@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "vjencanje")
@@ -35,4 +37,12 @@ public class Vjencanje {
     @ManyToOne(optional = false)
     @JoinColumn(name = "paket_id", nullable = false)
     private Paket paket;
+
+    @ManyToMany
+    @JoinTable(
+            name = "vjencanje_dodatak",
+            joinColumns = @JoinColumn(name = "vjencanje_id"),
+            inverseJoinColumns = @JoinColumn(name = "dodatak_id")
+    )
+    private Set<Dodatak> dodaci = new HashSet<>();
 }

@@ -4,6 +4,7 @@ import hr.jbrzica.wedding_manager_api.dto.VjencanjeRequest;
 import hr.jbrzica.wedding_manager_api.entity.StatusVjencanja;
 import hr.jbrzica.wedding_manager_api.entity.Vjencanje;
 import hr.jbrzica.wedding_manager_api.service.VjencanjeService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +32,7 @@ public class VjencanjeController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Vjencanje stvori(@RequestBody VjencanjeRequest request) {
+    public Vjencanje stvori(@Valid @RequestBody VjencanjeRequest request) {
         return vjencanjeService.stvori(request);
     }
 

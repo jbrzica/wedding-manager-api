@@ -2,6 +2,7 @@ package hr.jbrzica.wedding_manager_api.controller;
 
 import hr.jbrzica.wedding_manager_api.entity.Dodatak;
 import hr.jbrzica.wedding_manager_api.service.DodatakService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +30,7 @@ public class DodatakController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Dodatak spremi(@RequestBody Dodatak dodatak) {
+    public Dodatak spremi(@Valid @RequestBody Dodatak dodatak) {
         return dodatakService.spremi(dodatak);
     }
 

@@ -2,6 +2,7 @@ package hr.jbrzica.wedding_manager_api.controller;
 
 import hr.jbrzica.wedding_manager_api.entity.Klijent;
 import hr.jbrzica.wedding_manager_api.service.KlijentService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +30,7 @@ public class KlijentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Klijent spremi(@RequestBody Klijent klijent) {
+    public Klijent spremi(@Valid @RequestBody Klijent klijent) {
         return klijentService.spremi(klijent);
     }
 

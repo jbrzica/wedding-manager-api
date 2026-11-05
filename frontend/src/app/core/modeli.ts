@@ -1,0 +1,154 @@
+// Oblici podataka koje vraća backend (isti nazivi kao Java DTO-ovi)
+
+export type StatusVjencanja = 'UPIT' | 'POTVRDENO' | 'ODRADENO' | 'ISPORUCENO';
+export type VrstaUplate = 'KAPARA' | 'RATA' | 'OSTATAK';
+export type UlogaSuradnika = 'FOTOGRAF' | 'VIDEOGRAF' | 'DRON' | 'ASISTENT' | 'OSTALO';
+export type IzvorUpita = 'INSTAGRAM' | 'FACEBOOK' | 'GOOGLE' | 'WEB_STRANICA' | 'PREPORUKA' | 'OSTALO';
+export type UlogaKorisnika = 'VLASNIK' | 'CLAN';
+export type Razdoblje = 'NADOLAZECA' | 'PROSLA' | 'SVA';
+
+export interface Korisnik {
+  id: number;
+  ime: string;
+  email: string;
+  uloga: UlogaKorisnika;
+  tvrtkaId: number;
+  nazivTvrtke: string;
+}
+
+export interface TokenOdgovor {
+  token: string;
+  korisnik: Korisnik;
+}
+
+export interface Poruka {
+  poruka: string;
+}
+
+export interface Osoba {
+  ime: string;
+  prezime: string;
+  telefon?: string | null;
+  email?: string | null;
+  adresa?: string | null;
+}
+
+export interface Paket {
+  id: number;
+  naziv: string;
+  opis?: string | null;
+  cijena: number;
+}
+
+export interface Dodatak {
+  id: number;
+  naziv: string;
+  cijena: number;
+}
+
+export interface Suradnik {
+  id: number;
+  ime: string;
+  uloga: UlogaSuradnika;
+  telefon?: string | null;
+  email?: string | null;
+  napomena?: string | null;
+}
+
+export interface StavkaRasporeda {
+  vrijeme?: string | null;
+  naziv: string;
+  adresa?: string | null;
+  napomena?: string | null;
+}
+
+export interface ClanEkipe {
+  suradnikId: number;
+  ime: string;
+  uloga: UlogaSuradnika;
+  telefon?: string | null;
+  honorar?: number | null;
+}
+
+export interface Uplata {
+  id: number;
+  iznos: number;
+  datum: string;
+  vrsta: VrstaUplate;
+  opis?: string | null;
+}
+
+export interface Financije {
+  dogovorenaCijena: number;
+  uplaceno: number;
+  preostalo: number;
+  kaparaPlacena: boolean;
+  honorariEkipe: number;
+  zarada: number;
+}
+
+export interface VjencanjeSazetak {
+  id: number;
+  datum: string;
+  lokacija?: string | null;
+  mlada: string;
+  mladozenja: string;
+  status: StatusVjencanja;
+  dogovorenaCijena: number;
+  uplaceno: number;
+  preostalo: number;
+  kaparaPlacena: boolean;
+}
+
+export interface VjencanjeDetalji {
+  id: number;
+  datum: string;
+  lokacija?: string | null;
+  mlada: Osoba;
+  mladozenja: Osoba;
+  paket?: Paket | null;
+  dodaci: Dodatak[];
+  status: StatusVjencanja;
+  rokIsporuke?: string | null;
+  izvorUpita?: IzvorUpita | null;
+  napomene?: string | null;
+  raspored: StavkaRasporeda[];
+  ekipa: ClanEkipe[];
+  uplate: Uplata[];
+  financije: Financije;
+}
+
+export interface VjencanjeZahtjev {
+  datum: string;
+  lokacija?: string | null;
+  mlada: Osoba;
+  mladozenja: Osoba;
+  paketId?: number | null;
+  dodatakIds: number[];
+  dogovorenaCijena?: number | null;
+  rokIsporuke?: string | null;
+  izvorUpita?: IzvorUpita | null;
+  napomene?: string | null;
+  raspored: StavkaRasporeda[];
+  ekipa: { suradnikId: number; uloga?: UlogaSuradnika | null; honorar?: number | null }[];
+}
+
+export interface Pregled {
+  sljedeceVjencanje?: VjencanjeSazetak | null;
+  danaDoSljedeceg?: number | null;
+  brojOveGodine: number;
+  ukupnoNenaplaceno: number;
+}
+
+export interface ClanTvrtke {
+  id: number;
+  ime: string;
+  email: string;
+  uloga: UlogaKorisnika;
+}
+
+export interface Tvrtka {
+  id: number;
+  naziv: string;
+  clanovi: ClanTvrtke[];
+}

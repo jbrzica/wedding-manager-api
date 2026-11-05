@@ -1,0 +1,67 @@
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: (
+      primary: mat.$rose-palette,
+      tertiary: mat.$orange-palette,
+      theme-type: light,
+    ),
+    typography: (plain-family: (Roboto, sans-serif), brand-family: (Roboto, sans-serif)),
+    density: 0,
+  ));
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+h1 { font-size: 26px; font-weight: 500; margin: 0 0 16px; }
+a { color: var(--mat-sys-primary); }
+
+// Zajedničko za ekrane prijave
+.auth-stranica {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 16px; box-sizing: border-box;
+  background: linear-gradient(160deg, var(--mat-sys-primary-container), var(--mat-sys-surface) 60%);
+}
+.auth-kartica {
+  width: 100%; max-width: 400px; padding: 24px; box-sizing: border-box;
+  form { display: flex; flex-direction: column; gap: 4px; }
+  h1 { margin-bottom: 4px; }
+}
+.podnaslov { color: var(--mat-sys-on-surface-variant); margin: 0 0 20px; }
+.dno { text-align: center; margin: 12px 0 0; font-size: 14px; }
+.sifra { letter-spacing: 8px; font-size: 22px; text-align: center; }
+
+.greska { color: var(--mat-sys-error); margin: 8px 0; }
+.info { color: #1e6b34; margin: 8px 0; }
+.sivo { color: var(--mat-sys-on-surface-variant); font-size: 14px; }
+
+// Popisi u postavkama
+app-paketi, app-dodaci, app-suradnici, app-tvrtka {
+  display: flex; flex-direction: column; gap: 16px; padding: 16px 0;
+}
+.opis { color: var(--mat-sys-on-surface-variant); margin: 0; }
+.lista { overflow: hidden; }
+.red {
+  display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  &:last-child { border-bottom: 0; }
+}
+.glavno { flex: 1; min-width: 0; }
+.cijena { font-variant-numeric: tabular-nums; font-weight: 500; }
+.prazno { padding: 16px; margin: 0; color: var(--mat-sys-on-surface-variant); }
+.forma { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; padding-top: 8px; }
+.cijeli-red { grid-column: 1 / -1; }
+.gumbi { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
+
+@media (max-width: 720px) {
+  .samo-desktop { display: none !important; }
+  .forma { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,131 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import {
+  Dodatak, Financije, Paket, Poruka, Pregled, Razdoblje, StatusVjencanja, Suradnik, Tvrtka,
+  Uplata, VjencanjeDetalji, VjencanjeSazetak, VjencanjeZahtjev, VrstaUplate,
+} from './modeli';
+
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+  private http = inject(HttpClient);
+
+  // Vjenčanja
+
+  popis(razdoblje: Razdoblje, pretraga?: string): Observable<VjencanjeSazetak[]> {
+    let params = new HttpParams().set('razdoblje', razdoblje);
+    if (pretraga) {
+      params = params.set('pretraga', pretraga);
+    }
+    return this.http.get<VjencanjeSazetak[]>('/api/vjencanja', { params });
+  }
+
+  kalendar(od: string, doDatuma: string): Observable<VjencanjeSazetak[]> {
+    const params = new HttpParams().set('od', od).set('do', doDatuma);
+    return this.http.get<VjencanjeSazetak[]>('/api/vjencanja/kalendar', { params });
+  }
+
+  pregled(): Observable<Pregled> {
+    return this.http.get<Pregled>('/api/vjencanja/pregled');
+  }
+
+  upozorenja(datum: string, suradnikIds: number[], izuzmiId?: number): Observable<{ upozorenja: string[] }> {
+    let params = new HttpParams().set('datum', datum);
+    suradnikIds.forEach((id) => (params = params.append('suradnikIds', id)));
+    if (izuzmiId) {
+      params = params.set('izuzmiId', izuzmiId);
+    }
+    return this.http.get<{ upozorenja: string[] }>('/api/vjencanja/upozorenja', { params });
+  }
+
+  detalji(id: number): Observable<VjencanjeDetalji> {
+    return this.http.get<VjencanjeDetalji>(`/api/vjencanja/${id}`);
+  }
+
+  financije(id: number): Observable<Financije> {
+    return this.http.get<Financije>(`/api/vjencanja/${id}/financije`);
+  }
+
+  stvoriVjencanje(z: VjencanjeZahtjev): Observable<VjencanjeDetalji> {
+    return this.http.post<VjencanjeDetalji>('/api/vjencanja', z);
+  }
+
+  izmijeniVjencanje(id: number, z: VjencanjeZahtjev): Observable<VjencanjeDetalji> {
+    return this.http.put<VjencanjeDetalji>(`/api/vjencanja/${id}`, z);
+  }
+
+  promijeniStatus(id: number, status: StatusVjencanja): Observable<VjencanjeDetalji> {
+    const params = new HttpParams().set('status', status);
+    return this.http.patch<VjencanjeDetalji>(`/api/vjencanja/${id}/status`, null, { params });
+  }
+
+  obrisiVjencanje(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/vjencanja/${id}`);
+  }
+
+  // Uplate
+
+  dodajUplatu(vjencanjeId: number, u: { iznos: number; datum: string; vrsta: VrstaUplate; opis?: string | null }): Observable<Uplata> {
+    return this.http.post<Uplata>(`/api/vjencanja/${vjencanjeId}/uplate`, u);
+  }
+
+  obrisiUplatu(vjencanjeId: number, uplataId: number): Observable<void> {
+    return this.http.delete<void>(`/api/vjencanja/${vjencanjeId}/uplate/${uplataId}`);
+  }
+
+  // Paketi, dodaci i suradnici imaju isti oblik: /api/<resurs>[/id]
+
+  paketi(): Observable<Paket[]> {
+    return this.http.get<Paket[]>('/api/paketi');
+  }
+
+  spremiPaket(p: Omit<Paket, 'id'>, id?: number): Observable<Paket> {
+    return id ? this.http.put<Paket>(`/api/paketi/${id}`, p) : this.http.post<Paket>('/api/paketi', p);
+  }
+
+  obrisiPaket(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/paketi/${id}`);
+  }
+
+  dodaci(): Observable<Dodatak[]> {
+    return this.http.get<Dodatak[]>('/api/dodaci');
+  }
+
+  spremiDodatak(d: Omit<Dodatak, 'id'>, id?: number): Observable<Dodatak> {
+    return id ? this.http.put<Dodatak>(`/api/dodaci/${id}`, d) : this.http.post<Dodatak>('/api/dodaci', d);
+  }
+
+  obrisiDodatak(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/dodaci/${id}`);
+  }
+
+  suradnici(): Observable<Suradnik[]> {
+    return this.http.get<Suradnik[]>('/api/suradnici');
+  }
+
+  spremiSuradnika(s: Omit<Suradnik, 'id'>, id?: number): Observable<Suradnik> {
+    return id ? this.http.put<Suradnik>(`/api/suradnici/${id}`, s) : this.http.post<Suradnik>('/api/suradnici', s);
+  }
+
+  obrisiSuradnika(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/suradnici/${id}`);
+  }
+
+  // Tvrtka
+
+  tvrtka(): Observable<Tvrtka> {
+    return this.http.get<Tvrtka>('/api/tvrtka');
+  }
+
+  preimenujTvrtku(naziv: string): Observable<Tvrtka> {
+    return this.http.put<Tvrtka>('/api/tvrtka', { naziv });
+  }
+
+  pozovi(email: string): Observable<Poruka> {
+    return this.http.post<Poruka>('/api/tvrtka/pozivi', { email });
+  }
+
+  ukloniClana(korisnikId: number): Observable<void> {
+    return this.http.delete<void>(`/api/tvrtka/clanovi/${korisnikId}`);
+  }
+}

@@ -1,0 +1,36 @@
+.zaglavlje { display: flex; align-items: center; gap: 8px; }
+.zaglavlje h1 { margin: 0; }
+form { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.skriveno { display: none; }
+mat-card-content { padding-top: 8px; }
+.red-2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; }
+.cijeli-red { grid-column: 1 / -1; }
+.mladenci { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.upozorenja {
+  margin: 0 16px 16px; padding: 12px; border-radius: 8px;
+  background: #fff3cd; color: #7a5b00; display: flex; flex-direction: column; gap: 4px;
+}
+.stavka { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.vrijeme { width: 120px; flex-shrink: 0; }
+.naziv { flex: 2; min-width: 0; }
+.adresa { flex: 3; min-width: 0; }
+.uloga { flex: 1; min-width: 0; }
+.honorar { width: 130px; flex-shrink: 0; }
+.akcije { display: flex; flex-shrink: 0; }
+.sivo { color: var(--mat-sys-on-surface-variant); font-size: 14px; }
+.link {
+  border: 0; background: none; padding: 0; cursor: pointer; font: inherit;
+  color: var(--mat-sys-primary); text-decoration: underline;
+}
+.dno {
+  display: flex; justify-content: flex-end; gap: 8px; position: sticky; bottom: 0;
+  padding: 12px 0; background: var(--mat-sys-surface);
+}
+
+@media (max-width: 720px) {
+  .red-2, .mladenci { grid-template-columns: 1fr; }
+  .stavka { flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--mat-sys-outline-variant); }
+  .naziv { flex: 1 1 calc(100% - 136px); }
+  .adresa, .uloga { flex: 1 1 100%; }
+  .dno { bottom: 64px; }
+}

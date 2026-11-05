@@ -8,21 +8,26 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+// Svaki upit traži i tvrtku: korisnik vidi samo vjenčanja svoje tvrtke.
 public interface VjencanjeRepository extends JpaRepository<Vjencanje, Long> {
 
-    List<Vjencanje> findAllByOrderByDatumAsc();
+    Optional<Vjencanje> findByIdAndTvrtkaId(Long id, Long tvrtkaId);
 
-    List<Vjencanje> findByDatumGreaterThanEqualOrderByDatumAsc(LocalDate datum);
+    List<Vjencanje> findByTvrtkaIdOrderByDatumAsc(Long tvrtkaId);
 
-    List<Vjencanje> findByDatumLessThanOrderByDatumDesc(LocalDate datum);
+    List<Vjencanje> findByTvrtkaIdAndDatumGreaterThanEqualOrderByDatumAsc(Long tvrtkaId, LocalDate datum);
 
-    List<Vjencanje> findByDatumBetweenOrderByDatumAsc(LocalDate od, LocalDate doDatuma);
+    List<Vjencanje> findByTvrtkaIdAndDatumLessThanOrderByDatumDesc(Long tvrtkaId, LocalDate datum);
 
-    List<Vjencanje> findByDatum(LocalDate datum);
+    List<Vjencanje> findByTvrtkaIdAndDatumBetweenOrderByDatumAsc(Long tvrtkaId, LocalDate od, LocalDate doDatuma);
 
-    List<Vjencanje> findByStatusNot(StatusVjencanja status);
+    List<Vjencanje> findByTvrtkaIdAndDatum(Long tvrtkaId, LocalDate datum);
 
-    Optional<Vjencanje> findFirstByDatumGreaterThanEqualAndStatusNotOrderByDatumAsc(LocalDate datum, StatusVjencanja status);
+    List<Vjencanje> findByTvrtkaIdAndStatusNot(Long tvrtkaId, StatusVjencanja status);
 
-    long countByDatumBetweenAndStatusNot(LocalDate od, LocalDate doDatuma, StatusVjencanja status);
+    Optional<Vjencanje> findFirstByTvrtkaIdAndDatumGreaterThanEqualAndStatusNotOrderByDatumAsc(
+            Long tvrtkaId, LocalDate datum, StatusVjencanja status);
+
+    long countByTvrtkaIdAndDatumBetweenAndStatusNot(
+            Long tvrtkaId, LocalDate od, LocalDate doDatuma, StatusVjencanja status);
 }

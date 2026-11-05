@@ -55,6 +55,7 @@ public class UplataService {
 
     @Transactional
     public void obrisi(Long vjencanjeId, Long uplataId) {
+        vjencanjeService.dohvatiEntitet(vjencanjeId);   // provjerava da je vjenčanje od moje tvrtke
         Uplata uplata = uplataRepository.findById(uplataId)
                 .filter(u -> u.getVjencanje().getId().equals(vjencanjeId))
                 .orElseThrow(() -> new ResponseStatusException(

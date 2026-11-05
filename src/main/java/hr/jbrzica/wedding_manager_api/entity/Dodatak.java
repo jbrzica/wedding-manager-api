@@ -23,4 +23,8 @@ public class Dodatak {
 
     @Column(nullable = false)
     private BigDecimal cijena;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "tvrtka_id", nullable = false)
+    private Tvrtka tvrtka;
 }

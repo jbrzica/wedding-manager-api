@@ -4,6 +4,8 @@ import hr.jbrzica.wedding_manager_api.dto.SuradnikRequest;
 import hr.jbrzica.wedding_manager_api.dto.SuradnikResponse;
 import hr.jbrzica.wedding_manager_api.entity.Suradnik;
 import hr.jbrzica.wedding_manager_api.repository.SuradnikRepository;
+import hr.jbrzica.wedding_manager_api.repository.TvrtkaRepository;
+import hr.jbrzica.wedding_manager_api.security.TrenutniKorisnik;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,13 +18,18 @@ import java.util.List;
 public class SuradnikService {
 
     private final SuradnikRepository suradnikRepository;
+    private final TvrtkaRepository tvrtkaRepository;
+    private final TrenutniKorisnik trenutniKorisnik;
 
-    public SuradnikService(SuradnikRepository suradnikRepository) {
+    public SuradnikService(SuradnikRepository suradnikRepository, TvrtkaRepository tvrtkaRepository,
+            TrenutniKorisnik trenutniKorisnik) {
         this.suradnikRepository = suradnikRepository;
+        this.tvrtkaRepository = tvrtkaRepository;
+        this.trenutniKorisnik = trenutniKorisnik;
     }
 
     public List<SuradnikResponse> dohvatiSve() {
-        return suradnikRepository.findAllByOrderByImeAsc().stream()
+        return suradnikRepository.findByTvrtkaIdOrderByImeAsc(trenutniKorisnik.tvrtkaId()).stream()
                 .map(SuradnikResponse::iz)
                 .toList();
     }
@@ -34,6 +41,7 @@ public class SuradnikService {
     @Transactional
     public SuradnikResponse stvori(SuradnikRequest request) {
         Suradnik suradnik = new Suradnik();
+        suradnik.setTvrtka(tvrtkaRepository.getReferenceById(trenutniKorisnik.tvrtkaId()));
         popuni(suradnik, request);
         return SuradnikResponse.iz(suradnikRepository.save(suradnik));
     }
@@ -52,7 +60,7 @@ public class SuradnikService {
     }
 
     public Suradnik dohvatiEntitet(Long id) {
-        return suradnikRepository.findById(id)
+        return suradnikRepository.findByIdAndTvrtkaId(id, trenutniKorisnik.tvrtkaId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Suradnik s id " + id + " ne postoji"));
     }

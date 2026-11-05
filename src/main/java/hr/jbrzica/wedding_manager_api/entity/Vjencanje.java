@@ -84,4 +84,8 @@ public class Vjencanje {
     @OneToMany(mappedBy = "vjencanje", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("datum ASC")
     private List<Uplata> uplate = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "tvrtka_id", nullable = false)
+    private Tvrtka tvrtka;
 }

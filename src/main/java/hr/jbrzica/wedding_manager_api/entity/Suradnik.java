@@ -29,4 +29,8 @@ public class Suradnik {
 
     @Column(length = 2000)
     private String napomena;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "tvrtka_id", nullable = false)
+    private Tvrtka tvrtka;
 }

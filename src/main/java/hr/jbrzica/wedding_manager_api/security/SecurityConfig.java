@@ -43,7 +43,9 @@ public class SecurityConfig {
                                 "/api/auth/zaboravljena-lozinka",
                                 "/api/auth/nova-lozinka").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/api/**").authenticated()
+                        // Sve ostalo je Angular aplikacija (HTML, JS, CSS), koja mora biti dostupna i prije prijave
+                        .anyRequest().permitAll())
                 // Neprijavljen korisnik dobije 401
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(new JwtFilter(jwtServis, korisnikRepository),

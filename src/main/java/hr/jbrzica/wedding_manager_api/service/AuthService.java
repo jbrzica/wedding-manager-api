@@ -117,6 +117,33 @@ public class AuthService {
         return token(korisnik);
     }
 
+    // Isto kao kod ponovnog slanja: odgovor ne otkriva postoji li račun.
+    @Transactional
+    public PorukaResponse zaboravljenaLozinka(EmailRequest request) {
+        String email = normaliziraj(request.email());
+        if (korisnikRepository.existsByEmail(email)) {
+            kodServis.posaljiKod(email, SvrhaKoda.RESET_LOZINKE, null,
+                    "Nova lozinka – Wedding Manager",
+                    "Zatražili ste novu lozinku. Upišite ovu šifru u aplikaciju i odaberite novu lozinku.\n"
+                            + "Ako niste vi zatražili, samo zanemarite ovaj mail.");
+        }
+        return new PorukaResponse("Ako račun s tim emailom postoji, poslali smo šifru za novu lozinku.");
+    }
+
+    @Transactional
+    public TokenResponse novaLozinka(NovaLozinkaRequest request) {
+        String email = normaliziraj(request.email());
+        Korisnik korisnik = korisnikRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Šifra nije ispravna ili je istekla. Zatražite novu šifru."));
+
+        kodServis.provjeri(email, SvrhaKoda.RESET_LOZINKE, request.kod());
+        korisnik.setLozinkaHash(passwordEncoder.encode(request.lozinka()));
+        // Šifra je stigla na taj email, pa je i email time potvrđen
+        korisnik.setEmailPotvrden(true);
+        return token(korisnik);
+    }
+
     @Transactional(readOnly = true)
     public KorisnikResponse ja() {
         Korisnik korisnik = korisnikRepository.findById(trenutniKorisnik.id())

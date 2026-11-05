@@ -8,6 +8,7 @@ public record FinancijeResponse(
         BigDecimal preostalo,
         boolean kaparaPlacena,
         BigDecimal honorariEkipe,
+        BigDecimal ostaliTroskovi,
         BigDecimal zarada
 ) {
 }

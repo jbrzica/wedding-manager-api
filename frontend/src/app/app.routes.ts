@@ -19,6 +19,11 @@ export const routes: Routes = [
     loadComponent: () => import('./auth/potvrda.component').then((m) => m.PotvrdaComponent),
   },
   {
+    path: 'zaboravljena-lozinka',
+    canActivate: [gostGuard],
+    loadComponent: () => import('./auth/zaboravljena-lozinka.component').then((m) => m.ZaboravljenaLozinkaComponent),
+  },
+  {
     path: 'poziv',
     canActivate: [gostGuard],
     loadComponent: () => import('./auth/poziv.component').then((m) => m.PozivComponent),
@@ -49,6 +54,10 @@ export const routes: Routes = [
       {
         path: 'vjencanja/:id',
         loadComponent: () => import('./vjencanja/detalji.component').then((m) => m.DetaljiComponent),
+      },
+      {
+        path: 'statistika',
+        loadComponent: () => import('./statistika/statistika.component').then((m) => m.StatistikaComponent),
       },
       {
         path: 'postavke',

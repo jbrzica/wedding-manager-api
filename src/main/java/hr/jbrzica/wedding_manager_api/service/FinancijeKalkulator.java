@@ -40,6 +40,7 @@ public class FinancijeKalkulator {
             }
         }
 
+        BigDecimal ostali = vjencanje.getOstaliTroskovi() != null ? vjencanje.getOstaliTroskovi() : BigDecimal.ZERO;
         BigDecimal cijena = vjencanje.getDogovorenaCijena();
         return new FinancijeResponse(
                 cijena,
@@ -47,7 +48,8 @@ public class FinancijeKalkulator {
                 cijena.subtract(uplaceno),
                 kaparaPlacena,
                 honorari,
-                cijena.subtract(honorari)
+                ostali,
+                cijena.subtract(honorari).subtract(ostali)
         );
     }
 }

@@ -22,6 +22,10 @@
         <mat-label>Lokacija (sala)</mat-label>
         <input matInput formControlName="lokacija" placeholder="npr. Hotel Osijek">
       </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Broj gostiju</mat-label>
+        <input matInput type="number" min="0" step="1" formControlName="brojGostiju">
+      </mat-form-field>
     </mat-card-content>
     @if (upozorenja().length) {
       <div class="upozorenja">
@@ -95,6 +99,11 @@
             <button type="button" class="link" (click)="vratiIzracunatuCijenu()">vrati</button>
           </mat-hint>
         }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Ostali troškovi (€)</mat-label>
+        <input matInput type="number" min="0" step="1" formControlName="ostaliTroskovi">
+        <mat-hint>Smještaj, put, albumi... oduzima se od zarade</mat-hint>
       </mat-form-field>
     </mat-card-content>
   </mat-card>
@@ -179,6 +188,10 @@
           <mat-option [value]="null">—</mat-option>
           @for (iz of izvori; track iz) { <mat-option [value]="iz">{{ oznakeIzvora[iz] }}</mat-option> }
         </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="cijeli-red">
+        <mat-label>Link na galeriju</mat-label>
+        <input matInput type="url" formControlName="linkGalerije" placeholder="https://...">
       </mat-form-field>
       <mat-form-field appearance="outline" class="cijeli-red">
         <mat-label>Napomene</mat-label>

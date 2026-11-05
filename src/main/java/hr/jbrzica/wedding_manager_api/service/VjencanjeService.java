@@ -22,6 +22,13 @@ import java.util.*;
 @Transactional(readOnly = true)
 public class VjencanjeService {
 
+    // Svako novo vjenčanje dobije ovu kontrolnu listu; stavke se mogu mijenjati
+    private static final List<String> ZADANI_ZADACI = List.of(
+            "Ugovor poslan", "Ugovor potpisan", "Odabir fotografija", "Album naručen", "Galerija poslana");
+
+    // Upiti i otkazana vjenčanja nisu dogovoreni posao
+    private static final List<StatusVjencanja> NIJE_POSAO = List.of(StatusVjencanja.UPIT, StatusVjencanja.OTKAZANO);
+
     private final VjencanjeRepository vjencanjeRepository;
     private final UplataRepository uplataRepository;
     private final ClanEkipeRepository clanEkipeRepository;
@@ -94,20 +101,19 @@ public class VjencanjeService {
         Long tvrtkaId = trenutniKorisnik.tvrtkaId();
 
         Optional<Vjencanje> sljedece = vjencanjeRepository
-                .findFirstByTvrtkaIdAndDatumGreaterThanEqualAndStatusNotOrderByDatumAsc(
-                        tvrtkaId, danas, StatusVjencanja.UPIT);
+                .findFirstByTvrtkaIdAndDatumGreaterThanEqualAndStatusNotInOrderByDatumAsc(
+                        tvrtkaId, danas, NIJE_POSAO);
         VjencanjeSazetak sljedeceSazetak = sljedece.map(v -> uSazetke(List.of(v)).get(0)).orElse(null);
         Long danaDoSljedeceg = sljedece.map(v -> ChronoUnit.DAYS.between(danas, v.getDatum())).orElse(null);
 
-        long brojOveGodine = vjencanjeRepository.countByTvrtkaIdAndDatumBetweenAndStatusNot(
+        long brojOveGodine = vjencanjeRepository.countByTvrtkaIdAndDatumBetweenAndStatusNotIn(
                 tvrtkaId,
                 LocalDate.of(danas.getYear(), 1, 1),
                 LocalDate.of(danas.getYear(), 12, 31),
-                StatusVjencanja.UPIT);
+                NIJE_POSAO);
 
-        // Upiti nisu dogovoreni posao, pa ne ulaze u nenaplaćeno.
         BigDecimal ukupnoNenaplaceno = BigDecimal.ZERO;
-        for (VjencanjeSazetak s : uSazetke(vjencanjeRepository.findByTvrtkaIdAndStatusNot(tvrtkaId, StatusVjencanja.UPIT))) {
+        for (VjencanjeSazetak s : uSazetke(vjencanjeRepository.findByTvrtkaIdAndStatusNotIn(tvrtkaId, NIJE_POSAO))) {
             if (s.preostalo().signum() > 0) {
                 ukupnoNenaplaceno = ukupnoNenaplaceno.add(s.preostalo());
             }
@@ -121,7 +127,7 @@ public class VjencanjeService {
         Long tvrtkaId = trenutniKorisnik.tvrtkaId();
 
         for (Vjencanje v : vjencanjeRepository.findByTvrtkaIdAndDatum(tvrtkaId, datum)) {
-            if (!v.getId().equals(izuzmiId)) {
+            if (!v.getId().equals(izuzmiId) && v.getStatus() != StatusVjencanja.OTKAZANO) {
                 upozorenja.add("Na taj datum već imate vjenčanje: " + parMladenaca(v));
             }
         }
@@ -129,7 +135,8 @@ public class VjencanjeService {
         if (suradnikIds != null && !suradnikIds.isEmpty()) {
             for (ClanEkipe clan : clanEkipeRepository.findBySuradnikIdInAndVjencanjeDatumAndVjencanjeTvrtkaId(
                     suradnikIds, datum, tvrtkaId)) {
-                if (!clan.getVjencanje().getId().equals(izuzmiId)) {
+                Vjencanje drugo = clan.getVjencanje();
+                if (!drugo.getId().equals(izuzmiId) && drugo.getStatus() != StatusVjencanja.OTKAZANO) {
                     upozorenja.add(clan.getSuradnik().getIme() + " je taj dan već na vjenčanju: "
                             + parMladenaca(clan.getVjencanje()));
                 }
@@ -153,6 +160,13 @@ public class VjencanjeService {
         Vjencanje vjencanje = new Vjencanje();
         vjencanje.setTvrtka(tvrtkaRepository.getReferenceById(trenutniKorisnik.tvrtkaId()));
         popuni(vjencanje, request);
+        for (int i = 0; i < ZADANI_ZADACI.size(); i++) {
+            Zadatak zadatak = new Zadatak();
+            zadatak.setNaziv(ZADANI_ZADACI.get(i));
+            zadatak.setRedoslijed(i);
+            zadatak.setVjencanje(vjencanje);
+            vjencanje.getZadaci().add(zadatak);
+        }
         return uDetalje(vjencanjeRepository.save(vjencanje));
     }
 
@@ -186,6 +200,9 @@ public class VjencanjeService {
         vjencanje.setRokIsporuke(request.rokIsporuke());
         vjencanje.setIzvorUpita(request.izvorUpita());
         vjencanje.setNapomene(request.napomene());
+        vjencanje.setBrojGostiju(request.brojGostiju());
+        vjencanje.setOstaliTroskovi(request.ostaliTroskovi());
+        vjencanje.setLinkGalerije(request.linkGalerije());
 
         Paket paket = request.paketId() != null ? paketService.dohvatiEntitet(request.paketId()) : null;
         vjencanje.setPaket(paket);
@@ -284,9 +301,12 @@ public class VjencanjeService {
                 v.getRokIsporuke(),
                 v.getIzvorUpita(),
                 v.getNapomene(),
+                v.getBrojGostiju(),
+                v.getLinkGalerije(),
                 raspored,
                 v.getEkipa().stream().map(ClanEkipeResponse::iz).toList(),
                 v.getUplate().stream().map(UplataResponse::iz).toList(),
+                v.getZadaci().stream().map(ZadatakResponse::iz).toList(),
                 financijeKalkulator.izracunaj(v)
         );
     }

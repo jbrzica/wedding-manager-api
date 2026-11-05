@@ -2,8 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  Dodatak, Financije, Paket, Poruka, Pregled, Razdoblje, StatusVjencanja, Suradnik, Tvrtka,
-  Uplata, VjencanjeDetalji, VjencanjeSazetak, VjencanjeZahtjev, VrstaUplate,
+  Dodatak, Financije, Statistika, Paket, Poruka, Pregled, Razdoblje, StatusVjencanja, Suradnik, Tvrtka,
+  Uplata, VjencanjeDetalji, Zadatak, VjencanjeSazetak, VjencanjeZahtjev, VrstaUplate,
 } from './modeli';
 
 @Injectable({ providedIn: 'root' })
@@ -73,6 +73,21 @@ export class ApiService {
     return this.http.delete<void>(`/api/vjencanja/${vjencanjeId}/uplate/${uplataId}`);
   }
 
+  // Kontrolna lista
+
+  dodajZadatak(vjencanjeId: number, naziv: string): Observable<Zadatak> {
+    return this.http.post<Zadatak>(`/api/vjencanja/${vjencanjeId}/zadaci`, { naziv });
+  }
+
+  oznaciZadatak(vjencanjeId: number, zadatakId: number, gotovo: boolean): Observable<Zadatak> {
+    const params = new HttpParams().set('gotovo', gotovo);
+    return this.http.patch<Zadatak>(`/api/vjencanja/${vjencanjeId}/zadaci/${zadatakId}`, null, { params });
+  }
+
+  obrisiZadatak(vjencanjeId: number, zadatakId: number): Observable<void> {
+    return this.http.delete<void>(`/api/vjencanja/${vjencanjeId}/zadaci/${zadatakId}`);
+  }
+
   // Paketi, dodaci i suradnici imaju isti oblik: /api/<resurs>[/id]
 
   paketi(): Observable<Paket[]> {
@@ -109,6 +124,12 @@ export class ApiService {
 
   obrisiSuradnika(id: number): Observable<void> {
     return this.http.delete<void>(`/api/suradnici/${id}`);
+  }
+
+  // Statistika
+
+  statistika(godina: number): Observable<Statistika> {
+    return this.http.get<Statistika>('/api/statistika', { params: new HttpParams().set('godina', godina) });
   }
 
   // Tvrtka

@@ -7,6 +7,7 @@ export const STATUSI: Record<StatusVjencanja, string> = {
   POTVRDENO: 'Potvrđeno',
   ODRADENO: 'Odrađeno',
   ISPORUCENO: 'Isporučeno',
+  OTKAZANO: 'Otkazano',
 };
 
 export const VRSTE_UPLATE: Record<VrstaUplate, string> = {

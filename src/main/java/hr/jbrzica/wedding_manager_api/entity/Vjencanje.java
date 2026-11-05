@@ -74,6 +74,14 @@ public class Vjencanje {
     @Column(length = 4000)
     private String napomene;
 
+    private Integer brojGostiju;
+
+    // Smještaj, put, albumi... jedan zbroj koji korisnik sam upiše
+    private BigDecimal ostaliTroskovi;
+
+    @Column(length = 1000)
+    private String linkGalerije;
+
     @OneToMany(mappedBy = "vjencanje", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("vrijeme ASC")
     private List<StavkaRasporeda> raspored = new ArrayList<>();
@@ -84,6 +92,10 @@ public class Vjencanje {
     @OneToMany(mappedBy = "vjencanje", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("datum ASC")
     private List<Uplata> uplate = new ArrayList<>();
+
+    @OneToMany(mappedBy = "vjencanje", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("redoslijed ASC, id ASC")
+    private List<Zadatak> zadaci = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tvrtka_id", nullable = false)

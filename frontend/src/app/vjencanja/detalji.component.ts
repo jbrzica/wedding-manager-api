@@ -1,6 +1,6 @@
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,8 +11,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { ApiService } from '../core/api.service';
-import { Osoba, StatusVjencanja, VjencanjeDetalji, VrstaUplate } from '../core/modeli';
+import { Osoba, StatusVjencanja, VjencanjeDetalji, VrstaUplate, Zadatak } from '../core/modeli';
 import { IZVORI_UPITA, STATUSI, ULOGE_SURADNIKA, VRSTE_UPLATE, kljucevi } from '../core/oznake';
 import { danas, izIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
@@ -21,7 +22,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
 @Component({
   selector: 'app-detalji',
   imports: [
-    DatePipe, CurrencyPipe, ReactiveFormsModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule,
+    DatePipe, CurrencyPipe, FormsModule, ReactiveFormsModule, MatCheckboxModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule,
     MatMenuModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, StatusOznakaComponent,
   ],
   template: `
@@ -40,6 +41,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
           <div class="podnaslov">
             {{ datum() | date: 'EEEE, d. MMMM yyyy.' }}
             @if (v.lokacija) { · {{ v.lokacija }} }
+            @if (v.brojGostiju) { · {{ v.brojGostiju }} gostiju }
           </div>
         </div>
         <button mat-stroked-button [matMenuTriggerFor]="statusi">
@@ -112,12 +114,15 @@ import { StatusOznakaComponent } from './status-oznaka.component';
             </mat-card-content>
           </mat-card>
 
-          @if (v.napomene || v.izvorUpita || v.rokIsporuke) {
+          @if (v.napomene || v.izvorUpita || v.rokIsporuke || v.linkGalerije) {
             <mat-card appearance="outlined">
               <mat-card-header><mat-card-title>Ostalo</mat-card-title></mat-card-header>
               <mat-card-content>
                 @if (v.rokIsporuke) { <p><span class="sivo">Rok isporuke:</span> {{ rok() | date: 'd. M. yyyy.' }}</p> }
                 @if (v.izvorUpita) { <p><span class="sivo">Izvor upita:</span> {{ oznakeIzvora[v.izvorUpita] }}</p> }
+                @if (v.linkGalerije) {
+                  <p class="link-galerije"><span class="sivo">Galerija:</span> <a [href]="v.linkGalerije" target="_blank" rel="noopener">{{ v.linkGalerije }}</a></p>
+                }
                 @if (v.napomene) { <p class="napomene">{{ v.napomene }}</p> }
               </mat-card-content>
             </mat-card>
@@ -125,6 +130,32 @@ import { StatusOznakaComponent } from './status-oznaka.component';
         </div>
 
         <div class="stupac">
+          <mat-card appearance="outlined">
+            <mat-card-header>
+              <mat-card-title>Kontrolna lista</mat-card-title>
+              <mat-card-subtitle>{{ gotovihZadataka() }} / {{ v.zadaci.length }} gotovo</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              @for (z of v.zadaci; track z.id) {
+                <div class="zadatak">
+                  <mat-checkbox [checked]="z.gotovo" (change)="oznaci(z, $event.checked)">
+                    <span [class.gotovo]="z.gotovo">{{ z.naziv }}</span>
+                  </mat-checkbox>
+                  <button mat-icon-button (click)="obrisiZadatak(z)" aria-label="Ukloni stavku"><mat-icon>close</mat-icon></button>
+                </div>
+              } @empty {
+                <p class="sivo">Lista je prazna.</p>
+              }
+              <form (ngSubmit)="dodajZadatak()" class="novi-zadatak">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>Nova stavka</mat-label>
+                  <input matInput name="noviZadatak" [(ngModel)]="noviZadatak" placeholder="npr. Poslati fotke za tisak">
+                </mat-form-field>
+                <button mat-icon-button type="submit" [disabled]="!noviZadatak.trim()" aria-label="Dodaj stavku"><mat-icon>add</mat-icon></button>
+              </form>
+            </mat-card-content>
+          </mat-card>
+
           <mat-card appearance="outlined">
             <mat-card-header><mat-card-title>Financije</mat-card-title></mat-card-header>
             <mat-card-content>
@@ -138,6 +169,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
                 <span>Preostalo</span>
                 <strong [class.duguje]="v.financije.preostalo > 0">{{ v.financije.preostalo | currency: 'EUR' }}</strong>
                 <span>Honorari ekipe</span><strong>− {{ v.financije.honorariEkipe | currency: 'EUR' }}</strong>
+                <span>Ostali troškovi</span><strong>− {{ v.financije.ostaliTroskovi | currency: 'EUR' }}</strong>
                 <span>Zarada</span><strong>{{ v.financije.zarada | currency: 'EUR' }}</strong>
               </div>
               <p [class]="v.financije.kaparaPlacena ? 'kapara da' : 'kapara ne'">
@@ -217,6 +249,13 @@ import { StatusOznakaComponent } from './status-oznaka.component';
     .nova-uplata { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
     .nova-uplata button { grid-column: span 2; }
     .opasno { color: var(--mat-sys-error); }
+    .zadatak { display: flex; align-items: center; justify-content: space-between; }
+    .zadatak button { opacity: .4; }
+    .zadatak:hover button { opacity: 1; }
+    .gotovo { text-decoration: line-through; color: var(--mat-sys-on-surface-variant); }
+    .novi-zadatak { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
+    .novi-zadatak mat-form-field { flex: 1; }
+    .link-galerije { overflow-wrap: anywhere; }
     @media (max-width: 820px) {
       .mreza { grid-template-columns: 1fr; }
     }
@@ -235,6 +274,8 @@ export class DetaljiComponent implements OnInit {
   greska = signal('');
 
   datum = computed(() => (this.v() ? izIso(this.v()!.datum) : null));
+  gotovihZadataka = computed(() => this.v()?.zadaci.filter((z) => z.gotovo).length ?? 0);
+  noviZadatak = '';
   rok = computed(() => (this.v()?.rokIsporuke ? izIso(this.v()!.rokIsporuke!) : null));
 
   readonly izIso = izIso;
@@ -287,6 +328,42 @@ export class DetaljiComponent implements OnInit {
       next: () => this.ucitaj(),
       error: (err) => this.poruka(porukaGreske(err)),
     });
+  }
+
+  oznaci(z: Zadatak, gotovo: boolean): void {
+    this.api.oznaciZadatak(this.v()!.id, z.id, gotovo).subscribe({
+      next: (novi) => this.zamijeniZadatke((lista) => lista.map((x) => (x.id === novi.id ? novi : x))),
+      error: (err) => {
+        this.poruka(porukaGreske(err));
+        this.ucitaj();
+      },
+    });
+  }
+
+  dodajZadatak(): void {
+    const naziv = this.noviZadatak.trim();
+    this.api.dodajZadatak(this.v()!.id, naziv).subscribe({
+      next: (novi) => {
+        this.noviZadatak = '';
+        this.zamijeniZadatke((lista) => [...lista, novi]);
+      },
+      error: (err) => this.poruka(porukaGreske(err)),
+    });
+  }
+
+  obrisiZadatak(z: Zadatak): void {
+    this.api.obrisiZadatak(this.v()!.id, z.id).subscribe({
+      next: () => this.zamijeniZadatke((lista) => lista.filter((x) => x.id !== z.id)),
+      error: (err) => this.poruka(porukaGreske(err)),
+    });
+  }
+
+  // Mijenjamo samo listu, bez ponovnog učitavanja cijelog vjenčanja
+  private zamijeniZadatke(promjena: (lista: Zadatak[]) => Zadatak[]): void {
+    const v = this.v();
+    if (v) {
+      this.v.set({ ...v, zadaci: promjena(v.zadaci) });
+    }
   }
 
   obrisi(): void {

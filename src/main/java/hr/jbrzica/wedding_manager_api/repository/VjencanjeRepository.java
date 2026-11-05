@@ -5,6 +5,7 @@ import hr.jbrzica.wedding_manager_api.entity.Vjencanje;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,11 +24,11 @@ public interface VjencanjeRepository extends JpaRepository<Vjencanje, Long> {
 
     List<Vjencanje> findByTvrtkaIdAndDatum(Long tvrtkaId, LocalDate datum);
 
-    List<Vjencanje> findByTvrtkaIdAndStatusNot(Long tvrtkaId, StatusVjencanja status);
+    List<Vjencanje> findByTvrtkaIdAndStatusNotIn(Long tvrtkaId, Collection<StatusVjencanja> statusi);
 
-    Optional<Vjencanje> findFirstByTvrtkaIdAndDatumGreaterThanEqualAndStatusNotOrderByDatumAsc(
-            Long tvrtkaId, LocalDate datum, StatusVjencanja status);
+    Optional<Vjencanje> findFirstByTvrtkaIdAndDatumGreaterThanEqualAndStatusNotInOrderByDatumAsc(
+            Long tvrtkaId, LocalDate datum, Collection<StatusVjencanja> statusi);
 
-    long countByTvrtkaIdAndDatumBetweenAndStatusNot(
-            Long tvrtkaId, LocalDate od, LocalDate doDatuma, StatusVjencanja status);
+    long countByTvrtkaIdAndDatumBetweenAndStatusNotIn(
+            Long tvrtkaId, LocalDate od, LocalDate doDatuma, Collection<StatusVjencanja> statusi);
 }

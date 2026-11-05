@@ -39,7 +39,9 @@ public class SecurityConfig {
                                 "/api/auth/potvrdi-email",
                                 "/api/auth/ponovno-posalji-kod",
                                 "/api/auth/prijava",
-                                "/api/auth/prihvati-poziv").permitAll()
+                                "/api/auth/prihvati-poziv",
+                                "/api/auth/zaboravljena-lozinka",
+                                "/api/auth/nova-lozinka").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                         .anyRequest().authenticated())
                 // Neprijavljen korisnik dobije 401

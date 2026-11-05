@@ -18,9 +18,12 @@ public record VjencanjeDetalji(
         LocalDate rokIsporuke,
         IzvorUpita izvorUpita,
         String napomene,
+        Integer brojGostiju,
+        String linkGalerije,
         List<StavkaRasporedaDto> raspored,
         List<ClanEkipeResponse> ekipa,
         List<UplataResponse> uplate,
+        List<ZadatakResponse> zadaci,
         FinancijeResponse financije
 ) {
 }

@@ -12,17 +12,18 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { ApiService } from '../core/api.service';
 import { Osoba, StatusVjencanja, VjencanjeDetalji, VrstaUplate, Zadatak } from '../core/modeli';
 import { IZVORI_UPITA, STATUSI, ULOGE_SURADNIKA, VRSTE_UPLATE, kljucevi } from '../core/oznake';
-import { danas, izIso } from '../core/datumi';
+import { izIso, uIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
 import { StatusOznakaComponent } from './status-oznaka.component';
 
 @Component({
   selector: 'app-detalji',
   imports: [
-    DatePipe, CurrencyPipe, FormsModule, ReactiveFormsModule, MatCheckboxModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule,
+    DatePipe, CurrencyPipe, FormsModule, ReactiveFormsModule, MatCheckboxModule, MatDatepickerModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule,
     MatMenuModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, StatusOznakaComponent,
   ],
   template: `
@@ -159,62 +160,106 @@ import { StatusOznakaComponent } from './status-oznaka.component';
           <mat-card appearance="outlined">
             <mat-card-header><mat-card-title>Financije</mat-card-title></mat-card-header>
             <mat-card-content>
-              <div class="paket">
-                {{ v.paket?.naziv || 'Bez paketa' }}
-                @for (d of v.dodaci; track d.id) { <span class="sivo"> + {{ d.naziv }}</span> }
+              <!-- 1. Naplata: koliko je još za naplatiti -->
+              <div class="naplata">
+                <span class="mala-oznaka">Preostalo za naplatu</span>
+                @if (v.financije.preostalo > 0) {
+                  <span class="veliki-iznos">{{ v.financije.preostalo | currency: 'EUR' }}</span>
+                } @else {
+                  <span class="veliki-iznos placeno"><mat-icon>check_circle</mat-icon> Sve plaćeno</span>
+                }
+                <div class="traka" role="progressbar" [attr.aria-valuenow]="postotakPlaceno()" aria-valuemin="0" aria-valuemax="100">
+                  <div class="ispuna" [style.width.%]="postotakPlaceno()"></div>
+                </div>
+                <div class="traka-legenda">
+                  <span>Uplaćeno {{ v.financije.uplaceno | currency: 'EUR' }}</span>
+                  <span>od {{ v.financije.dogovorenaCijena | currency: 'EUR' }}</span>
+                </div>
+                <span class="oznaka-kapare" [class.da]="v.financije.kaparaPlacena">
+                  <mat-icon inline>{{ v.financije.kaparaPlacena ? 'check' : 'schedule' }}</mat-icon>
+                  {{ v.financije.kaparaPlacena ? 'Kapara plaćena' : 'Kapara još nije plaćena' }}
+                </span>
               </div>
-              <div class="iznosi">
-                <span>Dogovorena cijena</span><strong>{{ v.financije.dogovorenaCijena | currency: 'EUR' }}</strong>
-                <span>Uplaćeno</span><strong>{{ v.financije.uplaceno | currency: 'EUR' }}</strong>
-                <span>Preostalo</span>
-                <strong [class.duguje]="v.financije.preostalo > 0">{{ v.financije.preostalo | currency: 'EUR' }}</strong>
-                <span>Honorari ekipe</span><strong>− {{ v.financije.honorariEkipe | currency: 'EUR' }}</strong>
-                <span>Ostali troškovi</span><strong>− {{ v.financije.ostaliTroskovi | currency: 'EUR' }}</strong>
-                <span>Zarada</span><strong>{{ v.financije.zarada | currency: 'EUR' }}</strong>
+
+              <!-- 2. Zarada: cijena minus troškovi -->
+              <div class="izracun">
+                <div class="mala-oznaka">Zarada</div>
+                <div class="redak">
+                  <span>
+                    Dogovorena cijena
+                    <span class="sivo">· {{ v.paket?.naziv || 'bez paketa' }}@for (d of v.dodaci; track d.id) { + {{ d.naziv }}}</span>
+                  </span>
+                  <span>{{ v.financije.dogovorenaCijena | currency: 'EUR' }}</span>
+                </div>
+                @if (v.financije.honorariEkipe > 0) {
+                  <div class="redak minus"><span>Honorari ekipe</span><span>− {{ v.financije.honorariEkipe | currency: 'EUR' }}</span></div>
+                }
+                @if (v.financije.ostaliTroskovi > 0) {
+                  <div class="redak minus"><span>Ostali troškovi</span><span>− {{ v.financije.ostaliTroskovi | currency: 'EUR' }}</span></div>
+                }
+                <div class="redak ukupno" [class.negativno]="v.financije.zarada < 0">
+                  <span>Zarada</span><span>{{ v.financije.zarada | currency: 'EUR' }}</span>
+                </div>
               </div>
-              <p [class]="v.financije.kaparaPlacena ? 'kapara da' : 'kapara ne'">
-                <mat-icon inline>{{ v.financije.kaparaPlacena ? 'check_circle' : 'schedule' }}</mat-icon>
-                {{ v.financije.kaparaPlacena ? 'Kapara plaćena' : 'Kapara nije plaćena' }}
-              </p>
             </mat-card-content>
           </mat-card>
 
           <mat-card appearance="outlined">
-            <mat-card-header><mat-card-title>Uplate</mat-card-title></mat-card-header>
+            <mat-card-header>
+              <mat-card-title>Uplate</mat-card-title>
+              <span class="razmak"></span>
+              @if (!formaUplateOtvorena()) {
+                <button mat-stroked-button (click)="otvoriFormuUplate()"><mat-icon>add</mat-icon> Dodaj uplatu</button>
+              }
+            </mat-card-header>
             <mat-card-content>
+              @if (formaUplateOtvorena()) {
+                <form [formGroup]="uplata" (ngSubmit)="dodajUplatu()" class="nova-uplata">
+                  @if (v.financije.preostalo > 0) {
+                    <button mat-stroked-button type="button" class="cijeli" (click)="upisiOstatak()">
+                      Upiši ostatak · {{ v.financije.preostalo | currency: 'EUR' }}
+                    </button>
+                  }
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Iznos (€)</mat-label>
+                    <input matInput type="number" min="0" step="0.01" formControlName="iznos" inputmode="decimal">
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Vrsta</mat-label>
+                    <mat-select formControlName="vrsta">
+                      @for (vr of vrsteLista; track vr) { <mat-option [value]="vr">{{ oznakeVrsta[vr] }}</mat-option> }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Datum</mat-label>
+                    <input matInput [matDatepicker]="datumUplate" formControlName="datum" (click)="datumUplate.open()">
+                    <mat-datepicker-toggle matIconSuffix [for]="datumUplate" />
+                    <mat-datepicker #datumUplate />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                    <mat-label>Opis (nije obavezno)</mat-label>
+                    <input matInput formControlName="opis">
+                  </mat-form-field>
+                  <div class="gumbi-uplate">
+                    <button mat-button type="button" (click)="formaUplateOtvorena.set(false)">Odustani</button>
+                    <button mat-flat-button type="submit" [disabled]="uplata.invalid">Spremi uplatu</button>
+                  </div>
+                </form>
+              }
+
               @for (u of v.uplate; track u.id) {
                 <div class="uplata">
-                  <div>
-                    <strong>{{ u.iznos | currency: 'EUR' }}</strong> <span class="sivo">· {{ oznakeVrsta[u.vrsta] }}</span>
-                    <div class="sivo">{{ izIso(u.datum) | date: 'd. M. yyyy.' }} @if (u.opis) { · {{ u.opis }} }</div>
+                  <div class="uplata-datum">{{ izIso(u.datum) | date: 'd.M.yyyy.' }}</div>
+                  <div class="uplata-opis">
+                    <span class="vrsta" [class]="'vrsta ' + u.vrsta.toLowerCase()">{{ oznakeVrsta[u.vrsta] }}</span>
+                    @if (u.opis) { <span class="sivo">{{ u.opis }}</span> }
                   </div>
+                  <strong class="uplata-iznos">{{ u.iznos | currency: 'EUR' }}</strong>
                   <button mat-icon-button (click)="obrisiUplatu(u.id)" aria-label="Obriši uplatu"><mat-icon>delete_outline</mat-icon></button>
                 </div>
               } @empty {
-                <p class="sivo">Još nema uplata.</p>
+                @if (!formaUplateOtvorena()) { <p class="sivo">Još nema uplata.</p> }
               }
-
-              <form [formGroup]="uplata" (ngSubmit)="dodajUplatu()" class="nova-uplata">
-                <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                  <mat-label>Iznos (€)</mat-label>
-                  <input matInput type="number" min="0" step="0.01" formControlName="iznos">
-                </mat-form-field>
-                <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                  <mat-label>Vrsta</mat-label>
-                  <mat-select formControlName="vrsta">
-                    @for (vr of vrsteLista; track vr) { <mat-option [value]="vr">{{ oznakeVrsta[vr] }}</mat-option> }
-                  </mat-select>
-                </mat-form-field>
-                <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                  <mat-label>Datum</mat-label>
-                  <input matInput type="date" formControlName="datum">
-                </mat-form-field>
-                <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                  <mat-label>Opis</mat-label>
-                  <input matInput formControlName="opis">
-                </mat-form-field>
-                <button mat-flat-button type="submit" [disabled]="uplata.invalid">Dodaj uplatu</button>
-              </form>
             </mat-card-content>
           </mat-card>
         </div>
@@ -238,16 +283,50 @@ import { StatusOznakaComponent } from './status-oznaka.component';
     .stavka:last-child { border-bottom: 0; }
     .vrijeme { font-weight: 500; width: 48px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
     .clan, .uplata { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
-    .paket { margin-bottom: 12px; }
-    .iznosi { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; }
-    .iznosi strong { text-align: right; font-variant-numeric: tabular-nums; }
+    .mala-oznaka {
+      font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--mat-sys-on-surface-variant);
+    }
+    .naplata { display: flex; flex-direction: column; gap: 6px; padding-bottom: 20px; border-bottom: 1px solid var(--mat-sys-outline-variant); }
+    .veliki-iznos {
+      font-size: 34px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.15;
+      font-variant-numeric: tabular-nums; color: var(--mat-sys-on-surface);
+    }
+    .veliki-iznos.placeno { color: var(--wm-uspjeh); display: flex; align-items: center; gap: 8px; font-size: 26px; }
+    .traka { height: 8px; border-radius: 4px; background: var(--mat-sys-surface-container-high); overflow: hidden; margin-top: 6px; }
+    .ispuna { height: 100%; background: var(--mat-sys-primary); border-radius: 4px; transition: width .3s; }
+    .traka-legenda { display: flex; justify-content: space-between; font-size: 13px; color: var(--mat-sys-on-surface-variant); }
+    .oznaka-kapare {
+      align-self: flex-start; margin-top: 6px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;
+      background: var(--wm-upozorenje-pozadina); color: var(--wm-upozorenje);
+    }
+    .oznaka-kapare.da { background: var(--wm-uspjeh-pozadina); color: var(--wm-uspjeh); }
+    .izracun { padding-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .redak { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+    .redak > span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .redak.minus { color: var(--mat-sys-on-surface-variant); }
+    .redak.ukupno { border-top: 1px solid var(--mat-sys-outline-variant); padding-top: 10px; font-weight: 600; font-size: 17px; }
+    .redak.ukupno.negativno { color: var(--mat-sys-error); }
+    .razmak { flex: 1; }
+    mat-card-header { align-items: center; }
     .duguje { color: var(--mat-sys-error); }
-    .kapara { margin: 16px 0 0; font-weight: 500; }
-    .kapara.da { color: #1e6b34; }
-    .kapara.ne { color: #7a5b00; }
     .napomene { white-space: pre-line; }
-    .nova-uplata { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
-    .nova-uplata button { grid-column: span 2; }
+    .nova-uplata {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; padding: 14px;
+      border-radius: 10px; background: var(--mat-sys-surface-container-low);
+    }
+    .nova-uplata .cijeli, .gumbi-uplate { grid-column: span 2; }
+    .gumbi-uplate { display: flex; justify-content: flex-end; gap: 8px; }
+    .uplata {
+      display: grid; grid-template-columns: 84px 1fr auto auto; align-items: center; gap: 8px;
+      padding: 6px 0; border-bottom: 1px solid var(--mat-sys-outline-variant);
+    }
+    .uplata:last-child { border-bottom: 0; }
+    .uplata-datum { font-size: 13px; color: var(--mat-sys-on-surface-variant); font-variant-numeric: tabular-nums; }
+    .uplata-opis { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .uplata-iznos { font-variant-numeric: tabular-nums; }
+    .vrsta { align-self: flex-start; font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 10px; background: var(--wm-neutralno-pozadina); color: var(--wm-neutralno); }
+    .vrsta.kapara { background: var(--mat-sys-primary-container); color: var(--mat-sys-on-primary-container); }
     .opasno { color: var(--mat-sys-error); }
     .zadatak { display: flex; align-items: center; justify-content: space-between; }
     .zadatak button { opacity: .4; }
@@ -289,12 +368,32 @@ export class DetaljiComponent implements OnInit {
   uplata = inject(FormBuilder).group({
     iznos: [null as number | null, [Validators.required, Validators.min(0.01)]],
     vrsta: ['KAPARA' as VrstaUplate, Validators.required],
-    datum: [danas(), Validators.required],
+    datum: [new Date() as Date | null, Validators.required],
     opis: [''],
+  });
+
+  formaUplateOtvorena = signal(false);
+  postotakPlaceno = computed(() => {
+    const f = this.v()?.financije;
+    if (!f || f.dogovorenaCijena <= 0) {
+      return 0;
+    }
+    return Math.min(100, Math.round((f.uplaceno / f.dogovorenaCijena) * 100));
   });
 
   ngOnInit(): void {
     this.ucitaj();
+  }
+
+  // Prva uplata je najčešće kapara, sljedeće rate
+  otvoriFormuUplate(): void {
+    const v = this.v()!;
+    this.uplata.reset({ iznos: null, vrsta: v.uplate.length ? 'RATA' : 'KAPARA', datum: new Date(), opis: '' });
+    this.formaUplateOtvorena.set(true);
+  }
+
+  upisiOstatak(): void {
+    this.uplata.patchValue({ iznos: this.v()!.financije.preostalo, vrsta: 'OSTATAK' });
   }
 
   punoIme(o: Osoba): string {
@@ -310,10 +409,9 @@ export class DetaljiComponent implements OnInit {
 
   dodajUplatu(): void {
     const u = this.uplata.getRawValue();
-    this.api.dodajUplatu(this.v()!.id, { iznos: u.iznos!, vrsta: u.vrsta!, datum: u.datum!, opis: u.opis || null }).subscribe({
+    this.api.dodajUplatu(this.v()!.id, { iznos: u.iznos!, vrsta: u.vrsta!, datum: uIso(u.datum!), opis: u.opis || null }).subscribe({
       next: () => {
-        // Nakon kapare je i sljedeća uplata najčešće rata
-        this.uplata.reset({ iznos: null, vrsta: 'RATA', datum: danas(), opis: '' });
+        this.formaUplateOtvorena.set(false);
         this.ucitaj();
       },
       error: (err) => this.poruka(porukaGreske(err)),

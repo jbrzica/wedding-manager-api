@@ -15,8 +15,11 @@
     <mat-card-content class="red-2">
       <mat-form-field appearance="outline">
         <mat-label>Datum vjenčanja</mat-label>
-        <input matInput type="date" formControlName="datum">
-        @if (forma.controls.datum.hasError('required')) { <mat-error>Datum je obavezan</mat-error> }
+        <input matInput [matDatepicker]="datumBirac" formControlName="datum" placeholder="npr. 14.6.2027." (click)="datumBirac.open()">
+        <mat-datepicker-toggle matIconSuffix [for]="datumBirac" />
+        <mat-datepicker #datumBirac />
+        @if (forma.controls.datum.hasError('required')) { <mat-error>Upišite ili odaberite datum</mat-error> }
+        @if (forma.controls.datum.hasError('matDatepickerParse')) { <mat-error>Datum upišite kao 14.6.2027.</mat-error> }
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Lokacija (sala)</mat-label>
@@ -117,7 +120,9 @@
         <div class="stavka" [formGroupName]="i">
           <mat-form-field appearance="outline" class="vrijeme" subscriptSizing="dynamic">
             <mat-label>Vrijeme</mat-label>
-            <input matInput type="time" formControlName="vrijeme">
+            <input matInput [matTimepicker]="vrijemeBirac" formControlName="vrijeme" placeholder="12:00">
+            <mat-timepicker-toggle matIconSuffix [for]="vrijemeBirac" />
+            <mat-timepicker #vrijemeBirac interval="15m" />
           </mat-form-field>
           <mat-form-field appearance="outline" class="naziv" subscriptSizing="dynamic">
             <mat-label>Što</mat-label>
@@ -180,7 +185,9 @@
     <mat-card-content class="red-2">
       <mat-form-field appearance="outline">
         <mat-label>Rok isporuke</mat-label>
-        <input matInput type="date" formControlName="rokIsporuke">
+        <input matInput [matDatepicker]="rokBirac" formControlName="rokIsporuke" placeholder="npr. 1.9.2027.">
+        <mat-datepicker-toggle matIconSuffix [for]="rokBirac" />
+        <mat-datepicker #rokBirac />
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Odakle je došao upit</mat-label>

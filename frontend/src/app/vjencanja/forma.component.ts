@@ -11,18 +11,21 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatTimepickerModule } from '@angular/material/timepicker';
 import { ApiService } from '../core/api.service';
 import {
   Dodatak, IzvorUpita, Paket, Suradnik, UlogaSuradnika, VjencanjeDetalji, VjencanjeZahtjev,
 } from '../core/modeli';
 import { IZVORI_UPITA, ULOGE_SURADNIKA, kljucevi } from '../core/oznake';
 import { porukaGreske } from '../core/greska';
+import { dateUVrijeme, izIso, uIso, vrijemeUDate } from '../core/datumi';
 
 @Component({
   selector: 'app-forma',
   imports: [
     ReactiveFormsModule, RouterLink, CurrencyPipe, MatCardModule, MatButtonModule, MatIconModule,
-    MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule,
+    MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, MatDatepickerModule, MatTimepickerModule,
   ],
   templateUrl: './forma.component.html',
   styleUrl: './forma.component.scss',
@@ -55,14 +58,14 @@ export class FormaComponent implements OnInit {
   readonly oznakeIzvora = IZVORI_UPITA;
 
   forma = this.fb.group({
-    datum: ['', Validators.required],
+    datum: [null as Date | null, Validators.required],
     lokacija: [''],
     mlada: this.osobaGrupa(),
     mladozenja: this.osobaGrupa(),
     paketId: [null as number | null],
     dodatakIds: [[] as number[]],
     dogovorenaCijena: [null as number | null, Validators.min(0)],
-    rokIsporuke: [''],
+    rokIsporuke: [null as Date | null],
     izvorUpita: [null as IzvorUpita | null],
     napomene: [''],
     brojGostiju: [null as number | null, Validators.min(0)],
@@ -94,7 +97,7 @@ export class FormaComponent implements OnInit {
             error: (err) => this.prikaziGresku(err),
           });
         } else {
-          this.forma.controls.datum.setValue(this.datum() ?? '');
+          this.forma.controls.datum.setValue(this.datum() ? izIso(this.datum()!) : null);
           this.dodajStavku('12:00', 'Dolazak kod mladenke');
           this.dodajStavku('', 'Crkva');
           this.dodajStavku('', 'Sala');
@@ -126,7 +129,7 @@ export class FormaComponent implements OnInit {
 
   dodajStavku(vrijeme = '', naziv = '', adresa = '', napomena = ''): void {
     this.raspored.push(this.fb.group({
-      vrijeme: [vrijeme],
+      vrijeme: [vrijemeUDate(vrijeme)],
       naziv: [naziv, Validators.required],
       adresa: [adresa],
       napomena: [napomena],
@@ -208,13 +211,13 @@ export class FormaComponent implements OnInit {
 
   private provjeriPreklapanja(): void {
     const datum = this.forma.controls.datum.value;
-    if (!datum) {
+    if (!datum || isNaN(datum.getTime())) {
       this.upozorenja.set([]);
       return;
     }
     const ids = this.ekipa.getRawValue().map((c) => c['suradnikId']).filter((id): id is number => !!id);
     const izuzmi = this.id() ? Number(this.id()) : undefined;
-    this.api.upozorenja(datum, ids, izuzmi).subscribe({
+    this.api.upozorenja(uIso(datum), ids, izuzmi).subscribe({
       next: (o) => this.upozorenja.set(o.upozorenja),
       error: () => this.upozorenja.set([]),
     });
@@ -224,14 +227,14 @@ export class FormaComponent implements OnInit {
     // Postojeća cijena je dogovorena, ne smije se sama promijeniti kad se otvori forma
     this.cijenaRucno = true;
     this.forma.patchValue({
-      datum: v.datum,
+      datum: izIso(v.datum),
       lokacija: v.lokacija ?? '',
       mlada: { ...v.mlada },
       mladozenja: { ...v.mladozenja },
       paketId: v.paket?.id ?? null,
       dodatakIds: v.dodaci.map((d) => d.id),
       dogovorenaCijena: v.financije.dogovorenaCijena,
-      rokIsporuke: v.rokIsporuke ?? '',
+      rokIsporuke: v.rokIsporuke ? izIso(v.rokIsporuke) : null,
       izvorUpita: v.izvorUpita ?? null,
       napomene: v.napomene ?? '',
       brojGostiju: v.brojGostiju ?? null,
@@ -254,21 +257,21 @@ export class FormaComponent implements OnInit {
       adresa: prazno(o['adresa']),
     });
     return {
-      datum: f.datum!,
+      datum: uIso(f.datum!),
       lokacija: prazno(f.lokacija),
       mlada: osoba(f.mlada),
       mladozenja: osoba(f.mladozenja),
       paketId: f.paketId,
       dodatakIds: f.dodatakIds ?? [],
       dogovorenaCijena: f.dogovorenaCijena,
-      rokIsporuke: prazno(f.rokIsporuke),
+      rokIsporuke: f.rokIsporuke ? uIso(f.rokIsporuke) : null,
       izvorUpita: f.izvorUpita,
       napomene: prazno(f.napomene),
       brojGostiju: f.brojGostiju,
       ostaliTroskovi: f.ostaliTroskovi,
       linkGalerije: prazno(f.linkGalerije),
       raspored: f.raspored.map((s) => ({
-        vrijeme: prazno(s['vrijeme']),
+        vrijeme: dateUVrijeme(s['vrijeme']),
         naziv: s['naziv'].trim(),
         adresa: prazno(s['adresa']),
         napomena: prazno(s['napomena']),

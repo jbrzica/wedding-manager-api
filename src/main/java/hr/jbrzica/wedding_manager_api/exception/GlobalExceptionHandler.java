@@ -4,6 +4,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mail.MailException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -63,5 +64,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleConflict(DataIntegrityViolationException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse(409, "Zapis se ne može spremiti ili obrisati jer krši pravila baze (npr. još se negdje koristi)", null));
+    }
+
+    // 503 - mail server nije dostupan, pa šifra nije poslana
+    @ExceptionHandler(MailException.class)
+    public ResponseEntity<ErrorResponse> handleMail(MailException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(503, "Mail se trenutno ne može poslati. Pokušajte kasnije.", null));
     }
 }

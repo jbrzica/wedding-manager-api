@@ -3,9 +3,11 @@ package hr.jbrzica.wedding_manager_api.service;
 import hr.jbrzica.wedding_manager_api.dto.*;
 import hr.jbrzica.wedding_manager_api.entity.*;
 import hr.jbrzica.wedding_manager_api.repository.ClanEkipeRepository;
+import hr.jbrzica.wedding_manager_api.repository.TvrtkaRepository;
 import hr.jbrzica.wedding_manager_api.repository.UplataRepository;
 import hr.jbrzica.wedding_manager_api.repository.VjencanjeRepository;
 import hr.jbrzica.wedding_manager_api.repository.ZbrojUplata;
+import hr.jbrzica.wedding_manager_api.security.TrenutniKorisnik;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,8 @@ public class VjencanjeService {
     private final DodatakService dodatakService;
     private final SuradnikService suradnikService;
     private final FinancijeKalkulator financijeKalkulator;
+    private final TvrtkaRepository tvrtkaRepository;
+    private final TrenutniKorisnik trenutniKorisnik;
 
     public VjencanjeService(VjencanjeRepository vjencanjeRepository,
                             UplataRepository uplataRepository,
@@ -34,7 +38,9 @@ public class VjencanjeService {
                             PaketService paketService,
                             DodatakService dodatakService,
                             SuradnikService suradnikService,
-                            FinancijeKalkulator financijeKalkulator) {
+                            FinancijeKalkulator financijeKalkulator,
+                            TvrtkaRepository tvrtkaRepository,
+                            TrenutniKorisnik trenutniKorisnik) {
         this.vjencanjeRepository = vjencanjeRepository;
         this.uplataRepository = uplataRepository;
         this.clanEkipeRepository = clanEkipeRepository;
@@ -42,6 +48,8 @@ public class VjencanjeService {
         this.dodatakService = dodatakService;
         this.suradnikService = suradnikService;
         this.financijeKalkulator = financijeKalkulator;
+        this.tvrtkaRepository = tvrtkaRepository;
+        this.trenutniKorisnik = trenutniKorisnik;
     }
 
     // ---------- čitanje ----------
@@ -49,10 +57,11 @@ public class VjencanjeService {
     public List<VjencanjeSazetak> popis(Razdoblje razdoblje, Integer godina,
                                         StatusVjencanja status, String pretraga) {
         LocalDate danas = LocalDate.now();
+        Long tvrtkaId = trenutniKorisnik.tvrtkaId();
         List<Vjencanje> vjencanja = switch (razdoblje) {
-            case NADOLAZECA -> vjencanjeRepository.findByDatumGreaterThanEqualOrderByDatumAsc(danas);
-            case PROSLA -> vjencanjeRepository.findByDatumLessThanOrderByDatumDesc(danas);
-            case SVA -> vjencanjeRepository.findAllByOrderByDatumAsc();
+            case NADOLAZECA -> vjencanjeRepository.findByTvrtkaIdAndDatumGreaterThanEqualOrderByDatumAsc(tvrtkaId, danas);
+            case PROSLA -> vjencanjeRepository.findByTvrtkaIdAndDatumLessThanOrderByDatumDesc(tvrtkaId, danas);
+            case SVA -> vjencanjeRepository.findByTvrtkaIdOrderByDatumAsc(tvrtkaId);
         };
 
         // Jedan fotograf ima stotinjak vjenčanja godišnje, pa je filtriranje u Javi dovoljno brzo.
@@ -69,7 +78,7 @@ public class VjencanjeService {
         if (od.isAfter(doDatuma)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Početni datum ne smije biti nakon završnog");
         }
-        return uSazetke(vjencanjeRepository.findByDatumBetweenOrderByDatumAsc(od, doDatuma));
+        return uSazetke(vjencanjeRepository.findByTvrtkaIdAndDatumBetweenOrderByDatumAsc(trenutniKorisnik.tvrtkaId(), od, doDatuma));
     }
 
     public VjencanjeDetalji detalji(Long id) {
@@ -82,20 +91,23 @@ public class VjencanjeService {
 
     public PregledResponse pregled() {
         LocalDate danas = LocalDate.now();
+        Long tvrtkaId = trenutniKorisnik.tvrtkaId();
 
         Optional<Vjencanje> sljedece = vjencanjeRepository
-                .findFirstByDatumGreaterThanEqualAndStatusNotOrderByDatumAsc(danas, StatusVjencanja.UPIT);
+                .findFirstByTvrtkaIdAndDatumGreaterThanEqualAndStatusNotOrderByDatumAsc(
+                        tvrtkaId, danas, StatusVjencanja.UPIT);
         VjencanjeSazetak sljedeceSazetak = sljedece.map(v -> uSazetke(List.of(v)).get(0)).orElse(null);
         Long danaDoSljedeceg = sljedece.map(v -> ChronoUnit.DAYS.between(danas, v.getDatum())).orElse(null);
 
-        long brojOveGodine = vjencanjeRepository.countByDatumBetweenAndStatusNot(
+        long brojOveGodine = vjencanjeRepository.countByTvrtkaIdAndDatumBetweenAndStatusNot(
+                tvrtkaId,
                 LocalDate.of(danas.getYear(), 1, 1),
                 LocalDate.of(danas.getYear(), 12, 31),
                 StatusVjencanja.UPIT);
 
         // Upiti nisu dogovoreni posao, pa ne ulaze u nenaplaćeno.
         BigDecimal ukupnoNenaplaceno = BigDecimal.ZERO;
-        for (VjencanjeSazetak s : uSazetke(vjencanjeRepository.findByStatusNot(StatusVjencanja.UPIT))) {
+        for (VjencanjeSazetak s : uSazetke(vjencanjeRepository.findByTvrtkaIdAndStatusNot(tvrtkaId, StatusVjencanja.UPIT))) {
             if (s.preostalo().signum() > 0) {
                 ukupnoNenaplaceno = ukupnoNenaplaceno.add(s.preostalo());
             }
@@ -106,15 +118,17 @@ public class VjencanjeService {
 
     public UpozorenjaResponse provjeriPreklapanja(LocalDate datum, List<Long> suradnikIds, Long izuzmiId) {
         List<String> upozorenja = new ArrayList<>();
+        Long tvrtkaId = trenutniKorisnik.tvrtkaId();
 
-        for (Vjencanje v : vjencanjeRepository.findByDatum(datum)) {
+        for (Vjencanje v : vjencanjeRepository.findByTvrtkaIdAndDatum(tvrtkaId, datum)) {
             if (!v.getId().equals(izuzmiId)) {
                 upozorenja.add("Na taj datum već imate vjenčanje: " + parMladenaca(v));
             }
         }
 
         if (suradnikIds != null && !suradnikIds.isEmpty()) {
-            for (ClanEkipe clan : clanEkipeRepository.findBySuradnikIdInAndVjencanjeDatum(suradnikIds, datum)) {
+            for (ClanEkipe clan : clanEkipeRepository.findBySuradnikIdInAndVjencanjeDatumAndVjencanjeTvrtkaId(
+                    suradnikIds, datum, tvrtkaId)) {
                 if (!clan.getVjencanje().getId().equals(izuzmiId)) {
                     upozorenja.add(clan.getSuradnik().getIme() + " je taj dan već na vjenčanju: "
                             + parMladenaca(clan.getVjencanje()));
@@ -126,7 +140,8 @@ public class VjencanjeService {
     }
 
     public Vjencanje dohvatiEntitet(Long id) {
-        return vjencanjeRepository.findById(id)
+        // Tuđe vjenčanje se ponaša kao da ne postoji (404), da se ne otkrije da postoji
+        return vjencanjeRepository.findByIdAndTvrtkaId(id, trenutniKorisnik.tvrtkaId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Vjenčanje s id " + id + " ne postoji"));
     }
@@ -136,6 +151,7 @@ public class VjencanjeService {
     @Transactional
     public VjencanjeDetalji stvori(VjencanjeRequest request) {
         Vjencanje vjencanje = new Vjencanje();
+        vjencanje.setTvrtka(tvrtkaRepository.getReferenceById(trenutniKorisnik.tvrtkaId()));
         popuni(vjencanje, request);
         return uDetalje(vjencanjeRepository.save(vjencanje));
     }

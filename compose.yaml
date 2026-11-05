@@ -23,9 +23,17 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/wedding
       SPRING_DATASOURCE_USERNAME: wedding
       SPRING_DATASOURCE_PASSWORD: wedding
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: "1025"
     depends_on:
       db:
         condition: service_healthy
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   pgdata:

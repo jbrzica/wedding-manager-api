@@ -7,7 +7,8 @@ Projekt je nastao iz stvarne potrebe obiteljskog fotografskog posla.
 ## Tehnologije
 
 - Java 21
-- Spring Boot 4 (Spring Web, Spring Data JPA, Validation)
+- Spring Boot 4 (Spring Web, Spring Data JPA, Validation, Spring Security, Mail)
+- JWT (jjwt) za prijavu
 - PostgreSQL 17
 - Gradle
 - Docker i Docker Compose
@@ -25,6 +26,7 @@ docker compose up -d --build
 ```
 
 Aplikacija radi na `http://localhost:8080`.
+Mailovi (šifre za potvrdu i pozive) lokalno se vide u Mailpitu: **http://localhost:8025**
 Dokumentacija i testiranje API-ja: **http://localhost:8080/swagger-ui.html**
 
 Gašenje:
@@ -32,6 +34,29 @@ Gašenje:
 ```bash
 docker compose down
 ```
+
+## Prijava i tvrtke
+
+Svaki korisnik pripada jednoj tvrtki i vidi samo njezine podatke (vjenčanja, pakete, dodatke, suradnike).
+
+1. `POST /api/auth/registracija` napravi tvrtku i vlasnika i pošalje šifru na email
+2. `POST /api/auth/potvrdi-email` sa šifrom potvrdi email i vrati JWT token
+3. `POST /api/auth/prijava` vrati token; svi ostali zahtjevi šalju zaglavlje `Authorization: Bearer <token>` (u Swaggeru gumb **Authorize**)
+4. Vlasnik poziva članove: `POST /api/tvrtka/pozivi`; pozvani se pridružuje s `POST /api/auth/prihvati-poziv`
+
+| Metoda | Putanja | Opis |
+|---|---|---|
+| POST | `/api/auth/registracija` | Nova tvrtka i vlasnik |
+| POST | `/api/auth/potvrdi-email` | Potvrda emaila šifrom, vraća token |
+| POST | `/api/auth/ponovno-posalji-kod` | Nova šifra za potvrdu |
+| POST | `/api/auth/prijava` | Prijava, vraća token |
+| POST | `/api/auth/prihvati-poziv` | Pridruživanje tvrtki šifrom iz poziva |
+| GET | `/api/auth/ja` | Prijavljeni korisnik |
+| GET / PUT | `/api/tvrtka` | Moja tvrtka i članovi / promjena naziva (vlasnik) |
+| POST | `/api/tvrtka/pozivi` | Poziv novog člana mailom (vlasnik) |
+| DELETE | `/api/tvrtka/clanovi/{id}` | Uklanjanje člana (vlasnik) |
+
+Lozinke i šifre spremaju se samo kao BCrypt hash. Šifra vrijedi 15 minuta i dopušta 5 pokušaja.
 
 ## Model podataka
 
@@ -111,7 +136,9 @@ Sve greške vraćaju isti oblik:
 | Kod | Kada |
 |---|---|
 | 400 | Neispravni podaci (validacija) |
-| 404 | Zapis ne postoji |
+| 401 | Niste prijavljeni ili je token neispravan |
+| 403 | Nemate pravo (npr. samo vlasnik smije pozivati članove) |
+| 404 | Zapis ne postoji ili pripada drugoj tvrtki |
 | 409 | Baza odbila zapis (npr. brisanje paketa koji se koristi na vjenčanju) |
 
 ## Struktura projekta
@@ -129,5 +156,4 @@ src/main/java/hr/jbrzica/wedding_manager_api/
 ## Planirano
 
 - Web sučelje (Angular) s kalendarom
-- Prijava korisnika, potvrda emaila šifrom i više korisnika na istom računu firme
 - Objava na internet i migracije baze (Flyway)

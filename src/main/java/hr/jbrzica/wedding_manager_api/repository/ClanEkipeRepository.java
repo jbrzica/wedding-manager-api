@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ClanEkipeRepository extends JpaRepository<ClanEkipe, Long> {
 
-    // Na kojim vjencanjima su ovi suradnici zadanog datuma
-    List<ClanEkipe> findBySuradnikIdInAndVjencanjeDatum(Collection<Long> suradnikIds, LocalDate datum);
+    // Na kojim vjenčanjima tvrtke su ovi suradnici zadanog datuma
+    List<ClanEkipe> findBySuradnikIdInAndVjencanjeDatumAndVjencanjeTvrtkaId(
+            Collection<Long> suradnikIds, LocalDate datum, Long tvrtkaId);
 }

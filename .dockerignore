@@ -3,3 +3,6 @@ build
 .idea
 *.iml
 .git
+frontend/node_modules
+frontend/dist
+frontend/.angular

@@ -43,6 +43,15 @@ export class AuthService {
       .pipe(tap((o) => this.spremi(o)));
   }
 
+  zaboravljenaLozinka(email: string): Observable<Poruka> {
+    return this.http.post<Poruka>('/api/auth/zaboravljena-lozinka', { email });
+  }
+
+  novaLozinka(email: string, kod: string, lozinka: string): Observable<TokenOdgovor> {
+    return this.http.post<TokenOdgovor>('/api/auth/nova-lozinka', { email, kod, lozinka })
+      .pipe(tap((o) => this.spremi(o)));
+  }
+
   // Nakon promjene naziva tvrtke osvježavamo spremljenog korisnika
   osvjeziKorisnika(): void {
     this.http.get<Korisnik>('/api/auth/ja').subscribe((k) => {

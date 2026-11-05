@@ -65,6 +65,9 @@ export class FormaComponent implements OnInit {
     rokIsporuke: [''],
     izvorUpita: [null as IzvorUpita | null],
     napomene: [''],
+    brojGostiju: [null as number | null, Validators.min(0)],
+    ostaliTroskovi: [null as number | null, Validators.min(0)],
+    linkGalerije: [''],
     raspored: this.fb.array<FormGroup>([]),
     ekipa: this.fb.array<FormGroup>([]),
   });
@@ -231,6 +234,9 @@ export class FormaComponent implements OnInit {
       rokIsporuke: v.rokIsporuke ?? '',
       izvorUpita: v.izvorUpita ?? null,
       napomene: v.napomene ?? '',
+      brojGostiju: v.brojGostiju ?? null,
+      ostaliTroskovi: v.financije.ostaliTroskovi || null,
+      linkGalerije: v.linkGalerije ?? '',
     });
     v.raspored.forEach((s) => this.dodajStavku(s.vrijeme?.slice(0, 5) ?? '', s.naziv, s.adresa ?? '', s.napomena ?? ''));
     v.ekipa.forEach((c) => this.dodajClana(c.suradnikId, c.uloga, c.honorar ?? null));
@@ -258,6 +264,9 @@ export class FormaComponent implements OnInit {
       rokIsporuke: prazno(f.rokIsporuke),
       izvorUpita: f.izvorUpita,
       napomene: prazno(f.napomene),
+      brojGostiju: f.brojGostiju,
+      ostaliTroskovi: f.ostaliTroskovi,
+      linkGalerije: prazno(f.linkGalerije),
       raspored: f.raspored.map((s) => ({
         vrijeme: prazno(s['vrijeme']),
         naziv: s['naziv'].trim(),

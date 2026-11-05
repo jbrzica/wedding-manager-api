@@ -1,0 +1,155 @@
+<div class="zaglavlje">
+  <h1>Statistika</h1>
+  <div class="godina">
+    <button mat-icon-button (click)="pomakni(-1)" aria-label="Prethodna godina"><mat-icon>chevron_left</mat-icon></button>
+    <span>{{ godina() }}</span>
+    <button mat-icon-button (click)="pomakni(1)" aria-label="Sljedeća godina"><mat-icon>chevron_right</mat-icon></button>
+  </div>
+</div>
+
+@if (ucitava()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+@if (greska()) {
+  <p class="greska">{{ greska() }}</p>
+}
+
+@if (s(); as s) {
+  <div class="kartice">
+    <mat-card appearance="outlined" class="stat">
+      <span class="oznaka">Vjenčanja</span>
+      <span class="vrijednost">{{ s.ovaGodina.broj }}</span>
+      <span class="detalj">prošle godine {{ s.proslaGodina.broj }}</span>
+    </mat-card>
+    <mat-card appearance="outlined" class="stat">
+      <span class="oznaka">Prihod</span>
+      <span class="vrijednost">{{ s.ovaGodina.prihod | currency: 'EUR' : 'symbol' : '1.0-0' }}</span>
+      @if (promjena(s.ovaGodina.prihod, s.proslaGodina.prihod); as p) {
+        <span class="detalj" [class.plus]="p > 0" [class.minus]="p < 0">{{ p > 0 ? '+' : '' }}{{ p }} % prema prošloj</span>
+      } @else {
+        <span class="detalj">&nbsp;</span>
+      }
+    </mat-card>
+    <mat-card appearance="outlined" class="stat">
+      <span class="oznaka">Zarada</span>
+      <span class="vrijednost">{{ s.ovaGodina.zarada | currency: 'EUR' : 'symbol' : '1.0-0' }}</span>
+      <span class="detalj">nakon honorara i troškova</span>
+    </mat-card>
+    <mat-card appearance="outlined" class="stat">
+      <span class="oznaka">Prosječna cijena</span>
+      <span class="vrijednost">{{ s.ovaGodina.prosjecnaCijena | currency: 'EUR' : 'symbol' : '1.0-0' }}</span>
+      <span class="detalj">prošle godine {{ s.proslaGodina.prosjecnaCijena | currency: 'EUR' : 'symbol' : '1.0-0' }}</span>
+    </mat-card>
+  </div>
+
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Prihod po mjesecima</mat-card-title>
+      <mat-card-subtitle>
+        <span class="legenda dogovoreno"></span> dogovoreno
+        <span class="legenda uplaceno"></span> uplaćeno
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="graf">
+        @for (m of s.poMjesecima; track m.mjesec) {
+          <div class="stupac" [title]="mjeseci[m.mjesec - 1] + ': ' + m.broj + ' vjenčanja, dogovoreno ' + (m.dogovoreno | currency: 'EUR') + ', uplaćeno ' + (m.uplaceno | currency: 'EUR')">
+            <span class="iznos">{{ m.dogovoreno > 0 ? (m.dogovoreno / 1000 | number: '1.0-1') + 'k' : '' }}</span>
+            <div class="traka">
+              <div class="dogovoreno" [style.height.%]="visina(m.dogovoreno)">
+                <div class="uplaceno" [style.height.%]="m.dogovoreno ? (m.uplaceno / m.dogovoreno) * 100 : 0"></div>
+              </div>
+            </div>
+            <span class="mjesec">{{ mjeseci[m.mjesec - 1] }}</span>
+            <span class="broj">{{ m.broj || '' }}</span>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <div class="dva">
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Odakle dolaze klijenti</mat-card-title>
+        <mat-card-subtitle>upiti i koliko ih je postalo posao</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @for (i of s.izvori; track i.izvor) {
+          <div class="izvor">
+            <div class="izvor-naslov">
+              <span>{{ i.izvor ? oznakeIzvora[i.izvor] : 'Nije upisano' }}</span>
+              <span class="sivo">{{ i.posao }} / {{ i.upita }} · {{ (i.posao / i.upita) * 100 | number: '1.0-0' }} %</span>
+            </div>
+            <div class="vodoravna">
+              <div class="upiti" [style.width.%]="(i.upita / najviseIzvor()) * 100">
+                <div class="posao" [style.width.%]="(i.posao / i.upita) * 100"></div>
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <p class="sivo">Nema podataka za ovu godinu.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>Slobodne subote u sezoni</mat-card-title>
+        <mat-card-subtitle>svibanj – rujan · slobodno {{ slobodnihSubota() }} od {{ s.subote.length }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="subote">
+        @for (d of s.subote; track d.datum) {
+          <span class="subota" [class.zauzeto]="d.dogovoreno > 0" [class.upit]="d.dogovoreno === 0 && d.upita > 0"
+                [title]="d.dogovoreno > 0 ? 'Zauzeto (' + d.dogovoreno + ')' : d.upita > 0 ? 'Samo upit' : 'Slobodno'">
+            {{ izIso(d.datum) | date: 'd.M.' }}
+          </span>
+        }
+      </mat-card-content>
+      <div class="legenda-subote">
+        <span><span class="kocka slobodno"></span> slobodno</span>
+        <span><span class="kocka upit"></span> samo upit</span>
+        <span><span class="kocka zauzeto"></span> zauzeto</span>
+      </div>
+    </mat-card>
+  </div>
+
+  <div class="tri">
+    <mat-card appearance="outlined">
+      <mat-card-header><mat-card-title>Paketi</mat-card-title></mat-card-header>
+      <mat-card-content>
+        @for (p of s.paketi; track p.naziv) {
+          <div class="redak"><span>{{ p.naziv }}</span><strong>{{ p.broj }}×</strong></div>
+        } @empty {
+          <p class="sivo">Nema podataka.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+    <mat-card appearance="outlined">
+      <mat-card-header><mat-card-title>Dodaci</mat-card-title></mat-card-header>
+      <mat-card-content>
+        @for (d of s.dodaci; track d.naziv) {
+          <div class="redak">
+            <span>{{ d.naziv }}</span>
+            <strong>{{ d.broj }}× <span class="sivo">({{ (s.ovaGodina.broj ? (d.broj / s.ovaGodina.broj) * 100 : 0) | number: '1.0-0' }} %)</span></strong>
+          </div>
+        } @empty {
+          <p class="sivo">Nema podataka.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+    <mat-card appearance="outlined">
+      <mat-card-header><mat-card-title>Honorari suradnicima</mat-card-title></mat-card-header>
+      <mat-card-content>
+        @for (h of s.honorari; track h.ime) {
+          <div class="redak">
+            <span>{{ h.ime }} <span class="sivo">· {{ h.brojVjencanja }} vj.</span></span>
+            <strong>{{ h.ukupno | currency: 'EUR' : 'symbol' : '1.0-0' }}</strong>
+          </div>
+        } @empty {
+          <p class="sivo">Nema honorara.</p>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+}

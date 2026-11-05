@@ -14,6 +14,7 @@ import { STATUSI } from '../core/oznake';
     .potvrdeno { background: #d6f0dd; color: #1e6b34; }
     .odradeno { background: #dbe7fb; color: #1d4f9c; }
     .isporuceno { background: #e8e8e8; color: #4a4a4a; }
+    .otkazano { background: #fde2e1; color: #9b2c2c; text-decoration: line-through; }
   `,
 })
 export class StatusOznakaComponent {

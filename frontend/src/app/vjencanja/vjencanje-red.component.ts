@@ -11,7 +11,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
   selector: 'app-vjencanje-red',
   imports: [RouterLink, DatePipe, CurrencyPipe, MatIconModule, StatusOznakaComponent],
   template: `
-    <a class="red" [routerLink]="['/vjencanja', v().id]">
+    <a class="red" [class.otkazano]="v().status === 'OTKAZANO'" [routerLink]="['/vjencanja', v().id]">
       <div class="datum">
         <span class="dan">{{ datum() | date: 'd' }}</span>
         <span class="dan-tjedna">{{ datum() | date: 'EEE' }}</span>
@@ -27,7 +27,8 @@ import { StatusOznakaComponent } from './status-oznaka.component';
       <div class="desno">
         <app-status [status]="v().status" />
         <div class="novac">
-          @if (v().preostalo > 0) {
+          @if (v().status === 'OTKAZANO') {
+          } @else if (v().preostalo > 0) {
             <span class="duguje">još {{ v().preostalo | currency: 'EUR' }}</span>
           } @else {
             <span class="placeno">plaćeno</span>
@@ -45,6 +46,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
       color: inherit; text-decoration: none;
       border-bottom: 1px solid var(--mat-sys-outline-variant);
     }
+    .otkazano { opacity: .55; }
     .red:hover { background: var(--mat-sys-surface-container-low); }
     .datum {
       display: flex; flex-direction: column; align-items: center; width: 44px; flex-shrink: 0;

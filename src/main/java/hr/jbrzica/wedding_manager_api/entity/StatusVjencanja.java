@@ -4,5 +4,6 @@ public enum StatusVjencanja {
     UPIT,
     POTVRDENO,
     ODRADENO,
-    ISPORUCENO
+    ISPORUCENO,
+    OTKAZANO
 }

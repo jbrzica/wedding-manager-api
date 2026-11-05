@@ -42,6 +42,16 @@ public class AuthController {
         return authService.prihvatiPoziv(request);
     }
 
+    @PostMapping("/zaboravljena-lozinka")
+    public PorukaResponse zaboravljenaLozinka(@Valid @RequestBody EmailRequest request) {
+        return authService.zaboravljenaLozinka(request);
+    }
+
+    @PostMapping("/nova-lozinka")
+    public TokenResponse novaLozinka(@Valid @RequestBody NovaLozinkaRequest request) {
+        return authService.novaLozinka(request);
+    }
+
     @GetMapping("/ja")
     public KorisnikResponse ja() {
         return authService.ja();

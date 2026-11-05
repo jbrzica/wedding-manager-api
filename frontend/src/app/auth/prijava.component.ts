@@ -35,6 +35,7 @@ import { porukaGreske } from '../core/greska';
           <button mat-flat-button type="submit" [disabled]="forma.invalid || salje()">Prijavi se</button>
         </form>
 
+        <p class="dno"><a routerLink="/zaboravljena-lozinka">Zaboravili ste lozinku?</a></p>
         <p class="dno">Nemate račun? <a routerLink="/registracija">Registrirajte tvrtku</a></p>
         <p class="dno">Dobili ste poziv? <a routerLink="/poziv">Pridružite se tvrtki</a></p>
       </mat-card>

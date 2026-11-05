@@ -23,6 +23,9 @@ import { AuthService } from '../core/auth.service';
         <a mat-button routerLink="/kalendar" routerLinkActive="aktivno">
           <mat-icon>calendar_month</mat-icon> Kalendar
         </a>
+        <a mat-button routerLink="/statistika" routerLinkActive="aktivno">
+          <mat-icon>bar_chart</mat-icon> Statistika
+        </a>
         <a mat-button routerLink="/postavke" routerLinkActive="aktivno">
           <mat-icon>settings</mat-icon> Postavke
         </a>
@@ -58,6 +61,9 @@ import { AuthService } from '../core/auth.service';
       </a>
       <a routerLink="/vjencanja/novo" routerLinkActive="aktivno">
         <mat-icon>add_circle</mat-icon><span>Novo</span>
+      </a>
+      <a routerLink="/statistika" routerLinkActive="aktivno">
+        <mat-icon>bar_chart</mat-icon><span>Statistika</span>
       </a>
       <a routerLink="/postavke" routerLinkActive="aktivno">
         <mat-icon>settings</mat-icon><span>Postavke</span>

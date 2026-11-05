@@ -21,6 +21,9 @@ public record VjencanjeRequest(
         LocalDate rokIsporuke,
         IzvorUpita izvorUpita,
         String napomene,
+        @PositiveOrZero(message = "Broj gostiju ne smije biti negativan") Integer brojGostiju,
+        @PositiveOrZero(message = "Troškovi ne smiju biti negativni") BigDecimal ostaliTroskovi,
+        String linkGalerije,
         List<@Valid StavkaRasporedaDto> raspored,
         List<@Valid ClanEkipeRequest> ekipa
 ) {

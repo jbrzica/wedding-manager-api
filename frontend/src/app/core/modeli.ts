@@ -1,6 +1,6 @@
 // Oblici podataka koje vraća backend (isti nazivi kao Java DTO-ovi)
 
-export type StatusVjencanja = 'UPIT' | 'POTVRDENO' | 'ODRADENO' | 'ISPORUCENO';
+export type StatusVjencanja = 'UPIT' | 'POTVRDENO' | 'ODRADENO' | 'ISPORUCENO' | 'OTKAZANO';
 export type VrstaUplate = 'KAPARA' | 'RATA' | 'OSTATAK';
 export type UlogaSuradnika = 'FOTOGRAF' | 'VIDEOGRAF' | 'DRON' | 'ASISTENT' | 'OSTALO';
 export type IzvorUpita = 'INSTAGRAM' | 'FACEBOOK' | 'GOOGLE' | 'WEB_STRANICA' | 'PREPORUKA' | 'OSTALO';
@@ -78,12 +78,19 @@ export interface Uplata {
   opis?: string | null;
 }
 
+export interface Zadatak {
+  id: number;
+  naziv: string;
+  gotovo: boolean;
+}
+
 export interface Financije {
   dogovorenaCijena: number;
   uplaceno: number;
   preostalo: number;
   kaparaPlacena: boolean;
   honorariEkipe: number;
+  ostaliTroskovi: number;
   zarada: number;
 }
 
@@ -112,9 +119,12 @@ export interface VjencanjeDetalji {
   rokIsporuke?: string | null;
   izvorUpita?: IzvorUpita | null;
   napomene?: string | null;
+  brojGostiju?: number | null;
+  linkGalerije?: string | null;
   raspored: StavkaRasporeda[];
   ekipa: ClanEkipe[];
   uplate: Uplata[];
+  zadaci: Zadatak[];
   financije: Financije;
 }
 
@@ -129,6 +139,9 @@ export interface VjencanjeZahtjev {
   rokIsporuke?: string | null;
   izvorUpita?: IzvorUpita | null;
   napomene?: string | null;
+  brojGostiju?: number | null;
+  ostaliTroskovi?: number | null;
+  linkGalerije?: string | null;
   raspored: StavkaRasporeda[];
   ekipa: { suradnikId: number; uloga?: UlogaSuradnika | null; honorar?: number | null }[];
 }
@@ -138,6 +151,25 @@ export interface Pregled {
   danaDoSljedeceg?: number | null;
   brojOveGodine: number;
   ukupnoNenaplaceno: number;
+}
+
+export interface SazetakGodine {
+  broj: number;
+  prihod: number;
+  zarada: number;
+  prosjecnaCijena: number;
+}
+
+export interface Statistika {
+  godina: number;
+  ovaGodina: SazetakGodine;
+  proslaGodina: SazetakGodine;
+  poMjesecima: { mjesec: number; broj: number; dogovoreno: number; uplaceno: number }[];
+  izvori: { izvor: IzvorUpita | null; upita: number; posao: number }[];
+  paketi: { naziv: string; broj: number }[];
+  dodaci: { naziv: string; broj: number }[];
+  subote: { datum: string; dogovoreno: number; upita: number }[];
+  honorari: { ime: string; brojVjencanja: number; ukupno: number }[];
 }
 
 export interface ClanTvrtke {

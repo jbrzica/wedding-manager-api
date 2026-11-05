@@ -1,8 +1,7 @@
 package hr.jbrzica.wedding_manager_api.controller;
 
-import hr.jbrzica.wedding_manager_api.dto.DugResponse;
 import hr.jbrzica.wedding_manager_api.dto.UplataRequest;
-import hr.jbrzica.wedding_manager_api.entity.Uplata;
+import hr.jbrzica.wedding_manager_api.dto.UplataResponse;
 import hr.jbrzica.wedding_manager_api.service.UplataService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -11,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/vjencanja/{vjencanjeId}")
+@RequestMapping("/api/vjencanja/{vjencanjeId}/uplate")
 public class UplataController {
 
     private final UplataService uplataService;
@@ -20,19 +19,20 @@ public class UplataController {
         this.uplataService = uplataService;
     }
 
-    @GetMapping("/uplate")
-    public List<Uplata> dohvatiUplate(@PathVariable Long vjencanjeId) {
+    @GetMapping
+    public List<UplataResponse> dohvatiUplate(@PathVariable Long vjencanjeId) {
         return uplataService.dohvatiZaVjencanje(vjencanjeId);
     }
 
-    @PostMapping("/uplate")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Uplata stvori(@PathVariable Long vjencanjeId, @Valid @RequestBody UplataRequest request) {
+    public UplataResponse stvori(@PathVariable Long vjencanjeId, @Valid @RequestBody UplataRequest request) {
         return uplataService.stvori(vjencanjeId, request);
     }
 
-    @GetMapping("/dug")
-    public DugResponse dug(@PathVariable Long vjencanjeId) {
-        return uplataService.izracunajDug(vjencanjeId);
+    @DeleteMapping("/{uplataId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void obrisi(@PathVariable Long vjencanjeId, @PathVariable Long uplataId) {
+        uplataService.obrisi(vjencanjeId, uplataId);
     }
 }

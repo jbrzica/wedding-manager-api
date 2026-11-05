@@ -1,73 +1,299 @@
 package hr.jbrzica.wedding_manager_api.service;
 
-import hr.jbrzica.wedding_manager_api.dto.VjencanjeRequest;
+import hr.jbrzica.wedding_manager_api.dto.*;
 import hr.jbrzica.wedding_manager_api.entity.*;
+import hr.jbrzica.wedding_manager_api.repository.ClanEkipeRepository;
+import hr.jbrzica.wedding_manager_api.repository.UplataRepository;
 import hr.jbrzica.wedding_manager_api.repository.VjencanjeRepository;
+import hr.jbrzica.wedding_manager_api.repository.ZbrojUplata;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @Service
+@Transactional(readOnly = true)
 public class VjencanjeService {
 
     private final VjencanjeRepository vjencanjeRepository;
-    private final KlijentService klijentService;
+    private final UplataRepository uplataRepository;
+    private final ClanEkipeRepository clanEkipeRepository;
     private final PaketService paketService;
     private final DodatakService dodatakService;
+    private final SuradnikService suradnikService;
+    private final FinancijeKalkulator financijeKalkulator;
 
     public VjencanjeService(VjencanjeRepository vjencanjeRepository,
-                            KlijentService klijentService,
+                            UplataRepository uplataRepository,
+                            ClanEkipeRepository clanEkipeRepository,
                             PaketService paketService,
-                            DodatakService dodatakService) {
+                            DodatakService dodatakService,
+                            SuradnikService suradnikService,
+                            FinancijeKalkulator financijeKalkulator) {
         this.vjencanjeRepository = vjencanjeRepository;
-        this.klijentService = klijentService;
+        this.uplataRepository = uplataRepository;
+        this.clanEkipeRepository = clanEkipeRepository;
         this.paketService = paketService;
         this.dodatakService = dodatakService;
+        this.suradnikService = suradnikService;
+        this.financijeKalkulator = financijeKalkulator;
     }
 
-    public List<Vjencanje> dohvatiSve(StatusVjencanja status) {
-        if (status == null) {
-            return vjencanjeRepository.findAll();
+    // ---------- čitanje ----------
+
+    public List<VjencanjeSazetak> popis(Razdoblje razdoblje, Integer godina,
+                                        StatusVjencanja status, String pretraga) {
+        LocalDate danas = LocalDate.now();
+        List<Vjencanje> vjencanja = switch (razdoblje) {
+            case NADOLAZECA -> vjencanjeRepository.findByDatumGreaterThanEqualOrderByDatumAsc(danas);
+            case PROSLA -> vjencanjeRepository.findByDatumLessThanOrderByDatumDesc(danas);
+            case SVA -> vjencanjeRepository.findAllByOrderByDatumAsc();
+        };
+
+        // Jedan fotograf ima stotinjak vjenčanja godišnje, pa je filtriranje u Javi dovoljno brzo.
+        List<Vjencanje> filtrirana = vjencanja.stream()
+                .filter(v -> godina == null || v.getDatum().getYear() == godina)
+                .filter(v -> status == null || v.getStatus() == status)
+                .filter(v -> odgovaraPretrazi(v, pretraga))
+                .toList();
+
+        return uSazetke(filtrirana);
+    }
+
+    public List<VjencanjeSazetak> kalendar(LocalDate od, LocalDate doDatuma) {
+        if (od.isAfter(doDatuma)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Početni datum ne smije biti nakon završnog");
         }
-        return vjencanjeRepository.findByStatus(status);
+        return uSazetke(vjencanjeRepository.findByDatumBetweenOrderByDatumAsc(od, doDatuma));
     }
 
-    public Vjencanje dohvatiPoId(Long id) {
+    public VjencanjeDetalji detalji(Long id) {
+        return uDetalje(dohvatiEntitet(id));
+    }
+
+    public FinancijeResponse financije(Long id) {
+        return financijeKalkulator.izracunaj(dohvatiEntitet(id));
+    }
+
+    public PregledResponse pregled() {
+        LocalDate danas = LocalDate.now();
+
+        Optional<Vjencanje> sljedece = vjencanjeRepository
+                .findFirstByDatumGreaterThanEqualAndStatusNotOrderByDatumAsc(danas, StatusVjencanja.UPIT);
+        VjencanjeSazetak sljedeceSazetak = sljedece.map(v -> uSazetke(List.of(v)).get(0)).orElse(null);
+        Long danaDoSljedeceg = sljedece.map(v -> ChronoUnit.DAYS.between(danas, v.getDatum())).orElse(null);
+
+        long brojOveGodine = vjencanjeRepository.countByDatumBetweenAndStatusNot(
+                LocalDate.of(danas.getYear(), 1, 1),
+                LocalDate.of(danas.getYear(), 12, 31),
+                StatusVjencanja.UPIT);
+
+        // Upiti nisu dogovoreni posao, pa ne ulaze u nenaplaćeno.
+        BigDecimal ukupnoNenaplaceno = BigDecimal.ZERO;
+        for (VjencanjeSazetak s : uSazetke(vjencanjeRepository.findByStatusNot(StatusVjencanja.UPIT))) {
+            if (s.preostalo().signum() > 0) {
+                ukupnoNenaplaceno = ukupnoNenaplaceno.add(s.preostalo());
+            }
+        }
+
+        return new PregledResponse(sljedeceSazetak, danaDoSljedeceg, brojOveGodine, ukupnoNenaplaceno);
+    }
+
+    public UpozorenjaResponse provjeriPreklapanja(LocalDate datum, List<Long> suradnikIds, Long izuzmiId) {
+        List<String> upozorenja = new ArrayList<>();
+
+        for (Vjencanje v : vjencanjeRepository.findByDatum(datum)) {
+            if (!v.getId().equals(izuzmiId)) {
+                upozorenja.add("Na taj datum već imate vjenčanje: " + parMladenaca(v));
+            }
+        }
+
+        if (suradnikIds != null && !suradnikIds.isEmpty()) {
+            for (ClanEkipe clan : clanEkipeRepository.findBySuradnikIdInAndVjencanjeDatum(suradnikIds, datum)) {
+                if (!clan.getVjencanje().getId().equals(izuzmiId)) {
+                    upozorenja.add(clan.getSuradnik().getIme() + " je taj dan već na vjenčanju: "
+                            + parMladenaca(clan.getVjencanje()));
+                }
+            }
+        }
+
+        return new UpozorenjaResponse(upozorenja);
+    }
+
+    public Vjencanje dohvatiEntitet(Long id) {
         return vjencanjeRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Vjencanje s id " + id + " ne postoji"));
+                        HttpStatus.NOT_FOUND, "Vjenčanje s id " + id + " ne postoji"));
     }
 
-    public Vjencanje stvori(VjencanjeRequest request) {
-        Klijent klijent = klijentService.dohvatiPoId(request.klijentId());
-        Paket paket = paketService.dohvatiPoId(request.paketId());
+    // ---------- pisanje ----------
 
+    @Transactional
+    public VjencanjeDetalji stvori(VjencanjeRequest request) {
         Vjencanje vjencanje = new Vjencanje();
+        popuni(vjencanje, request);
+        return uDetalje(vjencanjeRepository.save(vjencanje));
+    }
+
+    @Transactional
+    public VjencanjeDetalji izmijeni(Long id, VjencanjeRequest request) {
+        Vjencanje vjencanje = dohvatiEntitet(id);
+        popuni(vjencanje, request);
+        return uDetalje(vjencanje);
+    }
+
+    @Transactional
+    public VjencanjeDetalji promijeniStatus(Long id, StatusVjencanja status) {
+        Vjencanje vjencanje = dohvatiEntitet(id);
+        vjencanje.setStatus(status);
+        return uDetalje(vjencanje);
+    }
+
+    @Transactional
+    public void obrisi(Long id) {
+        // raspored, ekipa i uplate brišu se zajedno s vjenčanjem (cascade)
+        vjencanjeRepository.delete(dohvatiEntitet(id));
+    }
+
+    // ---------- pomoćne metode ----------
+
+    private void popuni(Vjencanje vjencanje, VjencanjeRequest request) {
         vjencanje.setDatum(request.datum());
         vjencanje.setLokacija(request.lokacija());
-        vjencanje.setKlijent(klijent);
+        vjencanje.setMlada(request.mlada().uEntitet());
+        vjencanje.setMladozenja(request.mladozenja().uEntitet());
+        vjencanje.setRokIsporuke(request.rokIsporuke());
+        vjencanje.setIzvorUpita(request.izvorUpita());
+        vjencanje.setNapomene(request.napomene());
+
+        Paket paket = request.paketId() != null ? paketService.dohvatiEntitet(request.paketId()) : null;
         vjencanje.setPaket(paket);
 
-        return vjencanjeRepository.save(vjencanje);
+        List<Dodatak> dodaci = dodatakService.dohvatiEntitete(request.dodatakIds());
+        vjencanje.getDodaci().clear();
+        vjencanje.getDodaci().addAll(dodaci);
+
+        // Cijena se predloži iz paketa i dodataka, ali korisnik je može promijeniti.
+        vjencanje.setDogovorenaCijena(request.dogovorenaCijena() != null
+                ? request.dogovorenaCijena()
+                : financijeKalkulator.predlozenaCijena(paket, dodaci));
+
+        // Liste se ne zamjenjuju novima, nego se isprazne i napune:
+        // tako Hibernate (orphanRemoval) obriše stare stavke iz baze.
+        vjencanje.getRaspored().clear();
+        if (request.raspored() != null) {
+            for (StavkaRasporedaDto dto : request.raspored()) {
+                StavkaRasporeda stavka = new StavkaRasporeda();
+                stavka.setVrijeme(dto.vrijeme());
+                stavka.setNaziv(dto.naziv());
+                stavka.setAdresa(dto.adresa());
+                stavka.setNapomena(dto.napomena());
+                stavka.setVjencanje(vjencanje);
+                vjencanje.getRaspored().add(stavka);
+            }
+        }
+
+        vjencanje.getEkipa().clear();
+        if (request.ekipa() != null) {
+            for (ClanEkipeRequest dto : request.ekipa()) {
+                Suradnik suradnik = suradnikService.dohvatiEntitet(dto.suradnikId());
+                ClanEkipe clan = new ClanEkipe();
+                clan.setVjencanje(vjencanje);
+                clan.setSuradnik(suradnik);
+                clan.setUloga(dto.uloga() != null ? dto.uloga() : suradnik.getUloga());
+                clan.setHonorar(dto.honorar());
+                vjencanje.getEkipa().add(clan);
+            }
+        }
     }
 
-    public Vjencanje promijeniStatus(Long id, StatusVjencanja noviStatus) {
-        Vjencanje vjencanje = dohvatiPoId(id);
-        vjencanje.setStatus(noviStatus);
-        return vjencanjeRepository.save(vjencanje);
+    private List<VjencanjeSazetak> uSazetke(List<Vjencanje> vjencanja) {
+        if (vjencanja.isEmpty()) {
+            return List.of();
+        }
+        List<Long> ids = vjencanja.stream().map(Vjencanje::getId).toList();
+
+        // Dva upita za cijeli popis, umjesto upita za svako vjenčanje (N+1 problem)
+        Map<Long, BigDecimal> uplacenoPoVjencanju = new HashMap<>();
+        for (ZbrojUplata zbroj : uplataRepository.zbrojiPoVjencanju(ids)) {
+            uplacenoPoVjencanju.put(zbroj.vjencanjeId(), zbroj.iznos());
+        }
+        Set<Long> sKaparom = new HashSet<>(uplataRepository.vjencanjaSUplatomVrste(VrstaUplate.KAPARA, ids));
+
+        List<VjencanjeSazetak> sazeci = new ArrayList<>();
+        for (Vjencanje v : vjencanja) {
+            BigDecimal uplaceno = uplacenoPoVjencanju.getOrDefault(v.getId(), BigDecimal.ZERO);
+            sazeci.add(new VjencanjeSazetak(
+                    v.getId(),
+                    v.getDatum(),
+                    v.getLokacija(),
+                    imeOsobe(v.getMlada()),
+                    imeOsobe(v.getMladozenja()),
+                    v.getStatus(),
+                    v.getDogovorenaCijena(),
+                    uplaceno,
+                    v.getDogovorenaCijena().subtract(uplaceno),
+                    sKaparom.contains(v.getId())
+            ));
+        }
+        return sazeci;
     }
 
-    public Vjencanje dodajDodatak(Long vjencanjeId, Long dodatakId) {
-        Vjencanje vjencanje = dohvatiPoId(vjencanjeId);
-        Dodatak dodatak = dodatakService.dohvatiPoId(dodatakId);
-        vjencanje.getDodaci().add(dodatak);
-        return vjencanjeRepository.save(vjencanje);
+    private VjencanjeDetalji uDetalje(Vjencanje v) {
+        List<StavkaRasporedaDto> raspored = v.getRaspored().stream()
+                .sorted(Comparator.comparing(StavkaRasporeda::getVrijeme,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(StavkaRasporedaDto::iz)
+                .toList();
+
+        List<DodatakResponse> dodaci = v.getDodaci().stream()
+                .sorted(Comparator.comparing(Dodatak::getNaziv))
+                .map(DodatakResponse::iz)
+                .toList();
+
+        return new VjencanjeDetalji(
+                v.getId(),
+                v.getDatum(),
+                v.getLokacija(),
+                OsobaDto.iz(v.getMlada()),
+                OsobaDto.iz(v.getMladozenja()),
+                v.getPaket() != null ? PaketResponse.iz(v.getPaket()) : null,
+                dodaci,
+                v.getStatus(),
+                v.getRokIsporuke(),
+                v.getIzvorUpita(),
+                v.getNapomene(),
+                raspored,
+                v.getEkipa().stream().map(ClanEkipeResponse::iz).toList(),
+                v.getUplate().stream().map(UplataResponse::iz).toList(),
+                financijeKalkulator.izracunaj(v)
+        );
     }
 
-    public void obrisi(Long id) {
-        Vjencanje vjencanje = dohvatiPoId(id);
-        vjencanjeRepository.delete(vjencanje);
+    private boolean odgovaraPretrazi(Vjencanje v, String pretraga) {
+        if (pretraga == null || pretraga.isBlank()) {
+            return true;
+        }
+        String trazeno = pretraga.trim().toLowerCase();
+        return sadrzi(imeOsobe(v.getMlada()), trazeno)
+                || sadrzi(imeOsobe(v.getMladozenja()), trazeno)
+                || sadrzi(v.getLokacija(), trazeno);
+    }
+
+    private boolean sadrzi(String tekst, String trazeno) {
+        return tekst != null && tekst.toLowerCase().contains(trazeno);
+    }
+
+    private String imeOsobe(Osoba osoba) {
+        return osoba == null ? "" : osoba.punoIme();
+    }
+
+    private String parMladenaca(Vjencanje v) {
+        return imeOsobe(v.getMlada()) + " i " + imeOsobe(v.getMladozenja());
     }
 }

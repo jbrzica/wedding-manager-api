@@ -25,9 +25,13 @@ public class Uplata {
     @Column(nullable = false)
     private LocalDate datum;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private VrstaUplate vrsta;
+
     private String opis;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "vjencanje_id", nullable = false)
     private Vjencanje vjencanje;
 }

@@ -1,6 +1,6 @@
 # Wedding Manager API
 
-REST API za fotografe vjenčanja: vođenje klijenata, vjenčanja, paketa, dodataka i uplata, s automatskim izračunom duga po vjenčanju.
+Aplikacija za fotografe vjenčanja: vođenje vjenčanja po datumima, mladenaca, rasporeda dana, ekipe (videografi, drugi fotografi), paketa, dodataka i uplata, s izračunom preostalog duga i zarade po vjenčanju.
 
 Projekt je nastao iz stvarne potrebe obiteljskog fotografskog posla.
 
@@ -36,48 +36,61 @@ docker compose down
 ## Model podataka
 
 ```
-klijent 1 ──── N vjencanje N ──── 1 paket
-                    │
-          ┌─────────┴─────────┐
-          N                   N
-       uplata          vjencanje_dodatak  N ──── 1 dodatak
+paket 1 ──── N vjencanje 1 ──── N uplata
+                 │  │
+                 │  └──── 1:N stavka_rasporeda
+                 │
+     ┌───────────┴───────────┐
+     N                       N
+vjencanje_dodatak        clan_ekipe (uloga, honorar)
+     N                       N
+     │                       │
+     1                       1
+  dodatak                suradnik
 ```
 
-- Klijent može imati više vjenčanja (1:N)
-- Vjenčanje ima jedan paket i više uplata (N:1, 1:N)
-- Vjenčanje i dodaci su u odnosu N:M preko spojne tablice
+- Mladenci (mlada i mladoženja) su dio vjenčanja: klasa `Osoba` je `@Embeddable` i koristi se dvaput
+- Vjenčanje ima više uplata i više stavki rasporeda dana (1:N)
+- Vjenčanja i dodaci su N:M preko spojne tablice
+- Vjenčanja i suradnici su povezani preko entiteta `ClanEkipe`, jer veza ima svoje podatke (uloga i honorar)
+- Vjenčanje pamti svoju dogovorenu cijenu: kasnija promjena cijene paketa ne mijenja stara vjenčanja
 
 ## API
 
 | Metoda | Putanja | Opis |
 |---|---|---|
-| GET / POST | `/api/klijenti` | Popis / novi klijent |
-| GET / DELETE | `/api/klijenti/{id}` | Jedan klijent / brisanje |
-| GET / POST | `/api/paketi` | Popis / novi paket |
-| GET / DELETE | `/api/paketi/{id}` | Jedan paket / brisanje |
-| GET / POST | `/api/dodaci` | Popis / novi dodatak |
-| GET / DELETE | `/api/dodaci/{id}` | Jedan dodatak / brisanje |
-| GET | `/api/vjencanja?status=POTVRDENO` | Popis vjenčanja, opcionalni filter po statusu |
-| POST | `/api/vjencanja` | Novo vjenčanje |
-| GET / DELETE | `/api/vjencanja/{id}` | Jedno vjenčanje / brisanje |
+| GET | `/api/vjencanja?razdoblje=NADOLAZECA` | Popis po datumima (`NADOLAZECA`, `PROSLA`, `SVA`), opcionalno `godina`, `status`, `pretraga` |
+| GET | `/api/vjencanja/kalendar?od=2028-06-01&do=2028-06-30` | Vjenčanja u razdoblju, za kalendar |
+| GET | `/api/vjencanja/pregled` | Sljedeće vjenčanje, broj vjenčanja ove godine, ukupno nenaplaćeno |
+| GET | `/api/vjencanja/upozorenja?datum=...&suradnikIds=1,2` | Upozorenja na preklapanje datuma i ekipe (samo upozorenje, spremanje je dopušteno) |
+| POST | `/api/vjencanja` | Novo vjenčanje (mladenci, raspored, ekipa, paket, dodaci, cijena) |
+| GET / PUT / DELETE | `/api/vjencanja/{id}` | Detalji / izmjena / brisanje |
 | PATCH | `/api/vjencanja/{id}/status?status=...` | Promjena statusa |
-| POST | `/api/vjencanja/{id}/dodaci/{dodatakId}` | Dodavanje dodatka vjenčanju |
-| GET / POST | `/api/vjencanja/{id}/uplate` | Uplate za vjenčanje / nova uplata |
-| GET | `/api/vjencanja/{id}/dug` | Ukupna cijena, uplaćeno i preostali dug |
+| GET | `/api/vjencanja/{id}/financije` | Cijena, uplaćeno, preostalo, je li kapara plaćena, honorari ekipe, zarada |
+| GET / POST | `/api/vjencanja/{id}/uplate` | Uplate / nova uplata (`KAPARA`, `RATA`, `OSTATAK`) |
+| DELETE | `/api/vjencanja/{id}/uplate/{uplataId}` | Brisanje uplate |
+| GET / POST, GET / PUT / DELETE `{id}` | `/api/paketi` | Paketi i njihove cijene |
+| GET / POST, GET / PUT / DELETE `{id}` | `/api/dodaci` | Dodaci |
+| GET / POST, GET / PUT / DELETE `{id}` | `/api/suradnici` | Suradnici (fotografi, videografi, dron...) |
 
-Statusi vjenčanja: `UPIT`, `POTVRDENO`, `ODRADENO`, `ISPORUCENO`.
+Statusi vjenčanja: `UPIT`, `POTVRDENO`, `ODRADENO`, `ISPORUCENO`. Upisana kapara automatski potvrđuje vjenčanje koje je bilo upit.
 
-### Primjer: izračun duga
+Ako se kod vjenčanja ne pošalje `dogovorenaCijena`, izračuna se iz cijene paketa i dodataka.
 
-Paket 2500 € + dron 300 € + album 450 €, uplaćena kapara 1000 €:
+### Primjer: financije vjenčanja
+
+Dogovoreno 3250 €, uplaćena kapara 1000 €, videograf 800 €:
 
 ```json
-GET /api/vjencanja/1/dug
+GET /api/vjencanja/1/financije
 
 {
-  "ukupnaCijena": 3250.00,
+  "dogovorenaCijena": 3250.00,
   "uplaceno": 1000.00,
-  "dug": 2250.00
+  "preostalo": 2250.00,
+  "kaparaPlacena": true,
+  "honorariEkipe": 800.00,
+  "zarada": 2450.00
 }
 ```
 
@@ -99,7 +112,7 @@ Sve greške vraćaju isti oblik:
 |---|---|
 | 400 | Neispravni podaci (validacija) |
 | 404 | Zapis ne postoji |
-| 409 | Duplikat (npr. email već postoji) |
+| 409 | Baza odbila zapis (npr. brisanje paketa koji se koristi na vjenčanju) |
 
 ## Struktura projekta
 
@@ -115,5 +128,6 @@ src/main/java/hr/jbrzica/wedding_manager_api/
 
 ## Planirano
 
-- Web sučelje (React)
-- Prijava korisnika
+- Web sučelje (Angular) s kalendarom
+- Prijava korisnika, potvrda emaila šifrom i više korisnika na istom računu firme
+- Objava na internet i migracije baze (Flyway)

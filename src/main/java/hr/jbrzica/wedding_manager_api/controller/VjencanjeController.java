@@ -1,13 +1,14 @@
 package hr.jbrzica.wedding_manager_api.controller;
 
-import hr.jbrzica.wedding_manager_api.dto.VjencanjeRequest;
+import hr.jbrzica.wedding_manager_api.dto.*;
 import hr.jbrzica.wedding_manager_api.entity.StatusVjencanja;
-import hr.jbrzica.wedding_manager_api.entity.Vjencanje;
 import hr.jbrzica.wedding_manager_api.service.VjencanjeService;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -21,29 +22,58 @@ public class VjencanjeController {
     }
 
     @GetMapping
-    public List<Vjencanje> dohvatiSve(@RequestParam(required = false) StatusVjencanja status) {
-        return vjencanjeService.dohvatiSve(status);
+    public List<VjencanjeSazetak> popis(
+            @RequestParam(defaultValue = "NADOLAZECA") Razdoblje razdoblje,
+            @RequestParam(required = false) Integer godina,
+            @RequestParam(required = false) StatusVjencanja status,
+            @RequestParam(required = false) String pretraga) {
+        return vjencanjeService.popis(razdoblje, godina, status, pretraga);
+    }
+
+    @GetMapping("/kalendar")
+    public List<VjencanjeSazetak> kalendar(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate od,
+            @RequestParam("do") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate doDatuma) {
+        return vjencanjeService.kalendar(od, doDatuma);
+    }
+
+    @GetMapping("/upozorenja")
+    public UpozorenjaResponse upozorenja(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate datum,
+            @RequestParam(required = false) List<Long> suradnikIds,
+            @RequestParam(required = false) Long izuzmiId) {
+        return vjencanjeService.provjeriPreklapanja(datum, suradnikIds, izuzmiId);
+    }
+
+    @GetMapping("/pregled")
+    public PregledResponse pregled() {
+        return vjencanjeService.pregled();
     }
 
     @GetMapping("/{id}")
-    public Vjencanje dohvatiPoId(@PathVariable Long id) {
-        return vjencanjeService.dohvatiPoId(id);
+    public VjencanjeDetalji detalji(@PathVariable Long id) {
+        return vjencanjeService.detalji(id);
+    }
+
+    @GetMapping("/{id}/financije")
+    public FinancijeResponse financije(@PathVariable Long id) {
+        return vjencanjeService.financije(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Vjencanje stvori(@Valid @RequestBody VjencanjeRequest request) {
+    public VjencanjeDetalji stvori(@Valid @RequestBody VjencanjeRequest request) {
         return vjencanjeService.stvori(request);
     }
 
-    @PatchMapping("/{id}/status")
-    public Vjencanje promijeniStatus(@PathVariable Long id, @RequestParam StatusVjencanja status) {
-        return vjencanjeService.promijeniStatus(id, status);
+    @PutMapping("/{id}")
+    public VjencanjeDetalji izmijeni(@PathVariable Long id, @Valid @RequestBody VjencanjeRequest request) {
+        return vjencanjeService.izmijeni(id, request);
     }
 
-    @PostMapping("/{id}/dodaci/{dodatakId}")
-    public Vjencanje dodajDodatak(@PathVariable Long id, @PathVariable Long dodatakId) {
-        return vjencanjeService.dodajDodatak(id, dodatakId);
+    @PatchMapping("/{id}/status")
+    public VjencanjeDetalji promijeniStatus(@PathVariable Long id, @RequestParam StatusVjencanja status) {
+        return vjencanjeService.promijeniStatus(id, status);
     }
 
     @DeleteMapping("/{id}")

@@ -1,5 +1,6 @@
 package hr.jbrzica.wedding_manager_api.dto;
 
+import hr.jbrzica.wedding_manager_api.entity.VrstaUplate;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -10,6 +11,7 @@ public record UplataRequest(
         @NotNull(message = "Iznos je obavezan")
         @Positive(message = "Iznos mora biti veći od 0") BigDecimal iznos,
         @NotNull(message = "Datum je obavezan") LocalDate datum,
+        @NotNull(message = "Vrsta uplate je obavezna") VrstaUplate vrsta,
         String opis
 ) {
 }

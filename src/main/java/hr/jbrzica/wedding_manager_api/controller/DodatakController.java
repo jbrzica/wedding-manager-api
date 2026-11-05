@@ -1,6 +1,7 @@
 package hr.jbrzica.wedding_manager_api.controller;
 
-import hr.jbrzica.wedding_manager_api.entity.Dodatak;
+import hr.jbrzica.wedding_manager_api.dto.DodatakRequest;
+import hr.jbrzica.wedding_manager_api.dto.DodatakResponse;
 import hr.jbrzica.wedding_manager_api.service.DodatakService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -19,19 +20,24 @@ public class DodatakController {
     }
 
     @GetMapping
-    public List<Dodatak> dohvatiSve() {
+    public List<DodatakResponse> dohvatiSve() {
         return dodatakService.dohvatiSve();
     }
 
     @GetMapping("/{id}")
-    public Dodatak dohvatiPoId(@PathVariable Long id) {
-        return dodatakService.dohvatiPoId(id);
+    public DodatakResponse dohvati(@PathVariable Long id) {
+        return dodatakService.dohvati(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Dodatak spremi(@Valid @RequestBody Dodatak dodatak) {
-        return dodatakService.spremi(dodatak);
+    public DodatakResponse stvori(@Valid @RequestBody DodatakRequest request) {
+        return dodatakService.stvori(request);
+    }
+
+    @PutMapping("/{id}")
+    public DodatakResponse izmijeni(@PathVariable Long id, @Valid @RequestBody DodatakRequest request) {
+        return dodatakService.izmijeni(id, request);
     }
 
     @DeleteMapping("/{id}")

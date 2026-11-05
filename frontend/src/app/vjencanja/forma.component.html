@@ -1,0 +1,198 @@
+<div class="zaglavlje">
+  <a mat-icon-button [routerLink]="urediMo() ? ['/vjencanja', id()] : ['/']" aria-label="Natrag">
+    <mat-icon>arrow_back</mat-icon>
+  </a>
+  <h1>{{ urediMo() ? 'Uredi vjenčanje' : 'Novo vjenčanje' }}</h1>
+</div>
+
+@if (ucitava()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<form [formGroup]="forma" (ngSubmit)="spremi()" [class.skriveno]="ucitava()">
+  <mat-card appearance="outlined">
+    <mat-card-header><mat-card-title>Osnovno</mat-card-title></mat-card-header>
+    <mat-card-content class="red-2">
+      <mat-form-field appearance="outline">
+        <mat-label>Datum vjenčanja</mat-label>
+        <input matInput type="date" formControlName="datum">
+        @if (forma.controls.datum.hasError('required')) { <mat-error>Datum je obavezan</mat-error> }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Lokacija (sala)</mat-label>
+        <input matInput formControlName="lokacija" placeholder="npr. Hotel Osijek">
+      </mat-form-field>
+    </mat-card-content>
+    @if (upozorenja().length) {
+      <div class="upozorenja">
+        @for (u of upozorenja(); track u) {
+          <div><mat-icon inline>warning</mat-icon> {{ u }}</div>
+        }
+      </div>
+    }
+  </mat-card>
+
+  <div class="mladenci">
+    @for (uloga of ['mlada', 'mladozenja']; track uloga) {
+      <mat-card appearance="outlined" [formGroupName]="uloga">
+        <mat-card-header><mat-card-title>{{ uloga === 'mlada' ? 'Mlada' : 'Mladoženja' }}</mat-card-title></mat-card-header>
+        <mat-card-content class="red-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Ime</mat-label>
+            <input matInput formControlName="ime">
+            <mat-error>Ime je obavezno</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Prezime</mat-label>
+            <input matInput formControlName="prezime">
+            <mat-error>Prezime je obavezno</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Telefon</mat-label>
+            <input matInput type="tel" formControlName="telefon">
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" formControlName="email">
+            <mat-error>Email nije ispravan</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="cijeli-red">
+            <mat-label>Adresa</mat-label>
+            <input matInput formControlName="adresa">
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+
+  <mat-card appearance="outlined">
+    <mat-card-header><mat-card-title>Paket i cijena</mat-card-title></mat-card-header>
+    <mat-card-content class="red-2">
+      <mat-form-field appearance="outline">
+        <mat-label>Paket</mat-label>
+        <mat-select formControlName="paketId">
+          <mat-option [value]="null">Bez paketa</mat-option>
+          @for (p of paketi(); track p.id) {
+            <mat-option [value]="p.id">{{ p.naziv }} · {{ p.cijena | currency: 'EUR' }}</mat-option>
+          }
+        </mat-select>
+        @if (!paketi().length) { <mat-hint>Pakete dodajete u Postavkama</mat-hint> }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Dodaci</mat-label>
+        <mat-select formControlName="dodatakIds" multiple>
+          @for (d of dodaci(); track d.id) {
+            <mat-option [value]="d.id">{{ d.naziv }} · {{ d.cijena | currency: 'EUR' }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Dogovorena cijena (€)</mat-label>
+        <input matInput type="number" min="0" step="1" formControlName="dogovorenaCijena" (input)="cijenaRucnoPromijenjena()">
+        @if (forma.controls.dogovorenaCijena.value !== izracunataCijena()) {
+          <mat-hint>
+            Paket + dodaci = {{ izracunataCijena() | currency: 'EUR' }}
+            <button type="button" class="link" (click)="vratiIzracunatuCijenu()">vrati</button>
+          </mat-hint>
+        }
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Raspored dana</mat-card-title>
+    </mat-card-header>
+    <mat-card-content formArrayName="raspored">
+      @for (s of raspored.controls; track s; let i = $index) {
+        <div class="stavka" [formGroupName]="i">
+          <mat-form-field appearance="outline" class="vrijeme" subscriptSizing="dynamic">
+            <mat-label>Vrijeme</mat-label>
+            <input matInput type="time" formControlName="vrijeme">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="naziv" subscriptSizing="dynamic">
+            <mat-label>Što</mat-label>
+            <input matInput formControlName="naziv" placeholder="npr. Crkva">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="adresa" subscriptSizing="dynamic">
+            <mat-label>Adresa</mat-label>
+            <input matInput formControlName="adresa">
+          </mat-form-field>
+          <div class="akcije">
+            <button mat-icon-button type="button" (click)="pomakni(i, -1)" [disabled]="i === 0" aria-label="Gore"><mat-icon>arrow_upward</mat-icon></button>
+            <button mat-icon-button type="button" (click)="pomakni(i, 1)" [disabled]="i === raspored.length - 1" aria-label="Dolje"><mat-icon>arrow_downward</mat-icon></button>
+            <button mat-icon-button type="button" (click)="ukloni(raspored, i)" aria-label="Ukloni"><mat-icon>close</mat-icon></button>
+          </div>
+        </div>
+      }
+      <button mat-stroked-button type="button" (click)="dodajStavku()"><mat-icon>add</mat-icon> Dodaj stavku</button>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined">
+    <mat-card-header><mat-card-title>Ekipa</mat-card-title></mat-card-header>
+    <mat-card-content formArrayName="ekipa">
+      <p class="sivo">Npr. vanjski snimatelj kad vi samo fotografirate. Honorar se oduzima od zarade.</p>
+      @for (c of ekipa.controls; track c; let i = $index) {
+        <div class="stavka" [formGroupName]="i">
+          <mat-form-field appearance="outline" class="naziv" subscriptSizing="dynamic">
+            <mat-label>Suradnik</mat-label>
+            <mat-select formControlName="suradnikId" (selectionChange)="odabranSuradnik(i, $event.value)">
+              @for (s of suradnici(); track s.id) {
+                <mat-option [value]="s.id">{{ s.ime }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="uloga" subscriptSizing="dynamic">
+            <mat-label>Uloga</mat-label>
+            <mat-select formControlName="uloga">
+              @for (u of uloge; track u) { <mat-option [value]="u">{{ oznakeUloga[u] }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="honorar" subscriptSizing="dynamic">
+            <mat-label>Honorar (€)</mat-label>
+            <input matInput type="number" min="0" formControlName="honorar">
+          </mat-form-field>
+          <div class="akcije">
+            <button mat-icon-button type="button" (click)="ukloni(ekipa, i)" aria-label="Ukloni"><mat-icon>close</mat-icon></button>
+          </div>
+        </div>
+      }
+      @if (suradnici().length) {
+        <button mat-stroked-button type="button" (click)="dodajClana()"><mat-icon>add</mat-icon> Dodaj člana ekipe</button>
+      } @else {
+        <p class="sivo">Suradnike prvo dodajte u <a routerLink="/postavke">Postavkama</a>.</p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined">
+    <mat-card-header><mat-card-title>Ostalo</mat-card-title></mat-card-header>
+    <mat-card-content class="red-2">
+      <mat-form-field appearance="outline">
+        <mat-label>Rok isporuke</mat-label>
+        <input matInput type="date" formControlName="rokIsporuke">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Odakle je došao upit</mat-label>
+        <mat-select formControlName="izvorUpita">
+          <mat-option [value]="null">—</mat-option>
+          @for (iz of izvori; track iz) { <mat-option [value]="iz">{{ oznakeIzvora[iz] }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="cijeli-red">
+        <mat-label>Napomene</mat-label>
+        <textarea matInput rows="4" formControlName="napomene"></textarea>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  @if (greska()) {
+    <p class="greska">{{ greska() }}</p>
+  }
+
+  <div class="dno">
+    <a mat-button [routerLink]="urediMo() ? ['/vjencanja', id()] : ['/']">Odustani</a>
+    <button mat-flat-button type="submit" [disabled]="sprema()">Spremi</button>
+  </div>
+</form>

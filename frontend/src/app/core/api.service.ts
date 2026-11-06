@@ -142,6 +142,14 @@ export class ApiService {
     return this.http.put<Tvrtka>('/api/tvrtka', { naziv });
   }
 
+  kalendarLink(): Observable<{ putanja: string }> {
+    return this.http.get<{ putanja: string }>('/api/kalendar/link');
+  }
+
+  noviKalendarLink(): Observable<{ putanja: string }> {
+    return this.http.post<{ putanja: string }>('/api/kalendar/link/novi', {});
+  }
+
   promjenaLozinke(staraLozinka: string, novaLozinka: string): Observable<Poruka> {
     return this.http.post<Poruka>('/api/auth/promjena-lozinke', { staraLozinka, novaLozinka });
   }

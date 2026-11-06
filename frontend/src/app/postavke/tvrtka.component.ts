@@ -68,6 +68,7 @@ import { porukaGreske } from '../core/greska';
     }
   `,
   styles: `
+    :host { display: flex; flex-direction: column; gap: 16px; }
     .u-redu { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .u-redu mat-form-field { flex: 1; min-width: 220px; }
   `,

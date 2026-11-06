@@ -60,6 +60,10 @@ export const routes: Routes = [
         loadComponent: () => import('./statistika/statistika.component').then((m) => m.StatistikaComponent),
       },
       {
+        path: 'paketi',
+        loadComponent: () => import('./paketi/paketi-ekipa.component').then((m) => m.PaketiEkipaComponent),
+      },
+      {
         path: 'postavke',
         loadComponent: () => import('./postavke/postavke.component').then((m) => m.PostavkeComponent),
       },

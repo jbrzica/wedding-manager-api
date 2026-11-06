@@ -1,6 +1,7 @@
 import { Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { oibValidator } from '../core/oib';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, forkJoin, merge } from 'rxjs';
@@ -124,6 +125,7 @@ export class FormaComponent implements OnInit {
       telefon: [''],
       email: ['', Validators.email],
       adresa: [''],
+      oib: ['', oibValidator],
     });
   }
 
@@ -255,6 +257,7 @@ export class FormaComponent implements OnInit {
       telefon: prazno(o['telefon']),
       email: prazno(o['email']),
       adresa: prazno(o['adresa']),
+      oib: prazno(o['oib']),
     });
     return {
       datum: uIso(f.datum!),

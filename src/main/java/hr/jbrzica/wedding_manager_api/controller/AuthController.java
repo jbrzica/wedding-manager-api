@@ -52,6 +52,11 @@ public class AuthController {
         return authService.novaLozinka(request);
     }
 
+    @PostMapping("/promjena-lozinke")
+    public PorukaResponse promjenaLozinke(@Valid @RequestBody PromjenaLozinkeRequest request) {
+        return authService.promjenaLozinke(request);
+    }
+
     @GetMapping("/ja")
     public KorisnikResponse ja() {
         return authService.ja();

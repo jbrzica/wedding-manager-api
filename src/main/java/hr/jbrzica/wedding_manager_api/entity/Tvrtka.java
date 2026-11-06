@@ -18,4 +18,7 @@ public class Tvrtka {
 
     @Column(nullable = false)
     private String naziv;
+
+    @Column(unique = true, length = 64)
+    private String kalendarToken;
 }

@@ -1,14 +1,16 @@
 import { Component } from '@angular/core';
 import { TvrtkaComponent } from './tvrtka.component';
 import { LozinkaComponent } from './lozinka.component';
+import { KalendarLinkComponent } from './kalendar.component';
 
 @Component({
   selector: 'app-postavke',
-  imports: [TvrtkaComponent, LozinkaComponent],
+  imports: [TvrtkaComponent, KalendarLinkComponent, LozinkaComponent],
   template: `
     <h1>Postavke</h1>
     <div class="kartice">
       <app-tvrtka />
+      <app-kalendar-link />
       <app-lozinka />
     </div>
   `,

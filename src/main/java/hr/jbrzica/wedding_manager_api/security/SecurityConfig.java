@@ -42,6 +42,8 @@ public class SecurityConfig {
                                 "/api/auth/prihvati-poziv",
                                 "/api/auth/zaboravljena-lozinka",
                                 "/api/auth/nova-lozinka").permitAll()
+                        // Kalendarske aplikacije ne šalju JWT; pristup daje tajni token u adresi
+                        .requestMatchers("/api/ical/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         // Sve ostalo je Angular aplikacija (HTML, JS, CSS), koja mora biti dostupna i prije prijave

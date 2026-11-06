@@ -25,9 +25,11 @@ public class VjencanjeController {
     public List<VjencanjeSazetak> popis(
             @RequestParam(defaultValue = "NADOLAZECA") Razdoblje razdoblje,
             @RequestParam(required = false) Integer godina,
-            @RequestParam(required = false) StatusVjencanja status,
-            @RequestParam(required = false) String pretraga) {
-        return vjencanjeService.popis(razdoblje, godina, status, pretraga);
+            @RequestParam(name = "status", required = false) List<StatusVjencanja> statusi,
+            @RequestParam(required = false) String pretraga,
+            @RequestParam(defaultValue = "false") boolean nenaplaceno,
+            @RequestParam(defaultValue = "false") boolean kasniIsporuka) {
+        return vjencanjeService.popis(razdoblje, godina, statusi, pretraga, nenaplaceno, kasniIsporuka);
     }
 
     @GetMapping("/kalendar")

@@ -75,6 +75,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
                   @if (o.telefon) { <a [href]="'tel:' + o.telefon"><mat-icon inline>call</mat-icon> {{ o.telefon }}</a> }
                   @if (o.email) { <a [href]="'mailto:' + o.email"><mat-icon inline>mail</mat-icon> {{ o.email }}</a> }
                   @if (o.adresa) { <span><mat-icon inline>home</mat-icon> {{ o.adresa }}</span> }
+                  @if (o.oib) { <span><mat-icon inline>badge</mat-icon> OIB {{ o.oib }}</span> }
                 </div>
               }
             </mat-card-content>

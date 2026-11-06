@@ -25,8 +25,8 @@ import { AuthService } from '../core/auth.service';
         <a mat-button routerLink="/statistika" routerLinkActive="aktivno">
           <mat-icon>bar_chart</mat-icon> Statistika
         </a>
-        <a mat-button routerLink="/postavke" routerLinkActive="aktivno">
-          <mat-icon>settings</mat-icon> Postavke
+        <a mat-button routerLink="/paketi" routerLinkActive="aktivno">
+          <mat-icon>inventory_2</mat-icon> Paketi i ekipa
         </a>
       </nav>
 
@@ -41,6 +41,9 @@ import { AuthService } from '../core/auth.service';
           <small>{{ auth.korisnik()?.nazivTvrtke }}</small>
           <small>{{ auth.korisnik()?.email }}</small>
         </div>
+        <a mat-menu-item routerLink="/postavke">
+          <mat-icon>settings</mat-icon> Postavke
+        </a>
         <button mat-menu-item (click)="auth.odjava()">
           <mat-icon>logout</mat-icon> Odjava
         </button>
@@ -65,8 +68,8 @@ import { AuthService } from '../core/auth.service';
       <a routerLink="/statistika" routerLinkActive="aktivno">
         <mat-icon>bar_chart</mat-icon><span>Statistika</span>
       </a>
-      <a routerLink="/postavke" routerLinkActive="aktivno">
-        <mat-icon>settings</mat-icon><span>Postavke</span>
+      <a routerLink="/paketi" routerLinkActive="aktivno">
+        <mat-icon>inventory_2</mat-icon><span>Paketi</span>
       </a>
     </nav>
   `,

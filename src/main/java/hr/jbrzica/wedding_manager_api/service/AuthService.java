@@ -144,6 +144,18 @@ public class AuthService {
         return token(korisnik);
     }
 
+    // Prijavljeni korisnik mijenja lozinku; stara se traži da ukradeni token nije dovoljan.
+    @Transactional
+    public PorukaResponse promjenaLozinke(PromjenaLozinkeRequest request) {
+        Korisnik korisnik = korisnikRepository.findById(trenutniKorisnik.id())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Niste prijavljeni"));
+        if (!passwordEncoder.matches(request.staraLozinka(), korisnik.getLozinkaHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trenutna lozinka nije ispravna");
+        }
+        korisnik.setLozinkaHash(passwordEncoder.encode(request.novaLozinka()));
+        return new PorukaResponse("Lozinka je promijenjena.");
+    }
+
     @Transactional(readOnly = true)
     public KorisnikResponse ja() {
         Korisnik korisnik = korisnikRepository.findById(trenutniKorisnik.id())

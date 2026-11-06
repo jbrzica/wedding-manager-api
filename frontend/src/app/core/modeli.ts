@@ -31,6 +31,7 @@ export interface Osoba {
   telefon?: string | null;
   email?: string | null;
   adresa?: string | null;
+  oib?: string | null;
 }
 
 export interface Paket {

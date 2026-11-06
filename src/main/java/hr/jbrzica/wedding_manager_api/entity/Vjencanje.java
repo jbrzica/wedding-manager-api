@@ -34,6 +34,7 @@ public class Vjencanje {
     @AttributeOverride(name = "telefon", column = @Column(name = "mlada_telefon"))
     @AttributeOverride(name = "email", column = @Column(name = "mlada_email"))
     @AttributeOverride(name = "adresa", column = @Column(name = "mlada_adresa"))
+    @AttributeOverride(name = "oib", column = @Column(name = "mlada_oib"))
     private Osoba mlada;
 
     @Embedded
@@ -42,6 +43,7 @@ public class Vjencanje {
     @AttributeOverride(name = "telefon", column = @Column(name = "mladozenja_telefon"))
     @AttributeOverride(name = "email", column = @Column(name = "mladozenja_email"))
     @AttributeOverride(name = "adresa", column = @Column(name = "mladozenja_adresa"))
+    @AttributeOverride(name = "oib", column = @Column(name = "mladozenja_oib"))
     private Osoba mladozenja;
 
     // Paket nije obavezan: ponekad se dogovori samo cijena.

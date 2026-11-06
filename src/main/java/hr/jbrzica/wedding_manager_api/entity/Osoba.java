@@ -20,6 +20,7 @@ public class Osoba {
     private String telefon;
     private String email;
     private String adresa;
+    private String oib;
 
     public String punoIme() {
         String i = ime == null ? "" : ime;

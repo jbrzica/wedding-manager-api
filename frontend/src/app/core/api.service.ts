@@ -142,6 +142,10 @@ export class ApiService {
     return this.http.put<Tvrtka>('/api/tvrtka', { naziv });
   }
 
+  promjenaLozinke(staraLozinka: string, novaLozinka: string): Observable<Poruka> {
+    return this.http.post<Poruka>('/api/auth/promjena-lozinke', { staraLozinka, novaLozinka });
+  }
+
   pozovi(email: string): Observable<Poruka> {
     return this.http.post<Poruka>('/api/tvrtka/pozivi', { email });
   }

@@ -25,10 +25,6 @@
         <mat-label>Lokacija (sala)</mat-label>
         <input matInput formControlName="lokacija" placeholder="npr. Hotel Osijek">
       </mat-form-field>
-      <mat-form-field appearance="outline">
-        <mat-label>Broj gostiju</mat-label>
-        <input matInput type="number" min="0" step="1" formControlName="brojGostiju">
-      </mat-form-field>
     </mat-card-content>
     @if (upozorenja().length) {
       <div class="upozorenja">
@@ -67,6 +63,11 @@
             <mat-label>Adresa</mat-label>
             <input matInput formControlName="adresa">
           </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>OIB</mat-label>
+            <input matInput formControlName="oib" inputmode="numeric" maxlength="11">
+            <mat-error>OIB nije ispravan (11 znamenki)</mat-error>
+          </mat-form-field>
         </mat-card-content>
       </mat-card>
     }
@@ -83,7 +84,7 @@
             <mat-option [value]="p.id">{{ p.naziv }} · {{ p.cijena | currency: 'EUR' }}</mat-option>
           }
         </mat-select>
-        @if (!paketi().length) { <mat-hint>Pakete dodajete u Postavkama</mat-hint> }
+        @if (!paketi().length) { <mat-hint>Pakete dodajete u izborniku Paketi i ekipa</mat-hint> }
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Dodaci</mat-label>
@@ -175,7 +176,7 @@
       @if (suradnici().length) {
         <button mat-stroked-button type="button" (click)="dodajClana()"><mat-icon>add</mat-icon> Dodaj člana ekipe</button>
       } @else {
-        <p class="sivo">Suradnike prvo dodajte u <a routerLink="/postavke">Postavkama</a>.</p>
+        <p class="sivo">Suradnike prvo dodajte u izborniku <a routerLink="/paketi">Paketi i ekipa</a>.</p>
       }
     </mat-card-content>
   </mat-card>
@@ -188,6 +189,10 @@
         <input matInput [matDatepicker]="rokBirac" formControlName="rokIsporuke" placeholder="npr. 1.9.2027.">
         <mat-datepicker-toggle matIconSuffix [for]="rokBirac" />
         <mat-datepicker #rokBirac />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Broj gostiju</mat-label>
+        <input matInput type="number" min="0" step="1" formControlName="brojGostiju">
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Odakle je došao upit</mat-label>

@@ -61,8 +61,8 @@ public class VjencanjeService {
 
     // ---------- čitanje ----------
 
-    public List<VjencanjeSazetak> popis(Razdoblje razdoblje, Integer godina,
-                                        StatusVjencanja status, String pretraga) {
+    public List<VjencanjeSazetak> popis(Razdoblje razdoblje, Integer godina, List<StatusVjencanja> statusi,
+                                        String pretraga, boolean nenaplaceno, boolean kasniIsporuka) {
         LocalDate danas = LocalDate.now();
         Long tvrtkaId = trenutniKorisnik.tvrtkaId();
         List<Vjencanje> vjencanja = switch (razdoblje) {
@@ -74,11 +74,28 @@ public class VjencanjeService {
         // Jedan fotograf ima stotinjak vjenčanja godišnje, pa je filtriranje u Javi dovoljno brzo.
         List<Vjencanje> filtrirana = vjencanja.stream()
                 .filter(v -> godina == null || v.getDatum().getYear() == godina)
-                .filter(v -> status == null || v.getStatus() == status)
+                .filter(v -> statusi == null || statusi.isEmpty() || statusi.contains(v.getStatus()))
                 .filter(v -> odgovaraPretrazi(v, pretraga))
+                .filter(v -> !kasniIsporuka || kasniIsporuka(v, danas))
                 .toList();
 
-        return uSazetke(filtrirana);
+        List<VjencanjeSazetak> sazeci = uSazetke(filtrirana);
+        // Preostali iznos postoji tek u sažetku, jer se uplate zbrajaju jednim upitom za cijeli popis
+        if (nenaplaceno) {
+            return sazeci.stream()
+                    .filter(s -> s.status() != StatusVjencanja.OTKAZANO && s.preostalo().signum() > 0)
+                    .toList();
+        }
+        return sazeci;
+    }
+
+    // Vjenčanje je bilo, rok je prošao, a fotografije još nisu predane. Otkazana vjenčanja ne kasne.
+    private boolean kasniIsporuka(Vjencanje v, LocalDate danas) {
+        return v.getDatum().isBefore(danas)
+                && v.getRokIsporuke() != null
+                && v.getRokIsporuke().isBefore(danas)
+                && v.getStatus() != StatusVjencanja.ISPORUCENO
+                && v.getStatus() != StatusVjencanja.OTKAZANO;
     }
 
     public List<VjencanjeSazetak> kalendar(LocalDate od, LocalDate doDatuma) {

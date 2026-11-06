@@ -5,16 +5,50 @@ import { EMPTY, Subject, catchError, debounceTime, distinctUntilChanged, switchM
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiService } from '../core/api.service';
-import { Pregled, Razdoblje, VjencanjeSazetak } from '../core/modeli';
+import { FilterVjencanja, Pregled, Razdoblje, StatusVjencanja, VjencanjeSazetak } from '../core/modeli';
+import { STATUSI } from '../core/oznake';
 import { izIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
 import { VjencanjeRedComponent } from './vjencanje-red.component';
+
+const ZADANI_FILTER: FilterVjencanja = {
+  razdoblje: 'NADOLAZECA', statusi: [], godina: null, nenaplaceno: false, kasniIsporuka: false,
+};
+const KLJUC_FILTERA = 'wm-filter-vjencanja';
+
+// Filter se pamti u browseru, da se ne mora birati svaki put; ako spremanje ne radi, kreće od zadanog.
+function ucitajFilter(): FilterVjencanja {
+  try {
+    const spremljen = localStorage.getItem(KLJUC_FILTERA);
+    return spremljen ? { ...ZADANI_FILTER, ...JSON.parse(spremljen) } : { ...ZADANI_FILTER };
+  } catch {
+    return { ...ZADANI_FILTER };
+  }
+}
+
+function spremiFilter(f: FilterVjencanja): void {
+  try {
+    localStorage.setItem(KLJUC_FILTERA, JSON.stringify(f));
+  } catch {
+    // privatni prozor ili blokirana pohrana: filter jednostavno ne ostaje zapamćen
+  }
+}
+
+function rasponGodina(): number[] {
+  const ova = new Date().getFullYear();
+  const godine: number[] = [];
+  for (let g = ova + 2; g >= ova - 5; g--) {
+    godine.push(g);
+  }
+  return godine;
+}
 
 interface Grupa {
   mjesec: Date;
@@ -24,7 +58,7 @@ interface Grupa {
 @Component({
   selector: 'app-popis',
   imports: [
-    RouterLink, DatePipe, CurrencyPipe, MatCardModule, MatButtonModule, MatButtonToggleModule,
+    RouterLink, DatePipe, CurrencyPipe, MatCardModule, MatButtonModule, MatChipsModule, MatSelectModule,
     MatFormFieldModule, MatInputModule, MatIconModule, MatProgressBarModule, VjencanjeRedComponent,
   ],
   template: `
@@ -62,17 +96,67 @@ interface Grupa {
     }
 
     <div class="filteri">
-      <mat-button-toggle-group [value]="razdoblje()" (change)="promijeniRazdoblje($event.value)" hideSingleSelectionIndicator>
-        <mat-button-toggle value="NADOLAZECA">Nadolazeća</mat-button-toggle>
-        <mat-button-toggle value="PROSLA">Prošla</mat-button-toggle>
-        <mat-button-toggle value="SVA">Sva</mat-button-toggle>
-      </mat-button-toggle-group>
-
       <mat-form-field appearance="outline" class="pretraga" subscriptSizing="dynamic">
         <mat-icon matPrefix>search</mat-icon>
         <input matInput placeholder="Ime, prezime, lokacija..." (input)="pretraga$.next($any($event.target).value)">
       </mat-form-field>
+      <button mat-stroked-button type="button" class="gumb-filter" (click)="panelOtvoren.set(!panelOtvoren())"
+              [attr.aria-expanded]="panelOtvoren()">
+        <mat-icon>tune</mat-icon> Filteri{{ brojAktivnih() ? ' (' + brojAktivnih() + ')' : '' }}
+      </button>
     </div>
+
+    @if (panelOtvoren()) {
+      <mat-card appearance="outlined" class="panel">
+        <div class="sekcija">
+          <span class="naslov-sekcije">Razdoblje</span>
+          <mat-chip-listbox [value]="filter().razdoblje" (change)="postavi({ razdoblje: $event.value ?? 'NADOLAZECA' })" aria-label="Razdoblje">
+            @for (r of razdoblja; track r.vrijednost) {
+              <mat-chip-option [value]="r.vrijednost">{{ r.naziv }}</mat-chip-option>
+            }
+          </mat-chip-listbox>
+        </div>
+
+        <div class="sekcija">
+          <span class="naslov-sekcije">Status <small>(bez odabira prikazuju se svi)</small></span>
+          <mat-chip-listbox multiple [value]="filter().statusi" (change)="postavi({ statusi: $event.value })" aria-label="Status">
+            @for (s of statusi; track s) {
+              <mat-chip-option [value]="s">{{ oznakeStatusa[s] }}</mat-chip-option>
+            }
+          </mat-chip-listbox>
+        </div>
+
+        <div class="sekcija">
+          <span class="naslov-sekcije">Posebno</span>
+          <mat-chip-listbox multiple [value]="posebno()" (change)="postaviPosebno($event.value)" aria-label="Posebni filteri">
+            <mat-chip-option value="nenaplaceno">Nije plaćeno do kraja</mat-chip-option>
+            <mat-chip-option value="kasniIsporuka">Kasni isporuka</mat-chip-option>
+          </mat-chip-listbox>
+        </div>
+
+        <div class="dno-panela">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="godina">
+            <mat-label>Godina</mat-label>
+            <mat-select [value]="filter().godina" (selectionChange)="postavi({ godina: $event.value })">
+              <mat-option [value]="null">Sve godine</mat-option>
+              @for (g of godine; track g) { <mat-option [value]="g">{{ g }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <span class="razmak"></span>
+          <button mat-button type="button" (click)="ocisti()" [disabled]="!brojAktivnih()">Očisti</button>
+          <button mat-flat-button type="button" (click)="panelOtvoren.set(false)">Gotovo</button>
+        </div>
+      </mat-card>
+    } @else if (brojAktivnih()) {
+      <mat-chip-set class="aktivni" aria-label="Aktivni filteri">
+        @for (a of aktivni(); track a.kljuc) {
+          <mat-chip (removed)="ukloni(a.kljuc)">
+            {{ a.naziv }}
+            <button matChipRemove [attr.aria-label]="'Ukloni filter ' + a.naziv"><mat-icon>cancel</mat-icon></button>
+          </mat-chip>
+        }
+      </mat-chip-set>
+    }
 
     @if (ucitava()) {
       <mat-progress-bar mode="indeterminate" />
@@ -105,8 +189,17 @@ interface Grupa {
     .oznaka { font-size: 12px; text-transform: uppercase; color: var(--mat-sys-on-surface-variant); }
     .vrijednost { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; color: inherit; text-decoration: none; line-height: 1.25; font-variant-numeric: tabular-nums; }
     .detalj { font-size: 13px; color: var(--mat-sys-on-surface-variant); }
-    .filteri { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-    .pretraga { flex: 1; min-width: 220px; }
+    .filteri { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+    .pretraga { flex: 1; min-width: 0; }
+    .gumb-filter { height: 56px; flex-shrink: 0; }
+    .panel { padding: 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 16px; }
+    .sekcija { display: flex; flex-direction: column; gap: 6px; }
+    .naslov-sekcije { font-size: 13px; font-weight: 600; color: var(--mat-sys-on-surface-variant); }
+    .naslov-sekcije small { font-weight: 400; }
+    .dno-panela { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .godina { width: 160px; }
+    .razmak { flex: 1; }
+    .aktivni { display: block; margin-bottom: 12px; }
     .mjesec { font-size: 16px; margin: 28px 0 10px; text-transform: capitalize; }
     .mjesec span { color: var(--mat-sys-on-surface-variant); font-weight: 400; }
     .lista { overflow: hidden; }
@@ -124,7 +217,45 @@ export class PopisComponent implements OnInit {
 
   pregled = signal<Pregled | null>(null);
   vjencanja = signal<VjencanjeSazetak[]>([]);
-  razdoblje = signal<Razdoblje>('NADOLAZECA');
+  filter = signal<FilterVjencanja>(ucitajFilter());
+  panelOtvoren = signal(false);
+
+  readonly oznakeStatusa = STATUSI;
+  readonly statusi = Object.keys(STATUSI) as StatusVjencanja[];
+  readonly razdoblja: { vrijednost: Razdoblje; naziv: string }[] = [
+    { vrijednost: 'NADOLAZECA', naziv: 'Nadolazeća' },
+    { vrijednost: 'PROSLA', naziv: 'Prošla' },
+    { vrijednost: 'SVA', naziv: 'Sva' },
+  ];
+  readonly godine = rasponGodina();
+
+  posebno = computed(() => {
+    const f = this.filter();
+    return [...(f.nenaplaceno ? ['nenaplaceno'] : []), ...(f.kasniIsporuka ? ['kasniIsporuka'] : [])];
+  });
+
+  // Ono što odstupa od zadanog prikaza (nadolazeća, svi statusi), za oznake ispod pretrage
+  aktivni = computed(() => {
+    const f = this.filter();
+    const lista: { kljuc: string; naziv: string }[] = [];
+    if (f.razdoblje !== 'NADOLAZECA') {
+      lista.push({ kljuc: 'razdoblje', naziv: f.razdoblje === 'PROSLA' ? 'Prošla' : 'Sva' });
+    }
+    for (const s of f.statusi) {
+      lista.push({ kljuc: 'status:' + s, naziv: STATUSI[s] });
+    }
+    if (f.godina) {
+      lista.push({ kljuc: 'godina', naziv: String(f.godina) });
+    }
+    if (f.nenaplaceno) {
+      lista.push({ kljuc: 'nenaplaceno', naziv: 'Nije plaćeno do kraja' });
+    }
+    if (f.kasniIsporuka) {
+      lista.push({ kljuc: 'kasniIsporuka', naziv: 'Kasni isporuka' });
+    }
+    return lista;
+  });
+  brojAktivnih = computed(() => this.aktivni().length);
   ucitava = signal(true);
   greska = signal('');
   pretraga$ = new Subject<string>();
@@ -154,7 +285,7 @@ export class PopisComponent implements OnInit {
         this.tekstPretrage = tekst.trim();
         this.ucitava.set(true);
         // Greška ne smije ugasiti pretragu, pa je hvatamo unutar switchMap
-        return this.api.popis(this.razdoblje(), this.tekstPretrage).pipe(
+        return this.api.popis(this.filter(), this.tekstPretrage).pipe(
           catchError((err) => {
             this.prikaziGresku(err);
             return EMPTY;
@@ -170,15 +301,38 @@ export class PopisComponent implements OnInit {
     this.ucitaj();
   }
 
-  promijeniRazdoblje(r: Razdoblje): void {
-    this.razdoblje.set(r);
+  postavi(promjena: Partial<FilterVjencanja>): void {
+    this.filter.update((f) => ({ ...f, ...promjena }));
+    spremiFilter(this.filter());
     this.ucitaj();
+  }
+
+  postaviPosebno(odabrano: string[]): void {
+    this.postavi({ nenaplaceno: odabrano.includes('nenaplaceno'), kasniIsporuka: odabrano.includes('kasniIsporuka') });
+  }
+
+  ukloni(kljuc: string): void {
+    if (kljuc === 'razdoblje') {
+      this.postavi({ razdoblje: 'NADOLAZECA' });
+    } else if (kljuc.startsWith('status:')) {
+      this.postavi({ statusi: this.filter().statusi.filter((s) => 'status:' + s !== kljuc) });
+    } else if (kljuc === 'godina') {
+      this.postavi({ godina: null });
+    } else if (kljuc === 'nenaplaceno') {
+      this.postavi({ nenaplaceno: false });
+    } else if (kljuc === 'kasniIsporuka') {
+      this.postavi({ kasniIsporuka: false });
+    }
+  }
+
+  ocisti(): void {
+    this.postavi(ZADANI_FILTER);
   }
 
   private ucitaj(): void {
     this.ucitava.set(true);
     this.greska.set('');
-    this.api.popis(this.razdoblje(), this.tekstPretrage).subscribe({
+    this.api.popis(this.filter(), this.tekstPretrage).subscribe({
       next: (lista) => this.prikazi(lista),
       error: (err) => this.prikaziGresku(err),
     });

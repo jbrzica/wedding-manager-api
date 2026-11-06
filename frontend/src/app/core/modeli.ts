@@ -7,6 +7,14 @@ export type IzvorUpita = 'INSTAGRAM' | 'FACEBOOK' | 'GOOGLE' | 'WEB_STRANICA' | 
 export type UlogaKorisnika = 'VLASNIK' | 'CLAN';
 export type Razdoblje = 'NADOLAZECA' | 'PROSLA' | 'SVA';
 
+export interface FilterVjencanja {
+  razdoblje: Razdoblje;
+  statusi: StatusVjencanja[];
+  godina: number | null;
+  nenaplaceno: boolean;
+  kasniIsporuka: boolean;
+}
+
 export interface Korisnik {
   id: number;
   ime: string;

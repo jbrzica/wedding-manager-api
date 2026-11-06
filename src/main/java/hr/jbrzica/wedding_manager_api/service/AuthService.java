@@ -5,6 +5,7 @@ import hr.jbrzica.wedding_manager_api.entity.*;
 import hr.jbrzica.wedding_manager_api.repository.KorisnikRepository;
 import hr.jbrzica.wedding_manager_api.repository.TvrtkaRepository;
 import hr.jbrzica.wedding_manager_api.security.JwtServis;
+import hr.jbrzica.wedding_manager_api.security.PrijavaLimiter;
 import hr.jbrzica.wedding_manager_api.security.TrenutniKorisnik;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,16 +22,18 @@ public class AuthService {
     private final KodServis kodServis;
     private final JwtServis jwtServis;
     private final TrenutniKorisnik trenutniKorisnik;
+    private final PrijavaLimiter prijavaLimiter;
 
     public AuthService(KorisnikRepository korisnikRepository, TvrtkaRepository tvrtkaRepository,
                        PasswordEncoder passwordEncoder, KodServis kodServis, JwtServis jwtServis,
-                       TrenutniKorisnik trenutniKorisnik) {
+                       TrenutniKorisnik trenutniKorisnik, PrijavaLimiter prijavaLimiter) {
         this.korisnikRepository = korisnikRepository;
         this.tvrtkaRepository = tvrtkaRepository;
         this.passwordEncoder = passwordEncoder;
         this.kodServis = kodServis;
         this.jwtServis = jwtServis;
         this.trenutniKorisnik = trenutniKorisnik;
+        this.prijavaLimiter = prijavaLimiter;
     }
 
     // Nova tvrtka i njezin vlasnik; račun je aktivan tek nakon potvrde emaila.
@@ -83,14 +86,19 @@ public class AuthService {
     @Transactional(readOnly = true)
     public TokenResponse prijava(PrijavaRequest request) {
         String email = normaliziraj(request.email());
+        prijavaLimiter.provjeri(email);
         Korisnik korisnik = korisnikRepository.findByEmail(email)
                 .filter(k -> passwordEncoder.matches(request.lozinka(), k.getLozinkaHash()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Pogrešan email ili lozinka"));
+                .orElseThrow(() -> {
+                    prijavaLimiter.neuspjeh(email);
+                    return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Pogrešan email ili lozinka");
+                });
 
         if (!korisnik.isEmailPotvrden()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Email nije potvrđen. Upišite šifru koju ste dobili mailom.");
         }
+        prijavaLimiter.uspjeh(email);
         return token(korisnik);
     }
 

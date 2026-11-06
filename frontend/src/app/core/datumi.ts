@@ -12,6 +12,24 @@ export function izIso(iso: string): Date {
   return new Date(g, m - 1, d);
 }
 
+// Vrijeme iz rasporeda ("14:30" ili "14:30:00") kao Date današnjeg dana, za birač vremena
+export function vrijemeUDate(vrijeme: string | null | undefined): Date | null {
+  if (!vrijeme) {
+    return null;
+  }
+  const [h, m] = vrijeme.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+export function dateUVrijeme(d: Date | null | undefined): string | null {
+  if (!d || isNaN(d.getTime())) {
+    return null;
+  }
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 export function danas(): string {
   return uIso(new Date());
 }

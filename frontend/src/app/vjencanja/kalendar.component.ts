@@ -122,11 +122,11 @@ const DANI_TJEDNA = ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
       font-size: 11px; padding: 2px 6px; border-radius: 4px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .upit { background: #fff3cd; }
-    .potvrdeno { background: #d6f0dd; }
-    .odradeno { background: #dbe7fb; }
-    .isporuceno { background: #e8e8e8; }
-    .otkazano { background: #fde2e1; text-decoration: line-through; opacity: .7; }
+    .upit { background: var(--wm-upozorenje-pozadina); }
+    .potvrdeno { background: var(--wm-uspjeh-pozadina); }
+    .odradeno { background: var(--wm-info-pozadina); }
+    .isporuceno { background: var(--wm-neutralno-pozadina); }
+    .otkazano { background: var(--wm-opasno-pozadina); text-decoration: line-through; opacity: .7; }
     .vise { font-size: 11px; color: var(--mat-sys-on-surface-variant); }
     .tocka { display: none; }
     .odabrani-dan { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 24px; flex-wrap: wrap; }

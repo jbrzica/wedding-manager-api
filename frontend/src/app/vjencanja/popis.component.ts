@@ -103,11 +103,11 @@ interface Grupa {
     .sazetak { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
     .stat { padding: 16px; display: flex; flex-direction: column; gap: 2px; }
     .oznaka { font-size: 12px; text-transform: uppercase; color: var(--mat-sys-on-surface-variant); }
-    .vrijednost { font-size: 26px; font-weight: 500; color: inherit; text-decoration: none; }
+    .vrijednost { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; color: inherit; text-decoration: none; line-height: 1.25; font-variant-numeric: tabular-nums; }
     .detalj { font-size: 13px; color: var(--mat-sys-on-surface-variant); }
     .filteri { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
     .pretraga { flex: 1; min-width: 220px; }
-    .mjesec { font-size: 16px; font-weight: 500; margin: 24px 0 8px; text-transform: capitalize; }
+    .mjesec { font-size: 16px; margin: 28px 0 10px; text-transform: capitalize; }
     .mjesec span { color: var(--mat-sys-on-surface-variant); font-weight: 400; }
     .lista { overflow: hidden; }
     .prazno { text-align: center; padding: 48px 0; color: var(--mat-sys-on-surface-variant); }

@@ -61,7 +61,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
     }
     .desno { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 13px; }
     .duguje { color: var(--mat-sys-error); }
-    .placeno { color: #1e6b34; }
+    .placeno { color: var(--wm-uspjeh); }
     .kapara { font-size: 11px; color: var(--mat-sys-on-surface-variant); }
   `,
 })

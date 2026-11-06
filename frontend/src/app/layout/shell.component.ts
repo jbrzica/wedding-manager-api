@@ -12,8 +12,7 @@ import { AuthService } from '../core/auth.service';
   template: `
     <mat-toolbar class="traka">
       <a routerLink="/" class="logo">
-        <mat-icon>favorite</mat-icon>
-        <span>{{ auth.korisnik()?.nazivTvrtke || 'Wedding Manager' }}</span>
+        <span>Wedding Manager</span>
       </a>
 
       <nav class="nav-desktop">
@@ -39,6 +38,7 @@ import { AuthService } from '../core/auth.service';
       <mat-menu #izbornik="matMenu">
         <div class="korisnik-info">
           <strong>{{ auth.korisnik()?.ime }}</strong>
+          <small>{{ auth.korisnik()?.nazivTvrtke }}</small>
           <small>{{ auth.korisnik()?.email }}</small>
         </div>
         <button mat-menu-item (click)="auth.odjava()">
@@ -74,9 +74,12 @@ import { AuthService } from '../core/auth.service';
     :host { display: block; min-height: 100vh; }
     .traka {
       position: sticky; top: 0; z-index: 10;
-      background: var(--mat-sys-surface-container);
+      background: rgba(255, 255, 255, .92); backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--mat-sys-outline-variant);
     }
+    .logo span { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+    .nav-desktop a { color: var(--mat-sys-on-surface-variant); }
+    .nav-desktop a.aktivno { color: var(--mat-sys-on-surface); }
     .logo {
       display: flex; align-items: center; gap: 8px;
       color: inherit; text-decoration: none; font-weight: 500; margin-right: 24px;
@@ -94,7 +97,7 @@ import { AuthService } from '../core/auth.service';
       .sadrzaj { padding-top: 16px; }
       .nav-mobitel {
         display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
-        background: var(--mat-sys-surface-container);
+        background: rgba(255, 255, 255, .96); backdrop-filter: blur(8px);
         border-top: 1px solid var(--mat-sys-outline-variant);
         padding-bottom: env(safe-area-inset-bottom);
       }

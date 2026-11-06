@@ -4,34 +4,79 @@ html {
   color-scheme: light;
   @include mat.theme((
     color: (
-      primary: mat.$rose-palette,
-      tertiary: mat.$orange-palette,
+      primary: mat.$orange-palette,
       theme-type: light,
     ),
-    typography: (plain-family: (Roboto, sans-serif), brand-family: (Roboto, sans-serif)),
+    typography: (plain-family: (Inter, sans-serif), brand-family: (Inter, sans-serif)),
     density: 0,
   ));
+
+  // Elegantna paleta: topla bijela, gotovo crni tekst i jedna boja (brončana/šampanjac)
+  --mat-sys-primary: #7a5c33;
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: #f3ead9;
+  --mat-sys-on-primary-container: #3b2a12;
+  --mat-sys-secondary-container: #f1ece3;
+  --mat-sys-on-secondary-container: #2b2620;
+  --mat-sys-surface: #fdfcfa;
+  --mat-sys-surface-container-lowest: #ffffff;
+  --mat-sys-surface-container-low: #faf8f4;
+  --mat-sys-surface-container: #f6f3ee;
+  --mat-sys-surface-container-high: #efebe4;
+  --mat-sys-surface-container-highest: #e8e3da;
+  --mat-sys-on-surface: #1c1a17;
+  --mat-sys-on-surface-variant: #6b645a;
+  --mat-sys-outline: #a39b8f;
+  --mat-sys-outline-variant: #e6e0d6;
+  --mat-sys-error: #a33a2e;
+
+  // Boje statusa i novca, iste u cijeloj aplikaciji
+  --wm-uspjeh: #3f6b45;
+  --wm-uspjeh-pozadina: #e8f0e6;
+  --wm-upozorenje: #8a6417;
+  --wm-upozorenje-pozadina: #f7efd9;
+  --wm-info: #3d5a80;
+  --wm-info-pozadina: #e6ecf3;
+  --wm-neutralno: #6b645a;
+  --wm-neutralno-pozadina: #eeeae3;
+  --wm-opasno: #a33a2e;
+  --wm-opasno-pozadina: #f6e3df;
 }
 
 html, body { height: 100%; }
 body {
   margin: 0;
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
+  font-family: Inter, 'Helvetica Neue', sans-serif;
   background: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
+  -webkit-font-smoothing: antialiased;
 }
 
-h1 { font-size: 26px; font-weight: 500; margin: 0 0 16px; }
+// Naslovi: isti font kao tekst, samo deblji i malo zbijeniji
+h1, h2, .mat-mdc-card-title {
+  font-family: Inter, sans-serif !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.015em;
+}
+h1 { font-size: 28px; line-height: 1.2; margin: 0 0 16px; }
+h2 { font-size: 18px; }
+.mat-mdc-card-title { font-size: 17px !important; }
 a { color: var(--mat-sys-primary); }
+
+// Kartice: bijele na toploj pozadini, bez sjene
+.mat-mdc-card-outlined {
+  background: var(--mat-sys-surface-container-lowest) !important;
+  border-radius: 14px !important;
+}
 
 // Zajedničko za ekrane prijave
 .auth-stranica {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   padding: 16px; box-sizing: border-box;
-  background: linear-gradient(160deg, var(--mat-sys-primary-container), var(--mat-sys-surface) 60%);
+  background: linear-gradient(170deg, #f3ead9 0%, var(--mat-sys-surface) 55%);
 }
 .auth-kartica {
-  width: 100%; max-width: 400px; padding: 24px; box-sizing: border-box;
+  width: 100%; max-width: 400px; padding: 28px; box-sizing: border-box;
   form { display: flex; flex-direction: column; gap: 4px; }
   h1 { margin-bottom: 4px; }
 }
@@ -40,7 +85,7 @@ a { color: var(--mat-sys-primary); }
 .sifra { letter-spacing: 8px; font-size: 22px; text-align: center; }
 
 .greska { color: var(--mat-sys-error); margin: 8px 0; }
-.info { color: #1e6b34; margin: 8px 0; }
+.info { color: var(--wm-uspjeh); margin: 8px 0; }
 .sivo { color: var(--mat-sys-on-surface-variant); font-size: 14px; }
 
 // Popisi u postavkama
@@ -64,4 +109,5 @@ app-paketi, app-dodaci, app-suradnici, app-tvrtka {
 @media (max-width: 720px) {
   .samo-desktop { display: none !important; }
   .forma { grid-template-columns: 1fr; }
+  h1 { font-size: 24px; }
 }

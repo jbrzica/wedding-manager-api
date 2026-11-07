@@ -7,6 +7,22 @@ export type IzvorUpita = 'INSTAGRAM' | 'FACEBOOK' | 'GOOGLE' | 'WEB_STRANICA' | 
 export type UlogaKorisnika = 'VLASNIK' | 'CLAN';
 export type Razdoblje = 'NADOLAZECA' | 'PROSLA' | 'SVA';
 
+export interface SuradnikPregled {
+  ime: string;
+  tvrtka: string;
+  kalendar: string;
+  vjencanja: {
+    datum: string;
+    lokacija: string | null;
+    potvrdeno: boolean;
+    mojaUloga: UlogaSuradnika | null;
+    mlada: { ime: string; telefon: string | null } | null;
+    mladozenja: { ime: string; telefon: string | null } | null;
+    raspored: StavkaRasporeda[];
+    ekipa: { ime: string; uloga: UlogaSuradnika | null; telefon: string | null; ja: boolean }[];
+  }[];
+}
+
 export interface FilterVjencanja {
   razdoblje: Razdoblje;
   statusi: StatusVjencanja[];

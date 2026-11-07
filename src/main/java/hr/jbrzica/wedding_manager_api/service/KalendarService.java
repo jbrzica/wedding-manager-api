@@ -9,6 +9,7 @@ import hr.jbrzica.wedding_manager_api.entity.UlogaKorisnika;
 import hr.jbrzica.wedding_manager_api.entity.Vjencanje;
 import hr.jbrzica.wedding_manager_api.repository.TvrtkaRepository;
 import hr.jbrzica.wedding_manager_api.repository.VjencanjeRepository;
+import hr.jbrzica.wedding_manager_api.security.TajniToken;
 import hr.jbrzica.wedding_manager_api.security.TrenutniKorisnik;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,13 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 
@@ -33,7 +32,6 @@ import java.util.Set;
 @Service
 public class KalendarService {
 
-    private static final SecureRandom RANDOM = new SecureRandom();
     private static final DateTimeFormatter DATUM = DateTimeFormatter.BASIC_ISO_DATE;
     private static final DateTimeFormatter VRIJEME_UTC = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
             .withZone(ZoneOffset.UTC);
@@ -53,7 +51,7 @@ public class KalendarService {
     public KalendarLinkResponse link() {
         Tvrtka tvrtka = mojaTvrtka();
         if (tvrtka.getKalendarToken() == null) {
-            tvrtka.setKalendarToken(noviToken());
+            tvrtka.setKalendarToken(TajniToken.novi());
         }
         return KalendarLinkResponse.za(tvrtka.getKalendarToken());
     }
@@ -65,7 +63,7 @@ public class KalendarService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ovo može samo vlasnik tvrtke");
         }
         Tvrtka tvrtka = mojaTvrtka();
-        tvrtka.setKalendarToken(noviToken());
+        tvrtka.setKalendarToken(TajniToken.novi());
         return KalendarLinkResponse.za(tvrtka.getKalendarToken());
     }
 
@@ -75,14 +73,18 @@ public class KalendarService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         List<Vjencanje> vjencanja = vjencanjeRepository.findByTvrtkaIdAndStatusNotIn(
                 tvrtka.getId(), Set.of(StatusVjencanja.OTKAZANO));
+        return izgradi("Vjenčanja – " + tvrtka.getNaziv(), vjencanja);
+    }
 
+    // Isti format koristi i osobni kalendar suradnika, samo s njegovim vjenčanjima.
+    public String izgradi(String nazivKalendara, List<Vjencanje> vjencanja) {
         List<String> redovi = new ArrayList<>();
         redovi.add("BEGIN:VCALENDAR");
         redovi.add("VERSION:2.0");
         redovi.add("PRODID:-//Wedding Manager//HR");
         redovi.add("CALSCALE:GREGORIAN");
         redovi.add("METHOD:PUBLISH");
-        redovi.add("X-WR-CALNAME:" + tekst("Vjenčanja – " + tvrtka.getNaziv()));
+        redovi.add("X-WR-CALNAME:" + tekst(nazivKalendara));
         redovi.add("X-WR-TIMEZONE:Europe/Zagreb");
         String sada = VRIJEME_UTC.format(Instant.now());
         for (Vjencanje v : vjencanja) {
@@ -170,12 +172,6 @@ public class KalendarService {
             i += Character.charCount(znak);
         }
         return sb.toString();
-    }
-
-    private static String noviToken() {
-        byte[] bajtovi = new byte[32];
-        RANDOM.nextBytes(bajtovi);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bajtovi);
     }
 
     private Tvrtka mojaTvrtka() {

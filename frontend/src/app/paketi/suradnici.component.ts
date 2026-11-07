@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../core/api.service';
 import { Suradnik, UlogaSuradnika } from '../core/modeli';
@@ -14,9 +15,12 @@ import { porukaGreske } from '../core/greska';
 
 @Component({
   selector: 'app-suradnici',
-  imports: [ReactiveFormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule],
+  imports: [ReactiveFormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule],
   template: `
-    <p class="opis">Vanjski snimatelji, fotografi, asistenti... Dodajete ih u ekipu pojedinog vjenčanja.</p>
+    <p class="opis">
+      Vanjski snimatelji, fotografi, asistenti... Dodajete ih u ekipu pojedinog vjenčanja.
+      Svaki suradnik ima svoj link (<mat-icon inline>link</mat-icon>) na kojem vidi samo svoja vjenčanja, bez cijena.
+    </p>
 
     <mat-card appearance="outlined" class="lista">
       @for (s of suradnici(); track s.id) {
@@ -28,6 +32,12 @@ import { porukaGreske } from '../core/greska';
               @if (s.email) { · {{ s.email }} }
             </div>
           </div>
+          <button mat-icon-button [matMenuTriggerFor]="izbornikLinka" aria-label="Link za suradnika"><mat-icon>link</mat-icon></button>
+          <mat-menu #izbornikLinka="matMenu">
+            <button mat-menu-item (click)="posaljiLink(s)"><mat-icon>send</mat-icon> Pošalji link suradniku</button>
+            <button mat-menu-item (click)="kopirajLink(s)"><mat-icon>content_copy</mat-icon> Kopiraj link</button>
+            <button mat-menu-item (click)="noviLink(s)"><mat-icon>refresh</mat-icon> Napravi novi link</button>
+          </mat-menu>
           <button mat-icon-button (click)="uredi(s)" aria-label="Uredi"><mat-icon>edit</mat-icon></button>
           <button mat-icon-button (click)="obrisi(s)" aria-label="Obriši"><mat-icon>delete_outline</mat-icon></button>
         </div>
@@ -123,6 +133,54 @@ export class SuradniciComponent implements OnInit {
       next: () => this.ucitaj(),
       error: (err) => this.snack.open(porukaGreske(err), 'OK', { duration: 5000 }),
     });
+  }
+
+  // Na mobitelu otvara WhatsApp/Viber; na računalu link se kopira
+  posaljiLink(s: Suradnik): void {
+    this.api.suradnikLink(s.id).subscribe({
+      next: async (r) => {
+        const url = window.location.origin + r.putanja;
+        const tekst = `Bok ${s.ime}, ovdje su ti sva vjenčanja na kojima radiš s nama (raspored, adrese i kontakti). Stranica je uvijek ažurna:\n${url}`;
+        if (navigator.share) {
+          try {
+            await navigator.share({ text: tekst });
+            return;
+          } catch {
+            // korisnik je odustao ili dijeljenje nije dostupno, pa kopiramo
+          }
+        }
+        this.kopiraj(tekst, 'Poruka s linkom je kopirana, zalijepite je suradniku.');
+      },
+      error: (err) => this.poruka(porukaGreske(err)),
+    });
+  }
+
+  kopirajLink(s: Suradnik): void {
+    this.api.suradnikLink(s.id).subscribe({
+      next: (r) => this.kopiraj(window.location.origin + r.putanja, 'Link je kopiran.'),
+      error: (err) => this.poruka(porukaGreske(err)),
+    });
+  }
+
+  noviLink(s: Suradnik): void {
+    if (!confirm(`Stari link za "${s.ime}" prestat će raditi. Novi link morate mu ponovno poslati. Nastaviti?`)) {
+      return;
+    }
+    this.api.noviSuradnikLink(s.id).subscribe({
+      next: (r) => this.kopiraj(window.location.origin + r.putanja, 'Napravljen je novi link i kopiran je.'),
+      error: (err) => this.poruka(porukaGreske(err)),
+    });
+  }
+
+  private kopiraj(tekst: string, uspjeh: string): void {
+    navigator.clipboard.writeText(tekst).then(
+      () => this.poruka(uspjeh),
+      () => this.poruka('Kopiranje nije uspjelo.'),
+    );
+  }
+
+  private poruka(tekst: string): void {
+    this.snack.open(tekst, 'OK', { duration: 4000 });
   }
 
   private ucitaj(): void {

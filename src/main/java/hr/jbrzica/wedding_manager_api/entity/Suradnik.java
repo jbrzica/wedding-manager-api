@@ -30,6 +30,10 @@ public class Suradnik {
     @Column(length = 2000)
     private String napomena;
 
+    // Tajni dio osobnog linka na kojem suradnik vidi svoja vjenčanja, bez cijena
+    @Column(unique = true, length = 64)
+    private String pristupniToken;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tvrtka_id", nullable = false)
     private Tvrtka tvrtka;

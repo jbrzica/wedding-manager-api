@@ -12,4 +12,7 @@ public interface ClanEkipeRepository extends JpaRepository<ClanEkipe, Long> {
     // Na kojim vjenčanjima tvrtke su ovi suradnici zadanog datuma
     List<ClanEkipe> findBySuradnikIdInAndVjencanjeDatumAndVjencanjeTvrtkaId(
             Collection<Long> suradnikIds, LocalDate datum, Long tvrtkaId);
+
+    // Sva mjesta u ekipi jednog suradnika, za njegovu stranicu i kalendar
+    List<ClanEkipe> findBySuradnikIdOrderByVjencanjeDatumAsc(Long suradnikId);
 }

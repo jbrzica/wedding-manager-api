@@ -11,4 +11,6 @@ public interface SuradnikRepository extends JpaRepository<Suradnik, Long> {
     List<Suradnik> findByTvrtkaIdOrderByImeAsc(Long tvrtkaId);
 
     Optional<Suradnik> findByIdAndTvrtkaId(Long id, Long tvrtkaId);
+
+    Optional<Suradnik> findByPristupniToken(String pristupniToken);
 }

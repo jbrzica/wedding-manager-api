@@ -29,6 +29,12 @@ export const routes: Routes = [
     loadComponent: () => import('./auth/poziv.component').then((m) => m.PozivComponent),
   },
 
+  // Osobni link suradnika: bez prijave, pristup daje tajni token
+  {
+    path: 's/:token',
+    loadComponent: () => import('./javno/suradnik-pregled.component').then((m) => m.SuradnikPregledComponent),
+  },
+
   // Aplikacija: samo za prijavljene
   {
     path: '',

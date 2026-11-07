@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  Dodatak, FilterVjencanja, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
+  Dodatak, FilterVjencanja, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
   Uplata, VjencanjeDetalji, Zadatak, VjencanjeSazetak, VjencanjeZahtjev, VrstaUplate,
 } from './modeli';
 
@@ -132,6 +132,18 @@ export class ApiService {
 
   spremiSuradnika(s: Omit<Suradnik, 'id'>, id?: number): Observable<Suradnik> {
     return id ? this.http.put<Suradnik>(`/api/suradnici/${id}`, s) : this.http.post<Suradnik>('/api/suradnici', s);
+  }
+
+  suradnikLink(id: number): Observable<{ putanja: string }> {
+    return this.http.get<{ putanja: string }>(`/api/suradnici/${id}/link`);
+  }
+
+  noviSuradnikLink(id: number): Observable<{ putanja: string }> {
+    return this.http.post<{ putanja: string }>(`/api/suradnici/${id}/link/novi`, {});
+  }
+
+  suradnikPregled(token: string): Observable<SuradnikPregled> {
+    return this.http.get<SuradnikPregled>(`/api/javno/suradnik/${encodeURIComponent(token)}`);
   }
 
   obrisiSuradnika(id: number): Observable<void> {

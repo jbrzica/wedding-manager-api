@@ -46,6 +46,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/ical/**").permitAll()
                         // Stranica suradnika: pristup daje tajni token u adresi, bez prijave
                         .requestMatchers("/api/javno/**").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         // Sve ostalo je Angular aplikacija (HTML, JS, CSS), koja mora biti dostupna i prije prijave

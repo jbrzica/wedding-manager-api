@@ -17,9 +17,10 @@ public class JwtServis {
     private final long trajanjeMs;
 
     public JwtServis(@Value("${app.jwt.tajna}") String tajna,
-                     @Value("${app.jwt.trajanje-sati}") long trajanjeSati) {
+                     @Value("${app.jwt.trajanje-minuta}") long trajanjeMinuta) {
         this.kljuc = Keys.hmacShaKeyFor(Decoders.BASE64.decode(tajna));
-        this.trajanjeMs = trajanjeSati * 60 * 60 * 1000;
+        // Kratko: ukradeni access token vrijedi samo par minuta, a prijavu drži refresh token
+        this.trajanjeMs = trajanjeMinuta * 60 * 1000;
     }
 
     public String napravi(Korisnik korisnik) {

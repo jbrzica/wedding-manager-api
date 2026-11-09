@@ -12,7 +12,7 @@ class JwtServisTest {
     private static final String TAJNA = "YYARpuOZfXWsInxPJx8PvqMwtynfByH6Y17xyJwnUDOk4+G1nsXjaxwNxFTHcA0+";
     private static final String DRUGA_TAJNA = "IMjAoz2jEC8TVZsBz5xbQAj+jGAsWix0gRduBd0kwULLwRbZilYYDFFeGqV925iu";
 
-    private final JwtServis jwtServis = new JwtServis(TAJNA, 1);
+    private final JwtServis jwtServis = new JwtServis(TAJNA, 15);
 
     @Test
     void napravljeniToken_vracaIdKorisnika() {
@@ -23,7 +23,7 @@ class JwtServisTest {
 
     @Test
     void tokenPotpisanDrugimKljucem_seOdbija() {
-        String tudiToken = new JwtServis(DRUGA_TAJNA, 1).napravi(korisnik(42L));
+        String tudiToken = new JwtServis(DRUGA_TAJNA, 15).napravi(korisnik(42L));
 
         assertThrows(JwtException.class, () -> jwtServis.procitajKorisnikId(tudiToken));
     }

@@ -1,24 +1,39 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable, catchError, finalize, of, shareReplay, tap } from 'rxjs';
 import { Korisnik, Poruka, TokenOdgovor } from './modeli';
 
-const KLJUC_TOKENA = 'wm_token';
-const KLJUC_KORISNIKA = 'wm_korisnik';
-
+/**
+ * Access token (JWT, 15 minuta) drži se samo u memoriji, a ne u localStorageu,
+ * pa ga skripta ubačena u stranicu (XSS) ne može ukrasti iz pohrane.
+ * Prijavu kroz osvježavanje stranice i dane drži refresh token u HttpOnly kolačiću,
+ * koji JavaScript uopće ne vidi; browser ga sam šalje na /api/auth/osvjezi.
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  private _token = signal<string | null>(citaj(KLJUC_TOKENA));
-  private _korisnik = signal<Korisnik | null>(parsiraj(citaj(KLJUC_KORISNIKA)));
+  private _token = signal<string | null>(null);
+  private _korisnik = signal<Korisnik | null>(null);
+  // Više zahtjeva koji istovremeno dobiju 401 dijele jedno osvježavanje
+  private osvjezavanjeUTijeku: Observable<TokenOdgovor | null> | null = null;
 
   readonly token = this._token.asReadonly();
   readonly korisnik = this._korisnik.asReadonly();
   readonly prijavljen = computed(() => this._token() !== null);
   readonly vlasnik = computed(() => this._korisnik()?.uloga === 'VLASNIK');
+
+  constructor() {
+    // Starije verzije spremale su token u localStorage; ostatak se briše
+    try {
+      localStorage.removeItem('wm_token');
+      localStorage.removeItem('wm_korisnik');
+    } catch {
+      // pohrana nije dostupna, nema se što brisati
+    }
+  }
 
   prijava(email: string, lozinka: string): Observable<TokenOdgovor> {
     return this.http.post<TokenOdgovor>('/api/auth/prijava', { email, lozinka })
@@ -52,59 +67,46 @@ export class AuthService {
       .pipe(tap((o) => this.spremi(o)));
   }
 
-  // Nakon promjene naziva tvrtke osvježavamo spremljenog korisnika
+  // Novi access token preko kolačića; null ako prijave nema ili je istekla
+  osvjezi(): Observable<TokenOdgovor | null> {
+    if (!this.osvjezavanjeUTijeku) {
+      this.osvjezavanjeUTijeku = this.http.post<TokenOdgovor>('/api/auth/osvjezi', {}).pipe(
+        tap((o) => this.spremi(o)),
+        catchError(() => {
+          this.ocisti();
+          return of(null);
+        }),
+        finalize(() => (this.osvjezavanjeUTijeku = null)),
+        shareReplay(1),
+      );
+    }
+    return this.osvjezavanjeUTijeku;
+  }
+
+  // Nakon promjene naziva tvrtke osvježavamo podatke korisnika
   osvjeziKorisnika(): void {
-    this.http.get<Korisnik>('/api/auth/ja').subscribe((k) => {
-      this._korisnik.set(k);
-      pisi(KLJUC_KORISNIKA, JSON.stringify(k));
-    });
+    this.http.get<Korisnik>('/api/auth/ja').subscribe((k) => this._korisnik.set(k));
   }
 
   odjava(): void {
-    this._token.set(null);
-    this._korisnik.set(null);
-    brisi(KLJUC_TOKENA);
-    brisi(KLJUC_KORISNIKA);
+    // Server opoziva refresh token i briše kolačić; lokalno brišemo odmah, i ako server ne odgovori
+    this.http.post('/api/auth/odjava', {}).subscribe({ error: () => undefined });
+    this.istekla();
+  }
+
+  // Prijava je istekla ili opozvana: samo očisti i vrati na prijavu
+  istekla(): void {
+    this.ocisti();
     this.router.navigate(['/prijava']);
   }
 
   private spremi(o: TokenOdgovor): void {
     this._token.set(o.token);
     this._korisnik.set(o.korisnik);
-    pisi(KLJUC_TOKENA, o.token);
-    pisi(KLJUC_KORISNIKA, JSON.stringify(o.korisnik));
   }
-}
 
-// localStorage može baciti grešku (privatni prozor), pa ga omotamo
-function citaj(kljuc: string): string | null {
-  try {
-    return localStorage.getItem(kljuc);
-  } catch {
-    return null;
-  }
-}
-
-function pisi(kljuc: string, vrijednost: string): void {
-  try {
-    localStorage.setItem(kljuc, vrijednost);
-  } catch {
-    // aplikacija radi i bez spremanja, samo traži ponovnu prijavu
-  }
-}
-
-function brisi(kljuc: string): void {
-  try {
-    localStorage.removeItem(kljuc);
-  } catch {
-    // isto kao gore
-  }
-}
-
-function parsiraj(json: string | null): Korisnik | null {
-  try {
-    return json ? JSON.parse(json) : null;
-  } catch {
-    return null;
+  private ocisti(): void {
+    this._token.set(null);
+    this._korisnik.set(null);
   }
 }

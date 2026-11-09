@@ -104,6 +104,7 @@ const TEME: Tema[] = [
       'U Postavkama mijenjaš naziv tvrtke, pozivaš članove (npr. supružnika ili partnera u poslu) i mijenjaš lozinku.',
       'Član tvrtke vidi i mijenja sve, uključujući cijene i zaradu.',
       'Zaboravljena lozinka: na stranici za prijavu odaberi „Zaboravljena lozinka“ i dobit ćeš šifru mailom.',
+      'Prijava traje 30 dana na svakom uređaju. Promjena lozinke odjavljuje sve ostale uređaje, a Odjava samo onaj na kojem jesi.',
       'Podaci se svaku noć spremaju u sigurnosnu kopiju.',
     ],
   },

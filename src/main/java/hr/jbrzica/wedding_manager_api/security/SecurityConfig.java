@@ -41,7 +41,10 @@ public class SecurityConfig {
                                 "/api/auth/prijava",
                                 "/api/auth/prihvati-poziv",
                                 "/api/auth/zaboravljena-lozinka",
-                                "/api/auth/nova-lozinka").permitAll()
+                                "/api/auth/nova-lozinka",
+                                // Osvježavanje i odjava rade preko kolačića, bez access tokena
+                                "/api/auth/osvjezi",
+                                "/api/auth/odjava").permitAll()
                         // Kalendarske aplikacije ne šalju JWT; pristup daje tajni token u adresi
                         .requestMatchers("/api/ical/**").permitAll()
                         // Stranica suradnika: pristup daje tajni token u adresi, bez prijave

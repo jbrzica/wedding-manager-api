@@ -15,11 +15,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { ProvjeraDatumaComponent } from './provjera-datuma.component';
 import { PrviKoraciComponent } from './prvi-koraci.component';
 import { ApiService } from '../core/api.service';
-import { FilterVjencanja, Pregled, Prognoza, Razdoblje, StatusVjencanja, VjencanjeSazetak } from '../core/modeli';
+import { FilterVjencanja, Pregled, Prognoza, Razdoblje, Stranica, StatusVjencanja, VjencanjeSazetak } from '../core/modeli';
 import { STATUSI } from '../core/oznake';
 import { izIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
 import { VjencanjeRedComponent } from './vjencanje-red.component';
+
+// Dovoljno za cijelu sezonu unaprijed; ostatak se učita gumbom
+const PO_STRANICI = 30;
 
 const ZADANI_FILTER: FilterVjencanja = {
   razdoblje: 'NADOLAZECA', statusi: [], godina: null, nenaplaceno: false, kasniIsporuka: false,
@@ -196,8 +199,16 @@ interface Grupa {
         </div>
       }
     }
+
+    @if (ukupno() > vjencanja().length) {
+      <div class="jos">
+        <span class="sivo">Prikazano {{ vjencanja().length }} od {{ ukupno() }}</span>
+        <button mat-stroked-button type="button" (click)="ucitajJos()" [disabled]="ucitava()">Prikaži još</button>
+      </div>
+    }
   `,
   styles: `
+    .jos { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 24px 0 8px; }
     .zaglavlje { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .gumbi-zaglavlja { display: flex; gap: 8px; }
     .sazetak { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
@@ -235,6 +246,8 @@ export class PopisComponent implements OnInit {
 
   pregled = signal<Pregled | null>(null);
   vjencanja = signal<VjencanjeSazetak[]>([]);
+  ukupno = signal(0);
+  private stranica = 0;
   filter = signal<FilterVjencanja>(ucitajFilter());
   panelOtvoren = signal(false);
 
@@ -303,7 +316,7 @@ export class PopisComponent implements OnInit {
         this.tekstPretrage = tekst.trim();
         this.ucitava.set(true);
         // Greška ne smije ugasiti pretragu, pa je hvatamo unutar switchMap
-        return this.api.popis(this.filter(), this.tekstPretrage).pipe(
+        return this.api.popis(this.filter(), this.tekstPretrage, 0, PO_STRANICI).pipe(
           catchError((err) => {
             this.prikaziGresku(err);
             return EMPTY;
@@ -311,7 +324,7 @@ export class PopisComponent implements OnInit {
         );
       }),
       takeUntilDestroyed(),
-    ).subscribe((lista) => this.prikazi(lista));
+    ).subscribe((s) => this.prikazi(s, false));
   }
 
   ngOnInit(): void {
@@ -356,14 +369,24 @@ export class PopisComponent implements OnInit {
   private ucitaj(): void {
     this.ucitava.set(true);
     this.greska.set('');
-    this.api.popis(this.filter(), this.tekstPretrage).subscribe({
-      next: (lista) => this.prikazi(lista),
+    this.api.popis(this.filter(), this.tekstPretrage, 0, PO_STRANICI).subscribe({
+      next: (s) => this.prikazi(s, false),
       error: (err) => this.prikaziGresku(err),
     });
   }
 
-  private prikazi(lista: VjencanjeSazetak[]): void {
-    this.vjencanja.set(lista);
+  ucitajJos(): void {
+    this.ucitava.set(true);
+    this.api.popis(this.filter(), this.tekstPretrage, this.stranica + 1, PO_STRANICI).subscribe({
+      next: (s) => this.prikazi(s, true),
+      error: (err) => this.prikaziGresku(err),
+    });
+  }
+
+  private prikazi(s: Stranica<VjencanjeSazetak>, dodaj: boolean): void {
+    this.vjencanja.set(dodaj ? [...this.vjencanja(), ...s.content] : s.content);
+    this.stranica = s.page.number;
+    this.ukupno.set(s.page.totalElements);
     this.ucitava.set(false);
   }
 

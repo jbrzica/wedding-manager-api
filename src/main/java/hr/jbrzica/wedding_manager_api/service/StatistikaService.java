@@ -3,7 +3,10 @@ package hr.jbrzica.wedding_manager_api.service;
 import hr.jbrzica.wedding_manager_api.dto.StatistikaResponse;
 import hr.jbrzica.wedding_manager_api.dto.StatistikaResponse.*;
 import hr.jbrzica.wedding_manager_api.entity.*;
+import hr.jbrzica.wedding_manager_api.repository.ClanEkipeRepository;
+import hr.jbrzica.wedding_manager_api.repository.UplataRepository;
 import hr.jbrzica.wedding_manager_api.repository.VjencanjeRepository;
+import hr.jbrzica.wedding_manager_api.repository.ZbrojPoVjencanju;
 import hr.jbrzica.wedding_manager_api.security.TrenutniKorisnik;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,16 +22,25 @@ import java.util.*;
 public class StatistikaService {
 
     private final VjencanjeRepository vjencanjeRepository;
+    private final UplataRepository uplataRepository;
+    private final ClanEkipeRepository clanEkipeRepository;
     private final TrenutniKorisnik trenutniKorisnik;
 
-    public StatistikaService(VjencanjeRepository vjencanjeRepository, TrenutniKorisnik trenutniKorisnik) {
+    public StatistikaService(VjencanjeRepository vjencanjeRepository, UplataRepository uplataRepository,
+                             ClanEkipeRepository clanEkipeRepository, TrenutniKorisnik trenutniKorisnik) {
         this.vjencanjeRepository = vjencanjeRepository;
+        this.uplataRepository = uplataRepository;
+        this.clanEkipeRepository = clanEkipeRepository;
         this.trenutniKorisnik = trenutniKorisnik;
     }
 
-    // Fotograf ima stotinjak vjenčanja godišnje, pa se sve računa u Javi iz jednog upita
+    /**
+     * Uplate, honorari i dodaci zbrajaju se u bazi (GROUP BY) jednim upitom za sva vjenčanja,
+     * pa je broj SQL upita isti za 10 i za 1000 vjenčanja. Prije se za svako vjenčanje
+     * posebno učitavalo troje (N+1).
+     */
     public StatistikaResponse za(int godina) {
-        List<Vjencanje> dvijeGodine = vjencanjeRepository.findByTvrtkaIdAndDatumBetweenOrderByDatumAsc(
+        List<Vjencanje> dvijeGodine = vjencanjeRepository.zaStatistiku(
                 trenutniKorisnik.tvrtkaId(), LocalDate.of(godina - 1, 1, 1), LocalDate.of(godina, 12, 31));
 
         List<Vjencanje> sveOve = dvijeGodine.stream().filter(v -> v.getDatum().getYear() == godina).toList();
@@ -38,20 +50,37 @@ public class StatistikaService {
                 .filter(StatistikaService::jePosao)
                 .toList();
 
+        List<Long> idsPosla = new ArrayList<>(ids(posaoOve));
+        idsPosla.addAll(ids(posaoProsle));
+        Map<Long, BigDecimal> uplaceno = poVjencanju(idsPosla.isEmpty() ? List.of() : uplataRepository.zbrojiPoVjencanju(idsPosla));
+        Map<Long, BigDecimal> honorari = poVjencanju(idsPosla.isEmpty() ? List.of() : clanEkipeRepository.honorariPoVjencanju(idsPosla));
+
         return new StatistikaResponse(
                 godina,
-                sazetak(posaoOve),
-                sazetak(posaoProsle),
-                poMjesecima(posaoOve),
+                sazetak(posaoOve, honorari),
+                sazetak(posaoProsle, honorari),
+                poMjesecima(posaoOve, uplaceno),
                 izvori(sveOve),
                 paketi(posaoOve),
                 dodaci(posaoOve),
                 subote(godina, sveOve),
-                honorari(posaoOve),
+                honorariSuradnika(posaoOve),
                 upiti(sveOve),
-                zaNaplatiti(posaoOve),
-                poMjesecima(posaoProsle).stream().map(Mjesec::dogovoreno).toList()
+                zaNaplatiti(posaoOve, uplaceno),
+                poMjesecima(posaoProsle, uplaceno).stream().map(Mjesec::dogovoreno).toList()
         );
+    }
+
+    private static List<Long> ids(List<Vjencanje> vjencanja) {
+        return vjencanja.stream().map(Vjencanje::getId).toList();
+    }
+
+    private static Map<Long, BigDecimal> poVjencanju(List<ZbrojPoVjencanju> zbrojevi) {
+        Map<Long, BigDecimal> mapa = new HashMap<>();
+        for (ZbrojPoVjencanju z : zbrojevi) {
+            mapa.put(z.vjencanjeId(), z.iznos());
+        }
+        return mapa;
     }
 
     private Upiti upiti(List<Vjencanje> sva) {
@@ -62,11 +91,10 @@ public class StatistikaService {
     }
 
     // Koliko od dogovorenog posla te godine još nije uplaćeno
-    private BigDecimal zaNaplatiti(List<Vjencanje> posao) {
+    private BigDecimal zaNaplatiti(List<Vjencanje> posao, Map<Long, BigDecimal> uplaceno) {
         BigDecimal ukupno = BigDecimal.ZERO;
         for (Vjencanje v : posao) {
-            BigDecimal uplaceno = v.getUplate().stream().map(Uplata::getIznos).reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal preostalo = v.getDogovorenaCijena().subtract(uplaceno);
+            BigDecimal preostalo = v.getDogovorenaCijena().subtract(uplaceno.getOrDefault(v.getId(), BigDecimal.ZERO));
             if (preostalo.signum() > 0) {
                 ukupno = ukupno.add(preostalo);
             }
@@ -79,12 +107,12 @@ public class StatistikaService {
         return v.getStatus() != StatusVjencanja.UPIT && v.getStatus() != StatusVjencanja.OTKAZANO;
     }
 
-    private SazetakGodine sazetak(List<Vjencanje> vjencanja) {
+    private SazetakGodine sazetak(List<Vjencanje> vjencanja, Map<Long, BigDecimal> honorariPoVjencanju) {
         BigDecimal prihod = BigDecimal.ZERO;
         BigDecimal honorari = BigDecimal.ZERO;
         for (Vjencanje v : vjencanja) {
             prihod = prihod.add(v.getDogovorenaCijena());
-            honorari = honorari.add(honorari(v));
+            honorari = honorari.add(honorariPoVjencanju.getOrDefault(v.getId(), BigDecimal.ZERO));
             if (v.getOstaliTroskovi() != null) {
                 honorari = honorari.add(v.getOstaliTroskovi());
             }
@@ -95,7 +123,7 @@ public class StatistikaService {
         return new SazetakGodine(vjencanja.size(), prihod, prihod.subtract(honorari), prosjek);
     }
 
-    private List<Mjesec> poMjesecima(List<Vjencanje> vjencanja) {
+    private List<Mjesec> poMjesecima(List<Vjencanje> vjencanja, Map<Long, BigDecimal> uplacenoPoVjencanju) {
         List<Mjesec> mjeseci = new ArrayList<>();
         for (int m = 1; m <= 12; m++) {
             long broj = 0;
@@ -105,9 +133,7 @@ public class StatistikaService {
                 if (v.getDatum().getMonthValue() == m) {
                     broj++;
                     dogovoreno = dogovoreno.add(v.getDogovorenaCijena());
-                    for (Uplata u : v.getUplate()) {
-                        uplaceno = uplaceno.add(u.getIznos());
-                    }
+                    uplaceno = uplaceno.add(uplacenoPoVjencanju.getOrDefault(v.getId(), BigDecimal.ZERO));
                 }
             }
             mjeseci.add(new Mjesec(m, broj, dogovoreno, uplaceno));
@@ -141,13 +167,12 @@ public class StatistikaService {
     }
 
     private List<Stavka> dodaci(List<Vjencanje> vjencanja) {
-        Map<String, Long> brojevi = new HashMap<>();
-        for (Vjencanje v : vjencanja) {
-            for (Dodatak d : v.getDodaci()) {
-                brojevi.merge(d.getNaziv(), 1L, Long::sum);
-            }
+        if (vjencanja.isEmpty()) {
+            return List.of();
         }
-        return uStavke(brojevi);
+        return vjencanjeRepository.dodaciPoNazivu(ids(vjencanja)).stream()
+                .map(d -> new Stavka(d.naziv(), d.broj()))
+                .toList();
     }
 
     private List<Stavka> uStavke(Map<String, Long> brojevi) {
@@ -182,28 +207,12 @@ public class StatistikaService {
         return subote;
     }
 
-    private List<Honorar> honorari(List<Vjencanje> vjencanja) {
-        Map<String, Honorar> poSuradniku = new HashMap<>();
-        for (Vjencanje v : vjencanja) {
-            for (ClanEkipe c : v.getEkipa()) {
-                BigDecimal iznos = c.getHonorar() != null ? c.getHonorar() : BigDecimal.ZERO;
-                poSuradniku.merge(c.getSuradnik().getIme(),
-                        new Honorar(c.getSuradnik().getIme(), 1, iznos),
-                        (a, b) -> new Honorar(a.ime(), a.brojVjencanja() + 1, a.ukupno().add(b.ukupno())));
-            }
+    private List<Honorar> honorariSuradnika(List<Vjencanje> vjencanja) {
+        if (vjencanja.isEmpty()) {
+            return List.of();
         }
-        return poSuradniku.values().stream()
-                .sorted(Comparator.comparing(Honorar::ukupno).reversed())
+        return clanEkipeRepository.honorariPoSuradniku(ids(vjencanja)).stream()
+                .map(h -> new Honorar(h.ime(), h.brojVjencanja(), h.ukupno()))
                 .toList();
-    }
-
-    private BigDecimal honorari(Vjencanje v) {
-        BigDecimal zbroj = BigDecimal.ZERO;
-        for (ClanEkipe c : v.getEkipa()) {
-            if (c.getHonorar() != null) {
-                zbroj = zbroj.add(c.getHonorar());
-            }
-        }
-        return zbroj;
     }
 }

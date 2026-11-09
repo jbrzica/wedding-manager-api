@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  Dodatak, Dostupnost, Prognoza, Promjena, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
+  Dodatak, Dostupnost, Stranica, Prognoza, Promjena, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
   Uplata, VjencanjeDetalji, Zadatak, VjencanjeSazetak, VjencanjeZahtjev, VrstaUplate,
 } from './modeli';
 
@@ -12,8 +12,8 @@ export class ApiService {
 
   // Vjenčanja
 
-  popis(filter: FilterVjencanja, pretraga?: string): Observable<VjencanjeSazetak[]> {
-    let params = new HttpParams().set('razdoblje', filter.razdoblje);
+  popis(filter: FilterVjencanja, pretraga: string, stranica: number, velicina: number): Observable<Stranica<VjencanjeSazetak>> {
+    let params = new HttpParams().set('razdoblje', filter.razdoblje).set('stranica', stranica).set('velicina', velicina);
     for (const s of filter.statusi) {
       params = params.append('status', s);
     }
@@ -29,7 +29,7 @@ export class ApiService {
     if (pretraga) {
       params = params.set('pretraga', pretraga);
     }
-    return this.http.get<VjencanjeSazetak[]>('/api/vjencanja', { params });
+    return this.http.get<Stranica<VjencanjeSazetak>>('/api/vjencanja', { params });
   }
 
   kalendar(od: string, doDatuma: string): Observable<VjencanjeSazetak[]> {

@@ -83,7 +83,7 @@ import { AuthService } from '../core/auth.service';
     :host { display: block; min-height: 100vh; }
     .traka {
       position: sticky; top: 0; z-index: 10;
-      background: rgba(255, 255, 255, .92); backdrop-filter: blur(8px);
+      background: var(--wm-traka); backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--mat-sys-outline-variant);
     }
     .logo span { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
@@ -106,7 +106,7 @@ import { AuthService } from '../core/auth.service';
       .sadrzaj { padding-top: 16px; }
       .nav-mobitel {
         display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
-        background: rgba(255, 255, 255, .96); backdrop-filter: blur(8px);
+        background: var(--wm-traka); backdrop-filter: blur(8px);
         border-top: 1px solid var(--mat-sys-outline-variant);
         padding-bottom: env(safe-area-inset-bottom);
       }

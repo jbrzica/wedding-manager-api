@@ -5,9 +5,15 @@ import hr.jbrzica.wedding_manager_api.entity.*;
 import hr.jbrzica.wedding_manager_api.repository.ClanEkipeRepository;
 import hr.jbrzica.wedding_manager_api.repository.TvrtkaRepository;
 import hr.jbrzica.wedding_manager_api.repository.UplataRepository;
+import hr.jbrzica.wedding_manager_api.repository.VjencanjeFilter;
 import hr.jbrzica.wedding_manager_api.repository.VjencanjeRepository;
-import hr.jbrzica.wedding_manager_api.repository.ZbrojUplata;
+import hr.jbrzica.wedding_manager_api.repository.ZbrojPoVjencanju;
 import hr.jbrzica.wedding_manager_api.security.TrenutniKorisnik;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,41 +74,22 @@ public class VjencanjeService {
 
     // ---------- čitanje ----------
 
-    public List<VjencanjeSazetak> popis(Razdoblje razdoblje, Integer godina, List<StatusVjencanja> statusi,
-                                        String pretraga, boolean nenaplaceno, boolean kasniIsporuka) {
-        LocalDate danas = LocalDate.now();
-        Long tvrtkaId = trenutniKorisnik.tvrtkaId();
-        List<Vjencanje> vjencanja = switch (razdoblje) {
-            case NADOLAZECA -> vjencanjeRepository.findByTvrtkaIdAndDatumGreaterThanEqualOrderByDatumAsc(tvrtkaId, danas);
-            case PROSLA -> vjencanjeRepository.findByTvrtkaIdAndDatumLessThanOrderByDatumDesc(tvrtkaId, danas);
-            case SVA -> vjencanjeRepository.findByTvrtkaIdOrderByDatumAsc(tvrtkaId);
-        };
+    // Najviše vjenčanja na jednoj stranici, da netko ne može zatražiti sve odjednom
+    public static final int NAJVISE_PO_STRANICI = 100;
 
-        // Jedan fotograf ima stotinjak vjenčanja godišnje, pa je filtriranje u Javi dovoljno brzo.
-        List<Vjencanje> filtrirana = vjencanja.stream()
-                .filter(v -> godina == null || v.getDatum().getYear() == godina)
-                .filter(v -> statusi == null || statusi.isEmpty() || statusi.contains(v.getStatus()))
-                .filter(v -> odgovaraPretrazi(v, pretraga))
-                .filter(v -> !kasniIsporuka || kasniIsporuka(v, danas))
-                .toList();
+    public Page<VjencanjeSazetak> popis(Razdoblje razdoblje, Integer godina, List<StatusVjencanja> statusi,
+                                        String pretraga, boolean nenaplaceno, boolean kasniIsporuka,
+                                        int stranica, int velicina) {
+        VjencanjeFilter filter = new VjencanjeFilter(trenutniKorisnik.tvrtkaId(), razdoblje, godina, statusi,
+                pretraga, nenaplaceno, kasniIsporuka, LocalDate.now());
+        // Prošla vjenčanja od najnovijeg, ostala od najbližeg; id da redoslijed bude stalan između stranica
+        Sort redoslijed = razdoblje == Razdoblje.PROSLA
+                ? Sort.by(Sort.Order.desc("datum"), Sort.Order.desc("id"))
+                : Sort.by(Sort.Order.asc("datum"), Sort.Order.asc("id"));
+        Pageable zahtjev = PageRequest.of(Math.max(stranica, 0), Math.clamp(velicina, 1, NAJVISE_PO_STRANICI), redoslijed);
 
-        List<VjencanjeSazetak> sazeci = uSazetke(filtrirana);
-        // Preostali iznos postoji tek u sažetku, jer se uplate zbrajaju jednim upitom za cijeli popis
-        if (nenaplaceno) {
-            return sazeci.stream()
-                    .filter(s -> s.status() != StatusVjencanja.OTKAZANO && s.preostalo().signum() > 0)
-                    .toList();
-        }
-        return sazeci;
-    }
-
-    // Vjenčanje je bilo, rok je prošao, a fotografije još nisu predane. Otkazana vjenčanja ne kasne.
-    private boolean kasniIsporuka(Vjencanje v, LocalDate danas) {
-        return v.getDatum().isBefore(danas)
-                && v.getRokIsporuke() != null
-                && v.getRokIsporuke().isBefore(danas)
-                && v.getStatus() != StatusVjencanja.ISPORUCENO
-                && v.getStatus() != StatusVjencanja.OTKAZANO;
+        Page<Vjencanje> vjencanja = vjencanjeRepository.findAll(filter.uSpecifikaciju(), zahtjev);
+        return new PageImpl<>(uSazetke(vjencanja.getContent()), zahtjev, vjencanja.getTotalElements());
     }
 
     public List<VjencanjeSazetak> kalendar(LocalDate od, LocalDate doDatuma) {
@@ -374,7 +361,7 @@ public class VjencanjeService {
 
         // Dva upita za cijeli popis, umjesto upita za svako vjenčanje (N+1 problem)
         Map<Long, BigDecimal> uplacenoPoVjencanju = new HashMap<>();
-        for (ZbrojUplata zbroj : uplataRepository.zbrojiPoVjencanju(ids)) {
+        for (ZbrojPoVjencanju zbroj : uplataRepository.zbrojiPoVjencanju(ids)) {
             uplacenoPoVjencanju.put(zbroj.vjencanjeId(), zbroj.iznos());
         }
         Set<Long> sKaparom = new HashSet<>(uplataRepository.vjencanjaSUplatomVrste(VrstaUplate.KAPARA, ids));
@@ -430,20 +417,6 @@ public class VjencanjeService {
                 v.getZadaci().stream().map(ZadatakResponse::iz).toList(),
                 financijeKalkulator.izracunaj(v)
         );
-    }
-
-    private boolean odgovaraPretrazi(Vjencanje v, String pretraga) {
-        if (pretraga == null || pretraga.isBlank()) {
-            return true;
-        }
-        String trazeno = pretraga.trim().toLowerCase();
-        return sadrzi(imeOsobe(v.getMlada()), trazeno)
-                || sadrzi(imeOsobe(v.getMladozenja()), trazeno)
-                || sadrzi(v.getLokacija(), trazeno);
-    }
-
-    private boolean sadrzi(String tekst, String trazeno) {
-        return tekst != null && tekst.toLowerCase().contains(trazeno);
     }
 
     private String imeOsobe(Osoba osoba) {

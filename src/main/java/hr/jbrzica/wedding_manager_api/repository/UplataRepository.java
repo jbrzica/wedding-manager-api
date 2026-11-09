@@ -15,12 +15,12 @@ public interface UplataRepository extends JpaRepository<Uplata, Long> {
 
     // Jedan upit za zbroj uplata svih vjencanja u popisu (umjesto jednog upita po vjencanju)
     @Query("""
-            SELECT new hr.jbrzica.wedding_manager_api.repository.ZbrojUplata(u.vjencanje.id, SUM(u.iznos))
+            SELECT new hr.jbrzica.wedding_manager_api.repository.ZbrojPoVjencanju(u.vjencanje.id, SUM(u.iznos))
             FROM Uplata u
             WHERE u.vjencanje.id IN :ids
             GROUP BY u.vjencanje.id
             """)
-    List<ZbrojUplata> zbrojiPoVjencanju(@Param("ids") Collection<Long> ids);
+    List<ZbrojPoVjencanju> zbrojiPoVjencanju(@Param("ids") Collection<Long> ids);
 
     @Query("""
             SELECT DISTINCT u.vjencanje.id

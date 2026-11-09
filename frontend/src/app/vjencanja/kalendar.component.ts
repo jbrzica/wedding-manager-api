@@ -100,6 +100,12 @@ const DANI_TJEDNA = ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
     .zaglavlje { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
     .izbor-mjeseca { flex: 1; min-width: 110px; max-width: 180px; }
     .izbor-godine { width: 100px; }
+    /* Mali mobiteli (npr. 320 px): strelice i izbor ostaju u jednom redu, samo Danas ide ispod */
+    @media (max-width: 380px) {
+      .zaglavlje { gap: 4px; }
+      .izbor-mjeseca { flex: 0 0 108px; min-width: 0; }
+      .izbor-godine { width: 84px; }
+    }
     .mreza { display: grid; grid-template-columns: repeat(7, 1fr); overflow: hidden; }
     .naslov-dana {
       padding: 8px; text-align: center; font-size: 12px; font-weight: 500;

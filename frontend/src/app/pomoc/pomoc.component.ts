@@ -52,6 +52,7 @@ const TEME: Tema[] = [
     id: 'raspored', ikona: 'schedule', naslov: 'Raspored dana i dijeljenje',
     tekst: [
       'Na vjenčanju upiši raspored: vrijeme, što se događa i adresu (npr. 11:00 priprema kod mladenke, 15:00 crkva, 18:30 sala).',
+      'Svoj tipični dan spremi gumbom „Spremi kao predložak“ ispod rasporeda. Svako novo vjenčanje onda kreće od njega, a na postojećem ga možeš uzeti gumbom „Uzmi predložak“.',
       'Gumbom za dijeljenje raspored se na mobitelu šalje WhatsAppom ili Viberom, a na računalu se kopira. Šalje se bez cijena.',
       'Kontrolna lista na vjenčanju (ugovor poslan, potpisan, odabir fotografija…) pomaže da se ništa ne zaboravi. Stavke možeš dodavati i brisati.',
     ],
@@ -71,6 +72,13 @@ const TEME: Tema[] = [
       'Android (Chrome): otvori aplikaciju u Chromeu → tri točke gore desno → Dodaj na početni zaslon (ili Instaliraj aplikaciju).',
       'iPhone (mora biti Safari): gumb za dijeljenje (kvadrat sa strelicom) → Dodaj na početni zaslon.',
       'Aplikacija se tada otvara preko cijelog ekrana, kao prava aplikacija.',
+    ],
+  },
+  {
+    id: 'prognoza', ikona: 'wb_sunny', naslov: 'Vremenska prognoza',
+    tekst: [
+      'Za vjenčanja u idućih 7 dana uz datum se prikazuje prognoza: vrijeme, najviša i najniža temperatura i vjerojatnost kiše.',
+      'Mjesto se prepoznaje iz lokacije. Najbolje je upisati i grad, npr. „Restoran Rubin, Đakovo“. Ako se mjesto ne prepozna, prognoza se ne prikazuje.',
     ],
   },
   {
@@ -103,6 +111,8 @@ const TEME: Tema[] = [
       'U Postavkama mijenjaš naziv tvrtke, pozivaš članove (npr. supružnika ili partnera u poslu) i mijenjaš lozinku.',
       'Član tvrtke vidi i mijenja sve, uključujući cijene i zaradu.',
       'Zaboravljena lozinka: na stranici za prijavu odaberi „Zaboravljena lozinka“ i dobit ćeš šifru mailom.',
+      'Prijava traje 30 dana na svakom uređaju. Promjena lozinke odjavljuje sve ostale uređaje, a Odjava samo onaj na kojem jesi.',
+      'Povijest promjena: na svakom vjenčanju vidiš tko je i kada mijenjao cijenu, datum, status ili uplate, a u Postavkama sve promjene u tvrtki, i za obrisana vjenčanja.',
       'Podaci se svaku noć spremaju u sigurnosnu kopiju.',
     ],
   },

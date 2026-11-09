@@ -15,7 +15,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ProvjeraDatumaComponent } from './provjera-datuma.component';
 import { PrviKoraciComponent } from './prvi-koraci.component';
 import { ApiService } from '../core/api.service';
-import { FilterVjencanja, Pregled, Razdoblje, StatusVjencanja, VjencanjeSazetak } from '../core/modeli';
+import { FilterVjencanja, Pregled, Prognoza, Razdoblje, StatusVjencanja, VjencanjeSazetak } from '../core/modeli';
 import { STATUSI } from '../core/oznake';
 import { izIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
@@ -179,7 +179,7 @@ interface Grupa {
       <h2 class="mjesec">{{ g.mjesec | date: 'LLLL yyyy' }} <span>({{ g.vjencanja.length }})</span></h2>
       <mat-card appearance="outlined" class="lista">
         @for (v of g.vjencanja; track v.id) {
-          <app-vjencanje-red [v]="v" />
+          <app-vjencanje-red [v]="v" [prognoza]="prognoze()[v.id]" />
         }
       </mat-card>
     } @empty {
@@ -231,6 +231,7 @@ interface Grupa {
 export class PopisComponent implements OnInit {
   private api = inject(ApiService);
   private dialog = inject(MatDialog);
+  prognoze = signal<Record<number, Prognoza>>({});
 
   pregled = signal<Pregled | null>(null);
   vjencanja = signal<VjencanjeSazetak[]>([]);
@@ -315,6 +316,8 @@ export class PopisComponent implements OnInit {
 
   ngOnInit(): void {
     this.api.pregled().subscribe((p) => this.pregled.set(p));
+    // Prognoza je dodatak: ako servis ne odgovori, popis radi i bez nje
+    this.api.prognoze().subscribe({ next: (p) => this.prognoze.set(p), error: () => undefined });
     this.ucitaj();
   }
 

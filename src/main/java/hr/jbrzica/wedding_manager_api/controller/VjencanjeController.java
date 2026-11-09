@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/vjencanja")
@@ -37,6 +38,16 @@ public class VjencanjeController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate od,
             @RequestParam("do") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate doDatuma) {
         return vjencanjeService.kalendar(od, doDatuma);
+    }
+
+    @GetMapping("/{id}/povijest")
+    public List<PromjenaResponse> povijest(@PathVariable Long id) {
+        return vjencanjeService.povijest(id);
+    }
+
+    @GetMapping("/prognoze")
+    public Map<Long, PrognozaResponse> prognoze() {
+        return vjencanjeService.prognoze();
     }
 
     @GetMapping("/dostupnost")

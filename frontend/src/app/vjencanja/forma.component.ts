@@ -14,9 +14,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatTimepickerModule } from '@angular/material/timepicker';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../core/api.service';
 import {
-  Dodatak, IzvorUpita, Paket, Suradnik, UlogaSuradnika, VjencanjeDetalji, VjencanjeZahtjev,
+  Dodatak, IzvorUpita, Paket, StavkaRasporeda, Suradnik, UlogaSuradnika, VjencanjeDetalji, VjencanjeZahtjev,
 } from '../core/modeli';
 import { IZVORI_UPITA, ULOGE_SURADNIKA, kljucevi } from '../core/oznake';
 import { porukaGreske } from '../core/greska';
@@ -33,6 +34,8 @@ import { dateUVrijeme, izIso, uIso, vrijemeUDate } from '../core/datumi';
 })
 export class FormaComponent implements OnInit {
   private api = inject(ApiService);
+  private snack = inject(MatSnackBar);
+  predlozak = signal<StavkaRasporeda[]>([]);
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
@@ -85,10 +88,12 @@ export class FormaComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const sifrarnici = forkJoin({ paketi: this.api.paketi(), dodaci: this.api.dodaci(), suradnici: this.api.suradnici() });
+    const sifrarnici = forkJoin({ paketi: this.api.paketi(), dodaci: this.api.dodaci(), suradnici: this.api.suradnici(),
+      predlozak: this.api.predlozakRasporeda() });
 
     sifrarnici.subscribe({
-      next: ({ paketi, dodaci, suradnici }) => {
+      next: ({ paketi, dodaci, suradnici, predlozak }) => {
+        this.predlozak.set(predlozak);
         this.paketi.set(paketi);
         this.dodaci.set(dodaci);
         this.suradnici.set(suradnici);
@@ -99,9 +104,14 @@ export class FormaComponent implements OnInit {
           });
         } else {
           this.forma.controls.datum.setValue(this.datum() ? izIso(this.datum()!) : null);
-          this.dodajStavku('12:00', 'Dolazak kod mladenke');
-          this.dodajStavku('', 'Crkva');
-          this.dodajStavku('', 'Sala');
+          // Novo vjenčanje kreće od predloška tvrtke, a dok ga nema, od uobičajenog dana
+          if (predlozak.length) {
+            this.popuniRaspored(predlozak);
+          } else {
+            this.dodajStavku('12:00', 'Dolazak kod mladenke');
+            this.dodajStavku('', 'Crkva');
+            this.dodajStavku('', 'Sala');
+          }
           this.ucitava.set(false);
         }
       },
@@ -127,6 +137,42 @@ export class FormaComponent implements OnInit {
       adresa: [''],
       oib: ['', oibValidator],
     });
+  }
+
+  uzmiPredlozak(): void {
+    const imaUpisanog = this.raspored.controls.some((s) => s.value['naziv']?.trim());
+    if (imaUpisanog && !confirm('Zamijeniti upisani raspored predloškom?')) {
+      return;
+    }
+    this.raspored.clear();
+    this.popuniRaspored(this.predlozak());
+  }
+
+  // Sprema samo stavke s nazivom; adrese ostaju, jer su crkva ili sala često iste
+  spremiPredlozak(): void {
+    const stavke = this.raspored.controls
+      .map((s) => s.value)
+      .filter((s) => s['naziv']?.trim())
+      .map((s) => ({ vrijeme: dateUVrijeme(s['vrijeme']), naziv: s['naziv'].trim(),
+        adresa: s['adresa']?.trim() || null, napomena: s['napomena']?.trim() || null }));
+    if (!stavke.length) {
+      this.snack.open('Raspored je prazan.', 'OK', { duration: 3000 });
+      return;
+    }
+    if (this.predlozak().length && !confirm('Zamijeniti postojeći predložak ovim rasporedom?')) {
+      return;
+    }
+    this.api.spremiPredlozakRasporeda(stavke).subscribe({
+      next: (p) => {
+        this.predlozak.set(p);
+        this.snack.open('Predložak je spremljen. Svako novo vjenčanje kretat će od njega.', 'OK', { duration: 4000 });
+      },
+      error: (err) => this.snack.open(porukaGreske(err), 'OK', { duration: 4000 }),
+    });
+  }
+
+  private popuniRaspored(stavke: StavkaRasporeda[]): void {
+    stavke.forEach((s) => this.dodajStavku(s.vrijeme?.slice(0, 5) ?? '', s.naziv, s.adresa ?? '', s.napomena ?? ''));
   }
 
   dodajStavku(vrijeme = '', naziv = '', adresa = '', napomena = ''): void {

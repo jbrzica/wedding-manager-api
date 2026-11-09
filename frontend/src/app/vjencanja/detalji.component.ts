@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -14,7 +14,9 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { ApiService } from '../core/api.service';
-import { Osoba, StatusVjencanja, VjencanjeDetalji, VrstaUplate, Zadatak } from '../core/modeli';
+import { PovijestVjencanjaComponent } from '../povijest/povijest-vjencanja.component';
+import { Osoba, Prognoza, StatusVjencanja, VjencanjeDetalji, VrstaUplate, Zadatak } from '../core/modeli';
+import { opisVremena } from '../core/vrijeme';
 import { IZVORI_UPITA, STATUSI, ULOGE_SURADNIKA, VRSTE_UPLATE, kljucevi } from '../core/oznake';
 import { izIso, uIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
@@ -22,7 +24,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
 
 @Component({
   selector: 'app-detalji',
-  imports: [
+  imports: [PovijestVjencanjaComponent, DecimalPipe,
     DatePipe, CurrencyPipe, FormsModule, ReactiveFormsModule, MatCheckboxModule, MatDatepickerModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule,
     MatMenuModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, StatusOznakaComponent,
   ],
@@ -44,6 +46,13 @@ import { StatusOznakaComponent } from './status-oznaka.component';
             @if (v.lokacija) { · {{ v.lokacija }} }
             @if (v.brojGostiju) { · {{ v.brojGostiju }} gostiju }
           </div>
+          @if (prognoza(); as p) {
+            <div class="prognoza" title="Prognoza za {{ p.mjesto }}">
+              {{ vrijeme(p.kod).ikona }} {{ vrijeme(p.kod).opis }} · {{ p.max | number: '1.0-0' }}° / {{ p.min | number: '1.0-0' }}°
+              @if (p.oborine !== null) { · {{ p.oborine }} % kiše }
+              <span class="sivo">· {{ p.mjesto }}</span>
+            </div>
+          }
         </div>
         <button mat-stroked-button [matMenuTriggerFor]="statusi">
           <app-status [status]="v.status" /> <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
@@ -263,6 +272,8 @@ import { StatusOznakaComponent } from './status-oznaka.component';
               }
             </mat-card-content>
           </mat-card>
+
+          <app-povijest-vjencanja [vjencanje]="v" />
         </div>
       </div>
     }
@@ -272,6 +283,8 @@ import { StatusOznakaComponent } from './status-oznaka.component';
     .naslov { flex: 1; min-width: 200px; }
     .naslov h1 { margin: 0; font-size: 24px; }
     .podnaslov { color: var(--mat-sys-on-surface-variant); }
+    .prognoza { margin-top: 6px; display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 14px;
+                background: var(--wm-info-pozadina); color: var(--wm-info); }
     .mreza { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; align-items: start; }
     .stupac { display: flex; flex-direction: column; gap: 16px; }
     mat-card-content { padding-top: 8px; }
@@ -348,6 +361,8 @@ export class DetaljiComponent implements OnInit {
   private api = inject(ApiService);
   private router = inject(Router);
   private snack = inject(MatSnackBar);
+  prognoza = signal<Prognoza | null>(null);
+  readonly vrijeme = opisVremena;
 
   id = input.required<string>();
   v = signal<VjencanjeDetalji | null>(null);
@@ -514,9 +529,17 @@ export class DetaljiComponent implements OnInit {
 
   private ucitaj(): void {
     this.api.detalji(Number(this.id())).subscribe({
-      next: (v) => this.v.set(v),
+      next: (v) => {
+        this.v.set(v);
+        this.ucitajPrognozu(v.id);
+      },
       error: (err) => this.greska.set(porukaGreske(err)),
     });
+  }
+
+  // Samo za vjenčanja idućih 7 dana; inače servis vrati prazno i ništa se ne prikaže
+  private ucitajPrognozu(id: number): void {
+    this.api.prognoze().subscribe({ next: (p) => this.prognoza.set(p[id] ?? null), error: () => undefined });
   }
 
   private poruka(tekst: string): void {

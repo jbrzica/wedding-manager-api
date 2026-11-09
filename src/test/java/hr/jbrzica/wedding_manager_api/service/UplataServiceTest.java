@@ -28,6 +28,9 @@ class UplataServiceTest {
     @Mock
     private VjencanjeService vjencanjeService;
 
+    @Mock
+    PovijestServis povijest;
+
     @InjectMocks
     private UplataService uplataService;
 

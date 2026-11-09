@@ -39,6 +39,8 @@ public class VjencanjeService {
     private final FinancijeKalkulator financijeKalkulator;
     private final TvrtkaRepository tvrtkaRepository;
     private final TrenutniKorisnik trenutniKorisnik;
+    private final PovijestServis povijest;
+    private final PrognozaServis prognozaServis;
 
     public VjencanjeService(VjencanjeRepository vjencanjeRepository,
                             UplataRepository uplataRepository,
@@ -48,7 +50,11 @@ public class VjencanjeService {
                             SuradnikService suradnikService,
                             FinancijeKalkulator financijeKalkulator,
                             TvrtkaRepository tvrtkaRepository,
-                            TrenutniKorisnik trenutniKorisnik) {
+                            TrenutniKorisnik trenutniKorisnik,
+                            PovijestServis povijest,
+                            PrognozaServis prognozaServis) {
+        this.povijest = povijest;
+        this.prognozaServis = prognozaServis;
         this.vjencanjeRepository = vjencanjeRepository;
         this.uplataRepository = uplataRepository;
         this.clanEkipeRepository = clanEkipeRepository;
@@ -140,6 +146,24 @@ public class VjencanjeService {
         return new PregledResponse(sljedeceSazetak, danaDoSljedeceg, brojOveGodine, ukupnoNenaplaceno);
     }
 
+    // Prognoza za vjenčanja idućih 7 dana, po id-u vjenčanja
+    public Map<Long, PrognozaResponse> prognoze() {
+        LocalDate danas = LocalDate.now();
+        Map<Long, PrognozaResponse> rezultat = new HashMap<>();
+        for (Vjencanje v : vjencanjeRepository.findByTvrtkaIdAndDatumBetweenOrderByDatumAsc(
+                trenutniKorisnik.tvrtkaId(), danas, danas.plusDays(PrognozaServis.DANA_UNAPRIJED))) {
+            if (v.getStatus() != StatusVjencanja.OTKAZANO) {
+                prognozaServis.za(v.getLokacija(), v.getDatum()).ifPresent(p -> rezultat.put(v.getId(), p));
+            }
+        }
+        return rezultat;
+    }
+
+    public List<PromjenaResponse> povijest(Long id) {
+        dohvatiEntitet(id);   // provjerava da je vjenčanje od moje tvrtke
+        return povijest.zaVjencanje(id);
+    }
+
     // Brza provjera datuma: tko je taj dan zauzet i ima li vjenčanja koji dan prije ili poslije
     public DostupnostResponse dostupnost(LocalDate datum) {
         Long tvrtkaId = trenutniKorisnik.tvrtkaId();
@@ -208,19 +232,27 @@ public class VjencanjeService {
             zadatak.setVjencanje(vjencanje);
             vjencanje.getZadaci().add(zadatak);
         }
-        return uDetalje(vjencanjeRepository.save(vjencanje));
+        Vjencanje spremljeno = vjencanjeRepository.save(vjencanje);
+        povijest.zabiljezi(spremljeno, "Upisano vjenčanje");
+        return uDetalje(spremljeno);
     }
 
     @Transactional
     public VjencanjeDetalji izmijeni(Long id, VjencanjeRequest request) {
         Vjencanje vjencanje = dohvatiEntitet(id);
+        Snimka prije = new Snimka(vjencanje);
         popuni(vjencanje, request);
+        zabiljeziRazlike(vjencanje, prije, new Snimka(vjencanje));
         return uDetalje(vjencanje);
     }
 
     @Transactional
     public VjencanjeDetalji promijeniStatus(Long id, StatusVjencanja status) {
         Vjencanje vjencanje = dohvatiEntitet(id);
+        if (vjencanje.getStatus() != status) {
+            povijest.zabiljezi(vjencanje, "Status: " + PovijestServis.status(vjencanje.getStatus())
+                    + " → " + PovijestServis.status(status));
+        }
         vjencanje.setStatus(status);
         return uDetalje(vjencanje);
     }
@@ -228,7 +260,55 @@ public class VjencanjeService {
     // Ne briše se odmah: ide u koš, odakle se može vratiti 30 dana
     @Transactional
     public void obrisi(Long id) {
-        dohvatiEntitet(id).setObrisano(Instant.now());
+        Vjencanje vjencanje = dohvatiEntitet(id);
+        vjencanje.setObrisano(Instant.now());
+        povijest.zabiljezi(vjencanje, "Premješteno u koš");
+    }
+
+    // Stanje bitnih polja prije i poslije izmjene, za povijest promjena
+    private record Snimka(LocalDate datum, String lokacija, BigDecimal cijena, String paket,
+                          BigDecimal ostaliTroskovi, Map<Long, BigDecimal> ekipa) {
+        Snimka(Vjencanje v) {
+            this(v.getDatum(), v.getLokacija(), v.getDogovorenaCijena(),
+                    v.getPaket() != null ? v.getPaket().getNaziv() : null, v.getOstaliTroskovi(), ekipaOd(v));
+        }
+
+        private static Map<Long, BigDecimal> ekipaOd(Vjencanje v) {
+            Map<Long, BigDecimal> m = new HashMap<>();
+            for (ClanEkipe c : v.getEkipa()) {
+                m.put(c.getSuradnik().getId(), c.getHonorar() == null ? null : c.getHonorar().stripTrailingZeros());
+            }
+            return m;
+        }
+    }
+
+    private void zabiljeziRazlike(Vjencanje v, Snimka prije, Snimka poslije) {
+        if (!Objects.equals(prije.datum(), poslije.datum())) {
+            povijest.zabiljezi(v, "Datum: " + PovijestServis.datum(prije.datum()) + " → " + PovijestServis.datum(poslije.datum()));
+        }
+        if (prije.cijena() == null ? poslije.cijena() != null : prije.cijena().compareTo(poslije.cijena()) != 0) {
+            povijest.zabiljezi(v, "Cijena: " + PovijestServis.novac(prije.cijena()) + " → " + PovijestServis.novac(poslije.cijena()));
+        }
+        if (!Objects.equals(prije.paket(), poslije.paket())) {
+            povijest.zabiljezi(v, "Paket: " + (prije.paket() == null ? "bez paketa" : prije.paket())
+                    + " → " + (poslije.paket() == null ? "bez paketa" : poslije.paket()));
+        }
+        if (!Objects.equals(prazno(prije.lokacija()), prazno(poslije.lokacija()))) {
+            povijest.zabiljezi(v, "Lokacija: " + (prazno(prije.lokacija()) == null ? "–" : prije.lokacija())
+                    + " → " + (prazno(poslije.lokacija()) == null ? "–" : poslije.lokacija()));
+        }
+        BigDecimal stariTroskovi = prije.ostaliTroskovi() == null ? BigDecimal.ZERO : prije.ostaliTroskovi();
+        BigDecimal noviTroskovi = poslije.ostaliTroskovi() == null ? BigDecimal.ZERO : poslije.ostaliTroskovi();
+        if (stariTroskovi.compareTo(noviTroskovi) != 0) {
+            povijest.zabiljezi(v, "Ostali troškovi: " + PovijestServis.novac(stariTroskovi) + " → " + PovijestServis.novac(noviTroskovi));
+        }
+        if (!prije.ekipa().equals(poslije.ekipa())) {
+            povijest.zabiljezi(v, "Promijenjena ekipa ili honorari");
+        }
+    }
+
+    private static String prazno(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
     }
 
     // ---------- pomoćne metode ----------

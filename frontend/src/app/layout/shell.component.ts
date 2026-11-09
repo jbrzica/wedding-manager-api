@@ -113,12 +113,13 @@ import { AuthService } from '../core/auth.service';
         display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
         background: var(--wm-traka); backdrop-filter: blur(8px);
         border-top: 1px solid var(--mat-sys-outline-variant);
-        /* Iznad trake za povratak na početni zaslon i dalje od zaobljenih kutova */
-        padding: 0 max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+        /* Iznad crtice za povratak na početni zaslon i dalje od zaobljenih kutova. Cijeli razmak
+           od iPhonea (34 pt) izgleda kao prazan prozor; tekst smije ići do same crtice, ne preko nje. */
+        padding: 0 max(8px, env(safe-area-inset-right)) max(4px, calc(env(safe-area-inset-bottom) - 16px)) max(8px, env(safe-area-inset-left));
       }
       .nav-mobitel a {
         flex: 1; display: flex; flex-direction: column; align-items: center;
-        padding: 8px 0; font-size: 12px; text-decoration: none;
+        padding: 8px 0 6px; font-size: 12px; text-decoration: none;
         color: var(--mat-sys-on-surface-variant);
       }
       .nav-mobitel a.aktivno { color: var(--mat-sys-primary); background: none; }

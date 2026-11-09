@@ -14,6 +14,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { ApiService } from '../core/api.service';
+import { PovijestVjencanjaComponent } from '../povijest/povijest-vjencanja.component';
 import { Osoba, StatusVjencanja, VjencanjeDetalji, VrstaUplate, Zadatak } from '../core/modeli';
 import { IZVORI_UPITA, STATUSI, ULOGE_SURADNIKA, VRSTE_UPLATE, kljucevi } from '../core/oznake';
 import { izIso, uIso } from '../core/datumi';
@@ -22,7 +23,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
 
 @Component({
   selector: 'app-detalji',
-  imports: [
+  imports: [PovijestVjencanjaComponent, 
     DatePipe, CurrencyPipe, FormsModule, ReactiveFormsModule, MatCheckboxModule, MatDatepickerModule, RouterLink, MatCardModule, MatButtonModule, MatIconModule,
     MatMenuModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressBarModule, StatusOznakaComponent,
   ],
@@ -263,6 +264,8 @@ import { StatusOznakaComponent } from './status-oznaka.component';
               }
             </mat-card-content>
           </mat-card>
+
+          <app-povijest-vjencanja [vjencanje]="v" />
         </div>
       </div>
     }

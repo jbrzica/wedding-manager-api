@@ -27,10 +27,13 @@ public class KosService {
 
     private final VjencanjeRepository vjencanjeRepository;
     private final TrenutniKorisnik trenutniKorisnik;
+    private final PovijestServis povijest;
 
-    public KosService(VjencanjeRepository vjencanjeRepository, TrenutniKorisnik trenutniKorisnik) {
+    public KosService(VjencanjeRepository vjencanjeRepository, TrenutniKorisnik trenutniKorisnik,
+                      PovijestServis povijest) {
         this.vjencanjeRepository = vjencanjeRepository;
         this.trenutniKorisnik = trenutniKorisnik;
+        this.povijest = povijest;
     }
 
     @Transactional(readOnly = true)
@@ -45,13 +48,18 @@ public class KosService {
         if (vjencanjeRepository.vratiIzKosa(id, trenutniKorisnik.tvrtkaId()) == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vjenčanje nije u košu");
         }
+        vjencanjeRepository.findByIdAndTvrtkaId(id, trenutniKorisnik.tvrtkaId())
+                .ifPresent(v -> povijest.zabiljezi(v, "Vraćeno iz koša"));
     }
 
     @Transactional
     public void obrisiTrajno(Long id) {
+        String naziv = vjencanjeRepository.uKosu(trenutniKorisnik.tvrtkaId()).stream()
+                .filter(v -> v.getId().equals(id)).findFirst().map(PovijestServis::naziv).orElse(null);
         if (vjencanjeRepository.obrisiTrajno(id, trenutniKorisnik.tvrtkaId()) == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vjenčanje nije u košu");
         }
+        povijest.zabiljezi(id, naziv, "Obrisano zauvijek");
     }
 
     // Svaku noć, nakon backupa u 4:00, brišu se vjenčanja koja su u košu dulje od 30 dana.

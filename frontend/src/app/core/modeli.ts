@@ -111,6 +111,15 @@ export interface Dostupnost {
   suradnici: { id: number; ime: string; uloga: UlogaSuradnika | null; naVjencanju: string | null }[];
 }
 
+export interface Promjena {
+  id: number;
+  vrijeme: string;
+  korisnik: string;
+  vjencanjeId: number | null;
+  vjencanje: string | null;
+  opis: string;
+}
+
 export interface KosStavka {
   id: number;
   datum: string;

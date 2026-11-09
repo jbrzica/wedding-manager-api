@@ -20,10 +20,12 @@ public class UplataService {
 
     private final UplataRepository uplataRepository;
     private final VjencanjeService vjencanjeService;
+    private final PovijestServis povijest;
 
-    public UplataService(UplataRepository uplataRepository, VjencanjeService vjencanjeService) {
+    public UplataService(UplataRepository uplataRepository, VjencanjeService vjencanjeService, PovijestServis povijest) {
         this.uplataRepository = uplataRepository;
         this.vjencanjeService = vjencanjeService;
+        this.povijest = povijest;
     }
 
     public List<UplataResponse> dohvatiZaVjencanje(Long vjencanjeId) {
@@ -45,9 +47,13 @@ public class UplataService {
         uplata.setVjencanje(vjencanje);
         vjencanje.getUplate().add(uplata);
 
+        povijest.zabiljezi(vjencanje, "Dodana uplata: " + PovijestServis.vrsta(request.vrsta()) + " "
+                + PovijestServis.novac(request.iznos()));
+
         // Plaćena kapara znači da je termin potvrđen.
         if (request.vrsta() == VrstaUplate.KAPARA && vjencanje.getStatus() == StatusVjencanja.UPIT) {
             vjencanje.setStatus(StatusVjencanja.POTVRDENO);
+            povijest.zabiljezi(vjencanje, "Status: Upit → Potvrđeno (plaćena kapara)");
         }
 
         return UplataResponse.iz(uplataRepository.save(uplata));
@@ -60,6 +66,8 @@ public class UplataService {
                 .filter(u -> u.getVjencanje().getId().equals(vjencanjeId))
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Uplata s id " + uplataId + " ne postoji na ovom vjenčanju"));
+        povijest.zabiljezi(uplata.getVjencanje(), "Obrisana uplata: " + PovijestServis.vrsta(uplata.getVrsta()) + " "
+                + PovijestServis.novac(uplata.getIznos()));
         // orphanRemoval obriše uplatu kad je maknemo iz liste vjenčanja
         uplata.getVjencanje().getUplate().remove(uplata);
     }

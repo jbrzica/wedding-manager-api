@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  Dodatak, Dostupnost, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
+  Dodatak, Dostupnost, Promjena, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
   Uplata, VjencanjeDetalji, Zadatak, VjencanjeSazetak, VjencanjeZahtjev, VrstaUplate,
 } from './modeli';
 
@@ -185,6 +185,15 @@ export class ApiService {
   }
 
   // Tvrtka
+
+  povijestVjencanja(id: number): Observable<Promjena[]> {
+    return this.http.get<Promjena[]>(`/api/vjencanja/${id}/povijest`);
+  }
+
+  povijest(korisnikId: number | null): Observable<Promjena[]> {
+    const params = korisnikId ? new HttpParams().set('korisnikId', korisnikId) : undefined;
+    return this.http.get<Promjena[]>('/api/povijest', { params });
+  }
 
   tvrtka(): Observable<Tvrtka> {
     return this.http.get<Tvrtka>('/api/tvrtka');

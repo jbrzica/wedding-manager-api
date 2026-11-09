@@ -1,20 +1,24 @@
 import { Component, input } from '@angular/core';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { VjencanjeSazetak } from '../core/modeli';
+import { Prognoza, VjencanjeSazetak } from '../core/modeli';
+import { opisVremena } from '../core/vrijeme';
 import { izIso, danas as danasIso } from '../core/datumi';
 import { StatusOznakaComponent } from './status-oznaka.component';
 
 // Jedan red u popisu i kalendaru
 @Component({
   selector: 'app-vjencanje-red',
-  imports: [RouterLink, DatePipe, CurrencyPipe, MatIconModule, StatusOznakaComponent],
+  imports: [RouterLink, DatePipe, CurrencyPipe, DecimalPipe, MatIconModule, StatusOznakaComponent],
   template: `
     <a class="red" [class.otkazano]="v().status === 'OTKAZANO'" [routerLink]="['/vjencanja', v().id]">
       <div class="datum">
         <span class="dan">{{ datum() | date: 'd' }}</span>
         <span class="dan-tjedna">{{ datum() | date: 'EEE' }}</span>
+        @if (prognoza(); as p) {
+          <span class="vrijeme" [title]="vrijeme(p.kod).opis + ', ' + p.mjesto">{{ vrijeme(p.kod).ikona }} {{ p.max | number: '1.0-0' }}°</span>
+        }
       </div>
       <div class="glavno">
         <div class="imena">{{ v().mlada }} &amp; {{ v().mladozenja }}</div>
@@ -42,6 +46,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
     </a>
   `,
   styles: `
+    .vrijeme { font-size: 11px; margin-top: 2px; white-space: nowrap; color: var(--mat-sys-on-surface-variant); }
     .red {
       display: flex; align-items: center; gap: 16px; padding: 12px 16px;
       color: inherit; text-decoration: none;
@@ -68,6 +73,8 @@ import { StatusOznakaComponent } from './status-oznaka.component';
   `,
 })
 export class VjencanjeRedComponent {
+  prognoza = input<Prognoza | undefined>(undefined);
+  readonly vrijeme = opisVremena;
   v = input.required<VjencanjeSazetak>();
   datum = () => izIso(this.v().datum);
   proslo = () => this.v().datum < danasIso();

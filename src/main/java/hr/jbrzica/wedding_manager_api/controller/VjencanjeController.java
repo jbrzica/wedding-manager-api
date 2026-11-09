@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/vjencanja")
@@ -42,6 +43,11 @@ public class VjencanjeController {
     @GetMapping("/{id}/povijest")
     public List<PromjenaResponse> povijest(@PathVariable Long id) {
         return vjencanjeService.povijest(id);
+    }
+
+    @GetMapping("/prognoze")
+    public Map<Long, PrognozaResponse> prognoze() {
+        return vjencanjeService.prognoze();
     }
 
     @GetMapping("/dostupnost")

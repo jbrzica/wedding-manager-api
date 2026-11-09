@@ -111,6 +111,15 @@ export interface Dostupnost {
   suradnici: { id: number; ime: string; uloga: UlogaSuradnika | null; naVjencanju: string | null }[];
 }
 
+export interface Prognoza {
+  datum: string;
+  mjesto: string;
+  kod: number;
+  max: number;
+  min: number;
+  oborine: number | null;
+}
+
 export interface Promjena {
   id: number;
   vrijeme: string;

@@ -40,6 +40,7 @@ public class VjencanjeService {
     private final TvrtkaRepository tvrtkaRepository;
     private final TrenutniKorisnik trenutniKorisnik;
     private final PovijestServis povijest;
+    private final PrognozaServis prognozaServis;
 
     public VjencanjeService(VjencanjeRepository vjencanjeRepository,
                             UplataRepository uplataRepository,
@@ -50,8 +51,10 @@ public class VjencanjeService {
                             FinancijeKalkulator financijeKalkulator,
                             TvrtkaRepository tvrtkaRepository,
                             TrenutniKorisnik trenutniKorisnik,
-                            PovijestServis povijest) {
+                            PovijestServis povijest,
+                            PrognozaServis prognozaServis) {
         this.povijest = povijest;
+        this.prognozaServis = prognozaServis;
         this.vjencanjeRepository = vjencanjeRepository;
         this.uplataRepository = uplataRepository;
         this.clanEkipeRepository = clanEkipeRepository;
@@ -141,6 +144,19 @@ public class VjencanjeService {
         }
 
         return new PregledResponse(sljedeceSazetak, danaDoSljedeceg, brojOveGodine, ukupnoNenaplaceno);
+    }
+
+    // Prognoza za vjenčanja idućih 7 dana, po id-u vjenčanja
+    public Map<Long, PrognozaResponse> prognoze() {
+        LocalDate danas = LocalDate.now();
+        Map<Long, PrognozaResponse> rezultat = new HashMap<>();
+        for (Vjencanje v : vjencanjeRepository.findByTvrtkaIdAndDatumBetweenOrderByDatumAsc(
+                trenutniKorisnik.tvrtkaId(), danas, danas.plusDays(PrognozaServis.DANA_UNAPRIJED))) {
+            if (v.getStatus() != StatusVjencanja.OTKAZANO) {
+                prognozaServis.za(v.getLokacija(), v.getDatum()).ifPresent(p -> rezultat.put(v.getId(), p));
+            }
+        }
+        return rezultat;
     }
 
     public List<PromjenaResponse> povijest(Long id) {

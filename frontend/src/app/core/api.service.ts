@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  Dodatak, Dostupnost, Promjena, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
+  Dodatak, Dostupnost, Prognoza, Promjena, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
   Uplata, VjencanjeDetalji, Zadatak, VjencanjeSazetak, VjencanjeZahtjev, VrstaUplate,
 } from './modeli';
 
@@ -185,6 +185,11 @@ export class ApiService {
   }
 
   // Tvrtka
+
+  // Prognoza za vjenčanja idućih 7 dana, ključ je id vjenčanja
+  prognoze(): Observable<Record<number, Prognoza>> {
+    return this.http.get<Record<number, Prognoza>>('/api/vjencanja/prognoze');
+  }
 
   povijestVjencanja(id: number): Observable<Promjena[]> {
     return this.http.get<Promjena[]>(`/api/vjencanja/${id}/povijest`);

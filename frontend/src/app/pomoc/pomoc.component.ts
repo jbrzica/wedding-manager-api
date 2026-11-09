@@ -75,6 +75,13 @@ const TEME: Tema[] = [
     ],
   },
   {
+    id: 'prognoza', ikona: 'wb_sunny', naslov: 'Vremenska prognoza',
+    tekst: [
+      'Za vjenčanja u idućih 7 dana uz datum se prikazuje prognoza: vrijeme, najviša i najniža temperatura i vjerojatnost kiše.',
+      'Mjesto se prepoznaje iz lokacije. Najbolje je upisati i grad, npr. „Restoran Rubin, Đakovo“. Ako se mjesto ne prepozna, prognoza se ne prikazuje.',
+    ],
+  },
+  {
     id: 'trazenje', ikona: 'tune', naslov: 'Pretraga, filteri i provjera datuma',
     tekst: [
       'Na početnoj stranici pretražuješ po imenu, prezimenu ili lokaciji.',

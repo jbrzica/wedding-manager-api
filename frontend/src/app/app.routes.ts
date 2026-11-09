@@ -78,6 +78,10 @@ export const routes: Routes = [
         loadComponent: () => import('./vjencanja/kos.component').then((m) => m.KosComponent),
       },
       {
+        path: 'povijest',
+        loadComponent: () => import('./povijest/povijest-stranica.component').then((m) => m.PovijestStranicaComponent),
+      },
+      {
         path: 'postavke',
         loadComponent: () => import('./postavke/postavke.component').then((m) => m.PostavkeComponent),
       },

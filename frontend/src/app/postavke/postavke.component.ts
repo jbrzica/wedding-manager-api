@@ -15,7 +15,7 @@ import { PovijestTvrtkeComponent } from '../povijest/povijest-tvrtke.component';
       <app-izgled />
       <app-kalendar-link />
       <app-lozinka />
-      <app-povijest-tvrtke />
+      <app-povijest-tvrtke [sazeto]="true" />
     </div>
   `,
   styles: `

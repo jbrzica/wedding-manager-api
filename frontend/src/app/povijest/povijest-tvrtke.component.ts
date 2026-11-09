@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -8,9 +8,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../core/api.service';
 import { ClanTvrtke, Promjena } from '../core/modeli';
 
-const PRIKAZI = 15;
+const U_SAZETKU = 5;
+const PO_KORAKU = 30;
 
-// Sve promjene u tvrtki, s filtrom po osobi; vidi se i ono čega na vjenčanju više nema
+/**
+ * Promjene u tvrtki. U Postavkama samo zadnjih 5 (sazeto), a cijela povijest s filtrom
+ * po osobi je na posebnoj stranici. Vidi se i ono čega na vjenčanju više nema.
+ */
 @Component({
   selector: 'app-povijest-tvrtke',
   imports: [DatePipe, RouterLink, MatCardModule, MatButtonModule, MatFormFieldModule, MatSelectModule],
@@ -21,7 +25,7 @@ const PRIKAZI = 15;
         <mat-card-subtitle>tko je i kada mijenjao vjenčanja, cijene i uplate</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
-        @if (clanovi().length > 1) {
+        @if (!sazeto() && clanovi().length > 1) {
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="osoba">
             <mat-label>Osoba</mat-label>
             <mat-select [value]="korisnikId()" (selectionChange)="filtriraj($event.value)">
@@ -30,7 +34,7 @@ const PRIKAZI = 15;
             </mat-select>
           </mat-form-field>
         }
-        @for (p of (sve() ? promjene() : promjene().slice(0, prikazi)); track p.id) {
+        @for (p of promjene().slice(0, prikazano()); track p.id) {
           <div class="zapis">
             <span class="vrijeme">{{ p.vrijeme | date: 'd. M. yyyy. HH:mm' }}</span>
             <div>
@@ -51,8 +55,12 @@ const PRIKAZI = 15;
         } @empty {
           <p class="sivo">Još nema zabilježenih promjena.</p>
         }
-        @if (!sve() && promjene().length > prikazi) {
-          <button mat-button type="button" (click)="sve.set(true)">Prikaži više</button>
+        @if (sazeto()) {
+          @if (promjene().length > prikazano()) {
+            <a mat-button routerLink="/povijest">Prikaži svu povijest</a>
+          }
+        } @else if (promjene().length > prikazano()) {
+          <button mat-button type="button" (click)="prikazano.set(prikazano() + korak)">Prikaži još</button>
         }
       </mat-card-content>
     </mat-card>
@@ -72,17 +80,22 @@ export class PovijestTvrtkeComponent implements OnInit {
   promjene = signal<Promjena[]>([]);
   clanovi = signal<ClanTvrtke[]>([]);
   korisnikId = signal<number | null>(null);
-  sve = signal(false);
-  readonly prikazi = PRIKAZI;
+  sazeto = input(false);
+  prikazano = signal(PO_KORAKU);
+  readonly korak = PO_KORAKU;
 
   ngOnInit(): void {
-    this.api.tvrtka().subscribe((t) => this.clanovi.set(t.clanovi));
+    if (this.sazeto()) {
+      this.prikazano.set(U_SAZETKU);
+    } else {
+      this.api.tvrtka().subscribe((t) => this.clanovi.set(t.clanovi));
+    }
     this.ucitaj();
   }
 
   filtriraj(id: number | null): void {
     this.korisnikId.set(id);
-    this.sve.set(false);
+    this.prikazano.set(PO_KORAKU);
     this.ucitaj();
   }
 

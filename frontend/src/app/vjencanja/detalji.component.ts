@@ -105,7 +105,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
               @for (c of v.ekipa; track c.suradnikId) {
                 <div class="clan">
                   <div>
-                    <strong>{{ c.ime }}</strong> <span class="sivo">· {{ oznakeUloga[c.uloga] }}</span>
+                    <strong>{{ c.ime }}</strong><span class="sivo">&nbsp;· {{ oznakeUloga[c.uloga] }}</span>
                     @if (c.telefon) { <div><a [href]="'tel:' + c.telefon">{{ c.telefon }}</a></div> }
                   </div>
                   @if (c.honorar) { <span>{{ c.honorar | currency: 'EUR' }}</span> }

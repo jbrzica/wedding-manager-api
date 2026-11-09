@@ -62,7 +62,8 @@ import { porukaGreske } from '../core/greska';
             <div class="suradnik">
               <span>{{ s.ime }}@if (s.uloga) { <span class="sivo"> · {{ uloge[s.uloga] }}</span> }</span>
               @if (s.naVjencanju) {
-                <span class="oznaka zauzet">Zauzet ({{ s.naVjencanju }})</span>
+                <!-- Ime para samo kad taj dan ima više vjenčanja, inače je jasno o kojem se radi -->
+                <span class="oznaka zauzet">Zauzet@if (r.vjencanja.length > 1) { ({{ s.naVjencanju }}) }</span>
               } @else {
                 <span class="oznaka slobodan">Slobodan</span>
               }

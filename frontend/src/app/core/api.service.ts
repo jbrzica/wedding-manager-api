@@ -75,6 +75,10 @@ export class ApiService {
     return this.http.delete<void>(`/api/vjencanja/${id}`);
   }
 
+  prviKoraci(): Observable<{ paketi: boolean; suradnici: boolean; vjencanje: boolean; kalendar: boolean }> {
+    return this.http.get<{ paketi: boolean; suradnici: boolean; vjencanje: boolean; kalendar: boolean }>('/api/tvrtka/prvi-koraci');
+  }
+
   dostupnost(datum: string): Observable<Dostupnost> {
     return this.http.get<Dostupnost>('/api/vjencanja/dostupnost', { params: { datum } });
   }

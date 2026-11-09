@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { ProvjeraDatumaComponent } from './provjera-datuma.component';
+import { PrviKoraciComponent } from './prvi-koraci.component';
 import { ApiService } from '../core/api.service';
 import { FilterVjencanja, Pregled, Razdoblje, StatusVjencanja, VjencanjeSazetak } from '../core/modeli';
 import { STATUSI } from '../core/oznake';
@@ -61,7 +62,7 @@ interface Grupa {
   selector: 'app-popis',
   imports: [
     RouterLink, DatePipe, CurrencyPipe, MatCardModule, MatButtonModule, MatChipsModule, MatSelectModule,
-    MatFormFieldModule, MatInputModule, MatIconModule, MatProgressBarModule, VjencanjeRedComponent,
+    MatFormFieldModule, MatInputModule, MatIconModule, MatProgressBarModule, VjencanjeRedComponent, PrviKoraciComponent,
   ],
   template: `
     <div class="zaglavlje">
@@ -75,6 +76,8 @@ interface Grupa {
         </a>
       </div>
     </div>
+
+    <app-prvi-koraci />
 
     @if (pregled(); as p) {
       <div class="sazetak">
@@ -183,8 +186,13 @@ interface Grupa {
       @if (!ucitava() && !greska()) {
         <div class="prazno">
           <mat-icon>event_busy</mat-icon>
-          <p>Nema vjenčanja za prikaz.</p>
-          <a mat-stroked-button routerLink="/vjencanja/novo">Dodaj prvo vjenčanje</a>
+          @if (brojAktivnih()) {
+            <p>Nijedno vjenčanje ne odgovara filterima.</p>
+            <button mat-stroked-button type="button" (click)="ocisti()">Očisti filtere</button>
+          } @else {
+            <p>Ovdje će biti tvoja vjenčanja, poredana po mjesecima.</p>
+            <a mat-stroked-button routerLink="/vjencanja/novo">Dodaj prvo vjenčanje</a>
+          }
         </div>
       }
     }

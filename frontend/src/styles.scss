@@ -111,3 +111,6 @@ app-paketi, app-dodaci, app-suradnici, app-tvrtka {
   .forma { grid-template-columns: 1fr; }
   h1 { font-size: 24px; }
 }
+
+/* Podnaslov kartice manji i sivlji od naslova, da se ne čita kao glavni tekst */
+.mat-mdc-card-subtitle { color: var(--mat-sys-on-surface-variant) !important; font-size: 14px !important; font-weight: 400 !important; }

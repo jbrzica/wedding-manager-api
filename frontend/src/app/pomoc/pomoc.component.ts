@@ -120,6 +120,10 @@ const TEME: Tema[] = [
 ];
 
 const PITANJA: { pitanje: string; odgovor: string }[] = [
+  { pitanje: 'Kako uključiti tamni način?',
+    odgovor: 'Izbornik računa → Postavke → Izgled. „Kao uređaj” prati noćni način mobitela. Izbor vrijedi na uređaju na kojem ste ga promijenili.' },
+  { pitanje: 'Ne vidim sva vjenčanja na popisu.',
+    odgovor: 'Popis prikazuje 30 po 30. Na dnu kliknite Prikaži još. Provjerite i filtere iznad popisa.' },
   { pitanje: 'Promijenio sam cijenu paketa, a stara vjenčanja imaju staru cijenu?',
     odgovor: 'Tako je namjerno: na vjenčanju se pamti cijena koju ste dogovorili. Ako treba, promijeni cijenu na samom vjenčanju.' },
   { pitanje: 'Slučajno sam obrisao vjenčanje.',

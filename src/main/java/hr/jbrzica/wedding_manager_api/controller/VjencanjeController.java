@@ -4,6 +4,7 @@ import hr.jbrzica.wedding_manager_api.dto.*;
 import hr.jbrzica.wedding_manager_api.entity.StatusVjencanja;
 import hr.jbrzica.wedding_manager_api.service.VjencanjeService;
 import jakarta.validation.Valid;
+import org.springframework.data.web.PagedModel;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -23,14 +24,17 @@ public class VjencanjeController {
     }
 
     @GetMapping
-    public List<VjencanjeSazetak> popis(
+    public PagedModel<VjencanjeSazetak> popis(
             @RequestParam(defaultValue = "NADOLAZECA") Razdoblje razdoblje,
             @RequestParam(required = false) Integer godina,
             @RequestParam(name = "status", required = false) List<StatusVjencanja> statusi,
             @RequestParam(required = false) String pretraga,
             @RequestParam(defaultValue = "false") boolean nenaplaceno,
-            @RequestParam(defaultValue = "false") boolean kasniIsporuka) {
-        return vjencanjeService.popis(razdoblje, godina, statusi, pretraga, nenaplaceno, kasniIsporuka);
+            @RequestParam(defaultValue = "false") boolean kasniIsporuka,
+            @RequestParam(defaultValue = "0") int stranica,
+            @RequestParam(defaultValue = "50") int velicina) {
+        return new PagedModel<>(vjencanjeService.popis(razdoblje, godina, statusi, pretraga, nenaplaceno, kasniIsporuka,
+                stranica, velicina));
     }
 
     @GetMapping("/kalendar")

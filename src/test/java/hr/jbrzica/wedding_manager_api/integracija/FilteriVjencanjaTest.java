@@ -62,27 +62,55 @@ class FilteriVjencanjaTest {
     void viseStatusaOdjednom() throws Exception {
         mvc.perform(get("/api/vjencanja?razdoblje=SVA&status=UPIT&status=POTVRDENO")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[*].lokacija", containsInAnyOrder("Upit", "Placeno")));
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[*].lokacija", containsInAnyOrder("Upit", "Placeno")));
     }
 
     @Test
     void bezStatusaVracaSve() throws Exception {
         mvc.perform(get("/api/vjencanja?razdoblje=SVA").header("Authorization", "Bearer " + token))
-                .andExpect(jsonPath("$", hasSize(3)));
+                .andExpect(jsonPath("$.content", hasSize(3)));
     }
 
     @Test
     void samoNenaplacena() throws Exception {
         mvc.perform(get("/api/vjencanja?razdoblje=SVA&nenaplaceno=true").header("Authorization", "Bearer " + token))
-                .andExpect(jsonPath("$[*].lokacija", containsInAnyOrder("Upit", "Kasni")));
+                .andExpect(jsonPath("$.content[*].lokacija", containsInAnyOrder("Upit", "Kasni")));
     }
 
     @Test
     void samoKasniIsporuka() throws Exception {
         mvc.perform(get("/api/vjencanja?razdoblje=SVA&kasniIsporuka=true").header("Authorization", "Bearer " + token))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].lokacija").value("Kasni"));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].lokacija").value("Kasni"));
+    }
+
+    @Test
+    void pretragaPoImenuIPrezimenuZajedno() throws Exception {
+        mvc.perform(get("/api/vjencanja?razdoblje=SVA&pretraga=ana a").header("Authorization", "Bearer " + token))
+                .andExpect(jsonPath("$.content", hasSize(3)));
+        mvc.perform(get("/api/vjencanja?razdoblje=SVA&pretraga=KASNI").header("Authorization", "Bearer " + token))
+                .andExpect(jsonPath("$.content", hasSize(1)));
+    }
+
+    // Tri vjenčanja po dva na stranici: prva stranica dva najranija, druga zadnje
+    @Test
+    void poStranicama() throws Exception {
+        mvc.perform(get("/api/vjencanja?razdoblje=SVA&velicina=2").header("Authorization", "Bearer " + token))
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[0].lokacija").value("Kasni"))
+                .andExpect(jsonPath("$.content[1].lokacija").value("Upit"))
+                .andExpect(jsonPath("$.page.totalElements").value(3))
+                .andExpect(jsonPath("$.page.totalPages").value(2));
+        mvc.perform(get("/api/vjencanja?razdoblje=SVA&velicina=2&stranica=1").header("Authorization", "Bearer " + token))
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].lokacija").value("Placeno"));
+    }
+
+    @Test
+    void velicinaStraniceJeOgranicena() throws Exception {
+        mvc.perform(get("/api/vjencanja?razdoblje=SVA&velicina=100000").header("Authorization", "Bearer " + token))
+                .andExpect(jsonPath("$.page.size").value(100));
     }
 
     private long novo(String lokacija, String datum, String rokIsporuke) throws Exception {

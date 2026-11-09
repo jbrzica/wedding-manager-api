@@ -2,7 +2,9 @@ package hr.jbrzica.wedding_manager_api.repository;
 
 import hr.jbrzica.wedding_manager_api.entity.StatusVjencanja;
 import hr.jbrzica.wedding_manager_api.entity.Vjencanje;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,17 +16,11 @@ import java.util.List;
 import java.util.Optional;
 
 // Svaki upit traži i tvrtku: korisnik vidi samo vjenčanja svoje tvrtke.
-public interface VjencanjeRepository extends JpaRepository<Vjencanje, Long> {
+public interface VjencanjeRepository extends JpaRepository<Vjencanje, Long>, JpaSpecificationExecutor<Vjencanje> {
 
     Optional<Vjencanje> findByIdAndTvrtkaId(Long id, Long tvrtkaId);
 
     long countByTvrtkaId(Long tvrtkaId);
-
-    List<Vjencanje> findByTvrtkaIdOrderByDatumAsc(Long tvrtkaId);
-
-    List<Vjencanje> findByTvrtkaIdAndDatumGreaterThanEqualOrderByDatumAsc(Long tvrtkaId, LocalDate datum);
-
-    List<Vjencanje> findByTvrtkaIdAndDatumLessThanOrderByDatumDesc(Long tvrtkaId, LocalDate datum);
 
     List<Vjencanje> findByTvrtkaIdAndDatumBetweenOrderByDatumAsc(Long tvrtkaId, LocalDate od, LocalDate doDatuma);
 
@@ -37,6 +33,26 @@ public interface VjencanjeRepository extends JpaRepository<Vjencanje, Long> {
 
     long countByTvrtkaIdAndDatumBetweenAndStatusNotIn(
             Long tvrtkaId, LocalDate od, LocalDate doDatuma, Collection<StatusVjencanja> statusi);
+
+    // ---------- statistika ----------
+
+    // Paket se učita istim upitom (JOIN), a ne posebno za svako vjenčanje
+    @EntityGraph(attributePaths = "paket")
+    @Query("""
+            SELECT v FROM Vjencanje v
+            WHERE v.tvrtka.id = :tvrtkaId AND v.datum BETWEEN :od AND :doDatuma
+            ORDER BY v.datum
+            """)
+    List<Vjencanje> zaStatistiku(@Param("tvrtkaId") Long tvrtkaId, @Param("od") LocalDate od, @Param("doDatuma") LocalDate doDatuma);
+
+    @Query("""
+            SELECT new hr.jbrzica.wedding_manager_api.repository.BrojPoNazivu(d.naziv, COUNT(v))
+            FROM Vjencanje v JOIN v.dodaci d
+            WHERE v.id IN :ids
+            GROUP BY d.naziv
+            ORDER BY COUNT(v) DESC
+            """)
+    List<BrojPoNazivu> dodaciPoNazivu(@Param("ids") Collection<Long> ids);
 
     // ---------- koš ----------
     // Obični upiti ne vide obrisana vjenčanja (@SQLRestriction na entitetu), pa koš koristi izravan SQL.

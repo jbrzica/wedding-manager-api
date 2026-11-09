@@ -86,9 +86,9 @@ class IzolacijaTvrtkiTest {
     void tudjeVjencanjeNijeUPopisu() throws Exception {
         mvc.perform(get("/api/vjencanja?razdoblje=SVA").header("Authorization", "Bearer " + tokenB))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$.content", hasSize(0)));
         mvc.perform(get("/api/vjencanja?razdoblje=SVA").header("Authorization", "Bearer " + tokenA))
-                .andExpect(jsonPath("$", hasSize(1)));
+                .andExpect(jsonPath("$.content", hasSize(1)));
     }
 
     @Test

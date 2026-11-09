@@ -156,6 +156,12 @@ export interface Financije {
   zarada: number;
 }
 
+// Jedna stranica popisa, kako je vraća Spring (PagedModel)
+export interface Stranica<T> {
+  content: T[];
+  page: { size: number; number: number; totalElements: number; totalPages: number };
+}
+
 export interface VjencanjeSazetak {
   id: number;
   datum: string;

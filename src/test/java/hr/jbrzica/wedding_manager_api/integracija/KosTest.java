@@ -77,7 +77,7 @@ class KosTest {
         mvc.perform(get("/api/vjencanja/" + vjencanje).header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound());
         mvc.perform(get("/api/vjencanja?razdoblje=SVA").header("Authorization", "Bearer " + token))
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$.content", hasSize(0)));
         mvc.perform(get("/api/kos").header("Authorization", "Bearer " + token))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].mlada").value("Ana A"))

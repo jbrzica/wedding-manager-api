@@ -7,7 +7,8 @@ mat-card-content { padding-top: 8px; }
 .plus { color: var(--wm-uspjeh); }
 .minus { color: var(--mat-sys-error); }
 
-.kartice { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.kartice { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat.upozorenje .vrijednost { color: var(--wm-upozorenje); }
 .stat { padding: 16px; display: flex; flex-direction: column; gap: 2px; }
 .oznaka { font-size: 12px; text-transform: uppercase; color: var(--mat-sys-on-surface-variant); }
 .vrijednost { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.25; font-variant-numeric: tabular-nums; }
@@ -19,10 +20,12 @@ mat-card-content { padding-top: 8px; }
 .legenda:first-child { margin-left: 0; }
 .legenda.dogovoreno { background: var(--mat-sys-primary-container); }
 .legenda.uplaceno { background: var(--mat-sys-primary); }
+.legenda.prosla { height: 2px; vertical-align: 3px; background: var(--mat-sys-on-surface-variant); }
 .graf { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; height: 220px; }
 .stupac { display: flex; flex-direction: column; align-items: center; min-width: 0; }
 .iznos { font-size: 11px; height: 16px; color: var(--mat-sys-on-surface-variant); white-space: nowrap; }
-.traka { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.traka { flex: 1; width: 100%; display: flex; align-items: flex-end; position: relative; }
+.crta-prosla { position: absolute; left: -2px; right: -2px; height: 2px; background: var(--mat-sys-on-surface-variant); opacity: .7; z-index: 1; }
 .traka .dogovoreno {
   width: 100%; background: var(--mat-sys-primary-container); border-radius: 4px 4px 0 0;
   display: flex; align-items: flex-end; overflow: hidden;

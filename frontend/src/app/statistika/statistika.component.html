@@ -19,7 +19,11 @@
     <mat-card appearance="outlined" class="stat">
       <span class="oznaka">Vjenčanja</span>
       <span class="vrijednost">{{ s.ovaGodina.broj }}</span>
-      <span class="detalj">prošle godine {{ s.proslaGodina.broj }}</span>
+      @if (promjena(s.ovaGodina.broj, s.proslaGodina.broj); as p) {
+        <span class="detalj" [class.plus]="p > 0" [class.minus]="p < 0">{{ p > 0 ? '+' : '' }}{{ p }} % · prošle {{ s.proslaGodina.broj }}</span>
+      } @else {
+        <span class="detalj">prošle godine {{ s.proslaGodina.broj }}</span>
+      }
     </mat-card>
     <mat-card appearance="outlined" class="stat">
       <span class="oznaka">Prihod</span>
@@ -33,12 +37,26 @@
     <mat-card appearance="outlined" class="stat">
       <span class="oznaka">Zarada</span>
       <span class="vrijednost">{{ s.ovaGodina.zarada | currency: 'EUR' : 'symbol' : '1.0-0' }}</span>
-      <span class="detalj">nakon honorara i troškova</span>
+      @if (promjena(s.ovaGodina.zarada, s.proslaGodina.zarada); as p) {
+        <span class="detalj" [class.plus]="p > 0" [class.minus]="p < 0">{{ p > 0 ? '+' : '' }}{{ p }} % prema prošloj</span>
+      } @else {
+        <span class="detalj">nakon honorara i troškova</span>
+      }
     </mat-card>
     <mat-card appearance="outlined" class="stat">
       <span class="oznaka">Prosječna cijena</span>
       <span class="vrijednost">{{ s.ovaGodina.prosjecnaCijena | currency: 'EUR' : 'symbol' : '1.0-0' }}</span>
       <span class="detalj">prošle godine {{ s.proslaGodina.prosjecnaCijena | currency: 'EUR' : 'symbol' : '1.0-0' }}</span>
+    </mat-card>
+    <mat-card appearance="outlined" class="stat">
+      <span class="oznaka">Upiti → posao</span>
+      <span class="vrijednost">{{ s.upiti.ukupno ? ((s.upiti.posao / s.upiti.ukupno) * 100 | number: '1.0-0') + ' %' : '–' }}</span>
+      <span class="detalj">{{ s.upiti.posao }} od {{ s.upiti.ukupno }} · {{ s.upiti.otvoreno }} čeka · {{ s.upiti.otkazano }} otkazano</span>
+    </mat-card>
+    <mat-card appearance="outlined" class="stat" [class.upozorenje]="s.zaNaplatiti > 0">
+      <span class="oznaka">Još za naplatiti</span>
+      <span class="vrijednost">{{ s.zaNaplatiti | currency: 'EUR' : 'symbol' : '1.0-0' }}</span>
+      <span class="detalj">od dogovorenog posla ove godine</span>
     </mat-card>
   </div>
 
@@ -48,6 +66,7 @@
       <mat-card-subtitle>
         <span class="legenda dogovoreno"></span> dogovoreno
         <span class="legenda uplaceno"></span> uplaćeno
+        <span class="legenda prosla"></span> prošla godina
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
@@ -56,6 +75,10 @@
           <div class="stupac" [title]="mjeseci[m.mjesec - 1] + ': ' + m.broj + ' vjenčanja, dogovoreno ' + (m.dogovoreno | currency: 'EUR') + ', uplaćeno ' + (m.uplaceno | currency: 'EUR')">
             <span class="iznos">{{ m.dogovoreno > 0 ? (m.dogovoreno / 1000 | number: '1.0-1') + 'k' : '' }}</span>
             <div class="traka">
+              @if (s.proslaGodinaPoMjesecima[m.mjesec - 1] > 0) {
+                <div class="crta-prosla" [style.bottom.%]="visina(s.proslaGodinaPoMjesecima[m.mjesec - 1])"
+                     [title]="'Prošla godina: ' + (s.proslaGodinaPoMjesecima[m.mjesec - 1] | currency: 'EUR' : 'symbol' : '1.0-0')"></div>
+              }
               <div class="dogovoreno" [style.height.%]="visina(m.dogovoreno)">
                 <div class="uplaceno" [style.height.%]="m.dogovoreno ? (m.uplaceno / m.dogovoreno) * 100 : 0"></div>
               </div>

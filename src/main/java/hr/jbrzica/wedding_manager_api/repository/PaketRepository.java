@@ -12,4 +12,6 @@ public interface PaketRepository extends JpaRepository<Paket, Long> {
     List<Paket> findByTvrtkaIdOrderByNazivAsc(Long tvrtkaId);
 
     Optional<Paket> findByIdAndTvrtkaId(Long id, Long tvrtkaId);
+
+    long countByTvrtkaId(Long tvrtkaId);
 }

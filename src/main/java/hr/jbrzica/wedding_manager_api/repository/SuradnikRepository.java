@@ -13,4 +13,6 @@ public interface SuradnikRepository extends JpaRepository<Suradnik, Long> {
     Optional<Suradnik> findByIdAndTvrtkaId(Long id, Long tvrtkaId);
 
     Optional<Suradnik> findByPristupniToken(String pristupniToken);
+
+    long countByTvrtkaId(Long tvrtkaId);
 }

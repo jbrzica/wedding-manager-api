@@ -103,6 +103,24 @@ export interface Uplata {
   opis?: string | null;
 }
 
+export interface Dostupnost {
+  datum: string;
+  slobodno: boolean;
+  vjencanja: VjencanjeSazetak[];
+  blizu: VjencanjeSazetak[];
+  suradnici: { id: number; ime: string; uloga: UlogaSuradnika | null; naVjencanju: string | null }[];
+}
+
+export interface KosStavka {
+  id: number;
+  datum: string;
+  mlada: string | null;
+  mladozenja: string | null;
+  lokacija: string | null;
+  obrisano: string;
+  trajnoBrisanje: string;
+}
+
 export interface Zadatak {
   id: number;
   naziv: string;
@@ -195,6 +213,9 @@ export interface Statistika {
   dodaci: { naziv: string; broj: number }[];
   subote: { datum: string; dogovoreno: number; upita: number }[];
   honorari: { ime: string; brojVjencanja: number; ukupno: number }[];
+  upiti: { ukupno: number; posao: number; otkazano: number; otvoreno: number };
+  zaNaplatiti: number;
+  proslaGodinaPoMjesecima: number[];
 }
 
 export interface ClanTvrtke {

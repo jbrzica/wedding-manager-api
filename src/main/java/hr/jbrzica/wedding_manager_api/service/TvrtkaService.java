@@ -6,6 +6,9 @@ import hr.jbrzica.wedding_manager_api.entity.SvrhaKoda;
 import hr.jbrzica.wedding_manager_api.entity.Tvrtka;
 import hr.jbrzica.wedding_manager_api.entity.UlogaKorisnika;
 import hr.jbrzica.wedding_manager_api.repository.KorisnikRepository;
+import hr.jbrzica.wedding_manager_api.repository.PaketRepository;
+import hr.jbrzica.wedding_manager_api.repository.SuradnikRepository;
+import hr.jbrzica.wedding_manager_api.repository.VjencanjeRepository;
 import hr.jbrzica.wedding_manager_api.repository.TvrtkaRepository;
 import hr.jbrzica.wedding_manager_api.security.KorisnikPrincipal;
 import hr.jbrzica.wedding_manager_api.security.TrenutniKorisnik;
@@ -24,13 +27,30 @@ public class TvrtkaService {
     private final KorisnikRepository korisnikRepository;
     private final KodServis kodServis;
     private final TrenutniKorisnik trenutniKorisnik;
+    private final PaketRepository paketRepository;
+    private final SuradnikRepository suradnikRepository;
+    private final VjencanjeRepository vjencanjeRepository;
 
     public TvrtkaService(TvrtkaRepository tvrtkaRepository, KorisnikRepository korisnikRepository,
-                         KodServis kodServis, TrenutniKorisnik trenutniKorisnik) {
+                         KodServis kodServis, TrenutniKorisnik trenutniKorisnik, PaketRepository paketRepository,
+                         SuradnikRepository suradnikRepository, VjencanjeRepository vjencanjeRepository) {
         this.tvrtkaRepository = tvrtkaRepository;
         this.korisnikRepository = korisnikRepository;
         this.kodServis = kodServis;
         this.trenutniKorisnik = trenutniKorisnik;
+        this.paketRepository = paketRepository;
+        this.suradnikRepository = suradnikRepository;
+        this.vjencanjeRepository = vjencanjeRepository;
+    }
+
+    // Kalendar se računa kao povezan čim je link za kalendar jednom otvoren u Postavkama
+    public PrviKoraciResponse prviKoraci() {
+        Long tvrtkaId = trenutniKorisnik.tvrtkaId();
+        return new PrviKoraciResponse(
+                paketRepository.countByTvrtkaId(tvrtkaId) > 0,
+                suradnikRepository.countByTvrtkaId(tvrtkaId) > 0,
+                vjencanjeRepository.countByTvrtkaId(tvrtkaId) > 0,
+                mojaTvrtka().getKalendarToken() != null);
     }
 
     public TvrtkaResponse moja() {

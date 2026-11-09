@@ -28,6 +28,10 @@ public class SuradnikService {
         this.trenutniKorisnik = trenutniKorisnik;
     }
 
+    public List<Suradnik> sviEntiteti() {
+        return suradnikRepository.findByTvrtkaIdOrderByImeAsc(trenutniKorisnik.tvrtkaId());
+    }
+
     public List<SuradnikResponse> dohvatiSve() {
         return suradnikRepository.findByTvrtkaIdOrderByImeAsc(trenutniKorisnik.tvrtkaId()).stream()
                 .map(SuradnikResponse::iz)

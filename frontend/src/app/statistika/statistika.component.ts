@@ -31,7 +31,9 @@ export class StatistikaComponent implements OnInit {
   readonly izIso = izIso;
 
   // Najveći mjesec određuje visinu grafa
-  najviseMjesec = computed(() => Math.max(1, ...(this.s()?.poMjesecima.map((m) => m.dogovoreno) ?? [0])));
+  najviseMjesec = computed(() => Math.max(1,
+    ...(this.s()?.poMjesecima.map((m) => m.dogovoreno) ?? [0]),
+    ...(this.s()?.proslaGodinaPoMjesecima ?? [0])));
   najviseIzvor = computed(() => Math.max(1, ...(this.s()?.izvori.map((i) => i.upita) ?? [0])));
   slobodnihSubota = computed(() => this.s()?.subote.filter((x) => x.dogovoreno === 0).length ?? 0);
 

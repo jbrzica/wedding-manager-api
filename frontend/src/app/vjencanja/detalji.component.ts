@@ -466,11 +466,17 @@ export class DetaljiComponent implements OnInit {
   }
 
   obrisi(): void {
-    if (!confirm('Obrisati cijelo vjenčanje? Ovo se ne može poništiti.')) {
+    if (!confirm('Premjestiti vjenčanje u koš? Iz koša ga možete vratiti 30 dana.')) {
       return;
     }
-    this.api.obrisiVjencanje(this.v()!.id).subscribe({
-      next: () => this.router.navigate(['/']),
+    const id = this.v()!.id;
+    this.api.obrisiVjencanje(id).subscribe({
+      next: () => {
+        this.router.navigate(['/']);
+        this.snack.open('Vjenčanje je u košu.', 'Poništi', { duration: 8000 })
+          .onAction()
+          .subscribe(() => this.api.vratiIzKosa(id).subscribe(() => this.router.navigate(['/vjencanja', id])));
+      },
       error: (err) => this.poruka(porukaGreske(err)),
     });
   }

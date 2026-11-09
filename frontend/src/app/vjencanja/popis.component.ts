@@ -11,6 +11,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDialog } from '@angular/material/dialog';
+import { ProvjeraDatumaComponent } from './provjera-datuma.component';
 import { ApiService } from '../core/api.service';
 import { FilterVjencanja, Pregled, Razdoblje, StatusVjencanja, VjencanjeSazetak } from '../core/modeli';
 import { STATUSI } from '../core/oznake';
@@ -64,9 +66,14 @@ interface Grupa {
   template: `
     <div class="zaglavlje">
       <h1>Vjenčanja</h1>
-      <a mat-flat-button routerLink="/vjencanja/novo" class="samo-desktop">
-        <mat-icon>add</mat-icon> Novo vjenčanje
-      </a>
+      <div class="gumbi-zaglavlja">
+        <button mat-stroked-button type="button" (click)="provjeriDatum()">
+          <mat-icon>event_available</mat-icon> Provjeri datum
+        </button>
+        <a mat-flat-button routerLink="/vjencanja/novo" class="samo-desktop">
+          <mat-icon>add</mat-icon> Novo vjenčanje
+        </a>
+      </div>
     </div>
 
     @if (pregled(); as p) {
@@ -183,7 +190,8 @@ interface Grupa {
     }
   `,
   styles: `
-    .zaglavlje { display: flex; align-items: center; justify-content: space-between; }
+    .zaglavlje { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .gumbi-zaglavlja { display: flex; gap: 8px; }
     .sazetak { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
     .stat { padding: 16px; display: flex; flex-direction: column; gap: 2px; }
     .oznaka { font-size: 12px; text-transform: uppercase; color: var(--mat-sys-on-surface-variant); }
@@ -214,6 +222,7 @@ interface Grupa {
 })
 export class PopisComponent implements OnInit {
   private api = inject(ApiService);
+  private dialog = inject(MatDialog);
 
   pregled = signal<Pregled | null>(null);
   vjencanja = signal<VjencanjeSazetak[]>([]);
@@ -299,6 +308,10 @@ export class PopisComponent implements OnInit {
   ngOnInit(): void {
     this.api.pregled().subscribe((p) => this.pregled.set(p));
     this.ucitaj();
+  }
+
+  provjeriDatum(): void {
+    this.dialog.open(ProvjeraDatumaComponent, { width: '480px', maxWidth: '95vw', autoFocus: false });
   }
 
   postavi(promjena: Partial<FilterVjencanja>): void {

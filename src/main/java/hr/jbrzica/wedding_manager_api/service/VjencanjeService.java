@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -139,6 +140,29 @@ public class VjencanjeService {
         return new PregledResponse(sljedeceSazetak, danaDoSljedeceg, brojOveGodine, ukupnoNenaplaceno);
     }
 
+    // Brza provjera datuma: tko je taj dan zauzet i ima li vjenčanja koji dan prije ili poslije
+    public DostupnostResponse dostupnost(LocalDate datum) {
+        Long tvrtkaId = trenutniKorisnik.tvrtkaId();
+        List<Vjencanje> tjedan = vjencanjeRepository.findByTvrtkaIdAndDatumBetweenOrderByDatumAsc(
+                        tvrtkaId, datum.minusDays(3), datum.plusDays(3)).stream()
+                .filter(v -> v.getStatus() != StatusVjencanja.OTKAZANO)
+                .toList();
+        List<Vjencanje> tajDan = tjedan.stream().filter(v -> v.getDatum().equals(datum)).toList();
+        List<Vjencanje> blizu = tjedan.stream().filter(v -> !v.getDatum().equals(datum)).toList();
+
+        Map<Long, String> zauzeti = new HashMap<>();
+        for (ClanEkipe c : clanEkipeRepository.findByVjencanjeDatumAndVjencanjeTvrtkaIdAndVjencanjeObrisanoIsNull(datum, tvrtkaId)) {
+            if (c.getVjencanje().getStatus() != StatusVjencanja.OTKAZANO) {
+                zauzeti.putIfAbsent(c.getSuradnik().getId(), parMladenaca(c.getVjencanje()));
+            }
+        }
+        List<DostupnostResponse.SuradnikDostupnost> suradnici = suradnikService.sviEntiteti().stream()
+                .map(s -> new DostupnostResponse.SuradnikDostupnost(s.getId(), s.getIme(), s.getUloga(), zauzeti.get(s.getId())))
+                .toList();
+
+        return new DostupnostResponse(datum, tajDan.isEmpty(), uSazetke(tajDan), uSazetke(blizu), suradnici);
+    }
+
     public UpozorenjaResponse provjeriPreklapanja(LocalDate datum, List<Long> suradnikIds, Long izuzmiId) {
         List<String> upozorenja = new ArrayList<>();
         Long tvrtkaId = trenutniKorisnik.tvrtkaId();
@@ -150,7 +174,7 @@ public class VjencanjeService {
         }
 
         if (suradnikIds != null && !suradnikIds.isEmpty()) {
-            for (ClanEkipe clan : clanEkipeRepository.findBySuradnikIdInAndVjencanjeDatumAndVjencanjeTvrtkaId(
+            for (ClanEkipe clan : clanEkipeRepository.findBySuradnikIdInAndVjencanjeDatumAndVjencanjeTvrtkaIdAndVjencanjeObrisanoIsNull(
                     suradnikIds, datum, tvrtkaId)) {
                 Vjencanje drugo = clan.getVjencanje();
                 if (!drugo.getId().equals(izuzmiId) && drugo.getStatus() != StatusVjencanja.OTKAZANO) {
@@ -201,10 +225,10 @@ public class VjencanjeService {
         return uDetalje(vjencanje);
     }
 
+    // Ne briše se odmah: ide u koš, odakle se može vratiti 30 dana
     @Transactional
     public void obrisi(Long id) {
-        // raspored, ekipa i uplate brišu se zajedno s vjenčanjem (cascade)
-        vjencanjeRepository.delete(dohvatiEntitet(id));
+        dohvatiEntitet(id).setObrisano(Instant.now());
     }
 
     // ---------- pomoćne metode ----------

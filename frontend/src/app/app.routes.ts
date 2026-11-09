@@ -70,6 +70,14 @@ export const routes: Routes = [
         loadComponent: () => import('./paketi/paketi-ekipa.component').then((m) => m.PaketiEkipaComponent),
       },
       {
+        path: 'pomoc',
+        loadComponent: () => import('./pomoc/pomoc.component').then((m) => m.PomocComponent),
+      },
+      {
+        path: 'kos',
+        loadComponent: () => import('./vjencanja/kos.component').then((m) => m.KosComponent),
+      },
+      {
         path: 'postavke',
         loadComponent: () => import('./postavke/postavke.component').then((m) => m.PostavkeComponent),
       },

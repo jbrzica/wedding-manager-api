@@ -78,7 +78,7 @@ public class SuradnikLinkService {
     // Provjera tvrtke je dodatna zaštita: suradnik se ionako može dodati samo na vjenčanja svoje tvrtke.
     private List<ClanEkipe> mojaMjesta(Suradnik s) {
         Long tvrtkaId = s.getTvrtka().getId();
-        return clanEkipeRepository.findBySuradnikIdOrderByVjencanjeDatumAsc(s.getId()).stream()
+        return clanEkipeRepository.findBySuradnikIdAndVjencanjeObrisanoIsNullOrderByVjencanjeDatumAsc(s.getId()).stream()
                 .filter(c -> c.getVjencanje().getTvrtka().getId().equals(tvrtkaId))
                 .filter(c -> c.getVjencanje().getStatus() != StatusVjencanja.OTKAZANO)
                 .toList();

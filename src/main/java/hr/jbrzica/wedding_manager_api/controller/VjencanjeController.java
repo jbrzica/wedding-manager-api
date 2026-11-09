@@ -39,6 +39,11 @@ public class VjencanjeController {
         return vjencanjeService.kalendar(od, doDatuma);
     }
 
+    @GetMapping("/dostupnost")
+    public DostupnostResponse dostupnost(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate datum) {
+        return vjencanjeService.dostupnost(datum);
+    }
+
     @GetMapping("/upozorenja")
     public UpozorenjaResponse upozorenja(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate datum,

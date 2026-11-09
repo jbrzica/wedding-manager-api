@@ -105,7 +105,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
               @for (c of v.ekipa; track c.suradnikId) {
                 <div class="clan">
                   <div>
-                    <strong>{{ c.ime }}</strong> <span class="sivo">· {{ oznakeUloga[c.uloga] }}</span>
+                    <strong>{{ c.ime }}</strong><span class="sivo">&nbsp;· {{ oznakeUloga[c.uloga] }}</span>
                     @if (c.telefon) { <div><a [href]="'tel:' + c.telefon">{{ c.telefon }}</a></div> }
                   </div>
                   @if (c.honorar) { <span>{{ c.honorar | currency: 'EUR' }}</span> }
@@ -466,11 +466,17 @@ export class DetaljiComponent implements OnInit {
   }
 
   obrisi(): void {
-    if (!confirm('Obrisati cijelo vjenčanje? Ovo se ne može poništiti.')) {
+    if (!confirm('Premjestiti vjenčanje u koš? Iz koša ga možete vratiti 30 dana.')) {
       return;
     }
-    this.api.obrisiVjencanje(this.v()!.id).subscribe({
-      next: () => this.router.navigate(['/']),
+    const id = this.v()!.id;
+    this.api.obrisiVjencanje(id).subscribe({
+      next: () => {
+        this.router.navigate(['/']);
+        this.snack.open('Vjenčanje je u košu.', 'Poništi', { duration: 8000 })
+          .onAction()
+          .subscribe(() => this.api.vratiIzKosa(id).subscribe(() => this.router.navigate(['/vjencanja', id])));
+      },
       error: (err) => this.poruka(porukaGreske(err)),
     });
   }

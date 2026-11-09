@@ -29,7 +29,7 @@ import { porukaGreske } from '../core/greska';
           <button mat-icon-button (click)="obrisi(p)" aria-label="Obriši"><mat-icon>delete_outline</mat-icon></button>
         </div>
       } @empty {
-        <p class="prazno">Još nema paketa.</p>
+        <p class="prazno">Još nemaš paketa. Upiši npr. „Cijeli dan“ ili „Samo crkva“ s cijenom; kad ga odabereš na vjenčanju, cijena se upiše sama.</p>
       }
     </mat-card>
 

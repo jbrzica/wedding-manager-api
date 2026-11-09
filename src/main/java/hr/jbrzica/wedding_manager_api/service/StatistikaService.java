@@ -47,8 +47,31 @@ public class StatistikaService {
                 paketi(posaoOve),
                 dodaci(posaoOve),
                 subote(godina, sveOve),
-                honorari(posaoOve)
+                honorari(posaoOve),
+                upiti(sveOve),
+                zaNaplatiti(posaoOve),
+                poMjesecima(posaoProsle).stream().map(Mjesec::dogovoreno).toList()
         );
+    }
+
+    private Upiti upiti(List<Vjencanje> sva) {
+        long posao = sva.stream().filter(StatistikaService::jePosao).count();
+        long otkazano = sva.stream().filter(v -> v.getStatus() == StatusVjencanja.OTKAZANO).count();
+        long otvoreno = sva.stream().filter(v -> v.getStatus() == StatusVjencanja.UPIT).count();
+        return new Upiti(sva.size(), posao, otkazano, otvoreno);
+    }
+
+    // Koliko od dogovorenog posla te godine još nije uplaćeno
+    private BigDecimal zaNaplatiti(List<Vjencanje> posao) {
+        BigDecimal ukupno = BigDecimal.ZERO;
+        for (Vjencanje v : posao) {
+            BigDecimal uplaceno = v.getUplate().stream().map(Uplata::getIznos).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal preostalo = v.getDogovorenaCijena().subtract(uplaceno);
+            if (preostalo.signum() > 0) {
+                ukupno = ukupno.add(preostalo);
+            }
+        }
+        return ukupno;
     }
 
     // Upit i otkazano vjenčanje nisu dogovoreni posao

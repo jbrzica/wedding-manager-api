@@ -42,7 +42,7 @@ import { porukaGreske } from '../core/greska';
           <button mat-icon-button (click)="obrisi(s)" aria-label="Obriši"><mat-icon>delete_outline</mat-icon></button>
         </div>
       } @empty {
-        <p class="prazno">Još nema suradnika.</p>
+        <p class="prazno">Još nemaš suradnika. Dodaj snimatelje, fotografe ili asistente s kojima radiš, pa ih možeš stavljati u ekipu vjenčanja.</p>
       }
     </mat-card>
 

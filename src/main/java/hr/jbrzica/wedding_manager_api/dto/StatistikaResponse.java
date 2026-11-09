@@ -15,8 +15,15 @@ public record StatistikaResponse(
         List<Stavka> paketi,
         List<Stavka> dodaci,
         List<Subota> subote,
-        List<Honorar> honorari
+        List<Honorar> honorari,
+        Upiti upiti,
+        BigDecimal zaNaplatiti,
+        List<BigDecimal> proslaGodinaPoMjesecima
 ) {
+    // Svi upisani termini godine: koliko je postalo posao, koliko otkazano, koliko još čeka odgovor
+    public record Upiti(long ukupno, long posao, long otkazano, long otvoreno) {
+    }
+
     public record SazetakGodine(long broj, BigDecimal prihod, BigDecimal zarada, BigDecimal prosjecnaCijena) {
     }
 

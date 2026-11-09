@@ -4,8 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,6 +16,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "vjencanje")
+// Vjenčanja u košu ne vidi nijedan JPA upit; koš ih dohvaća posebnim SQL upitima u repozitoriju
+@SQLRestriction("obrisano IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,6 +26,9 @@ public class Vjencanje {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    // Kad je premješteno u koš; null = vjenčanje je aktivno
+    private Instant obrisano;
 
     @Column(nullable = false)
     private LocalDate datum;

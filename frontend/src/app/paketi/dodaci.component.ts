@@ -28,7 +28,7 @@ import { porukaGreske } from '../core/greska';
           <button mat-icon-button (click)="obrisi(p)" aria-label="Obriši"><mat-icon>delete_outline</mat-icon></button>
         </div>
       } @empty {
-        <p class="prazno">Još nema dodataka.</p>
+        <p class="prazno">Još nemaš dodataka. To su stvari koje se doplaćuju uz paket, npr. dron, album ili druga kamera.</p>
       }
     </mat-card>
 

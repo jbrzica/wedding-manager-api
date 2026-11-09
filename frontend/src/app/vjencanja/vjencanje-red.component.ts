@@ -3,7 +3,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { VjencanjeSazetak } from '../core/modeli';
-import { izIso } from '../core/datumi';
+import { izIso, danas as danasIso } from '../core/datumi';
 import { StatusOznakaComponent } from './status-oznaka.component';
 
 // Jedan red u popisu i kalendaru
@@ -29,7 +29,8 @@ import { StatusOznakaComponent } from './status-oznaka.component';
         <div class="novac">
           @if (v().status === 'OTKAZANO') {
           } @else if (v().preostalo > 0) {
-            <span class="duguje">još {{ v().preostalo | currency: 'EUR' }}</span>
+            <!-- Crveno tek kad je vjenčanje prošlo; prije toga je neplaćeni ostatak normalan -->
+            <span [class.duguje]="proslo()" [class.ceka]="!proslo()">još {{ v().preostalo | currency: 'EUR' }}</span>
           } @else {
             <span class="placeno">plaćeno</span>
           }
@@ -61,6 +62,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
     }
     .desno { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 13px; }
     .duguje { color: var(--mat-sys-error); }
+    .ceka { color: var(--mat-sys-on-surface-variant); }
     .placeno { color: var(--wm-uspjeh); }
     .kapara { font-size: 11px; color: var(--mat-sys-on-surface-variant); }
   `,
@@ -68,4 +70,5 @@ import { StatusOznakaComponent } from './status-oznaka.component';
 export class VjencanjeRedComponent {
   v = input.required<VjencanjeSazetak>();
   datum = () => izIso(this.v().datum);
+  proslo = () => this.v().datum < danasIso();
 }

@@ -2,6 +2,7 @@ package hr.jbrzica.wedding_manager_api.controller;
 
 import hr.jbrzica.wedding_manager_api.dto.EmailRequest;
 import hr.jbrzica.wedding_manager_api.dto.PorukaResponse;
+import hr.jbrzica.wedding_manager_api.dto.PrviKoraciResponse;
 import hr.jbrzica.wedding_manager_api.dto.TvrtkaRequest;
 import hr.jbrzica.wedding_manager_api.dto.TvrtkaResponse;
 import hr.jbrzica.wedding_manager_api.service.TvrtkaService;
@@ -22,6 +23,11 @@ public class TvrtkaController {
     @GetMapping
     public TvrtkaResponse moja() {
         return tvrtkaService.moja();
+    }
+
+    @GetMapping("/prvi-koraci")
+    public PrviKoraciResponse prviKoraci() {
+        return tvrtkaService.prviKoraci();
     }
 
     @PutMapping

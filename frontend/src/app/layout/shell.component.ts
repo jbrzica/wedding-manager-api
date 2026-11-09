@@ -44,6 +44,12 @@ import { AuthService } from '../core/auth.service';
         <a mat-menu-item routerLink="/postavke">
           <mat-icon>settings</mat-icon> Postavke
         </a>
+        <a mat-menu-item routerLink="/kos">
+          <mat-icon>delete</mat-icon> Koš
+        </a>
+        <a mat-menu-item routerLink="/pomoc">
+          <mat-icon>help</mat-icon> Pomoć
+        </a>
         <button mat-menu-item (click)="auth.odjava()">
           <mat-icon>logout</mat-icon> Odjava
         </button>

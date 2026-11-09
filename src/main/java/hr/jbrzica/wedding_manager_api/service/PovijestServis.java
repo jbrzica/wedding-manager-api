@@ -8,20 +8,25 @@ import hr.jbrzica.wedding_manager_api.entity.Vjencanje;
 import hr.jbrzica.wedding_manager_api.entity.VrstaUplate;
 import hr.jbrzica.wedding_manager_api.repository.KorisnikRepository;
 import hr.jbrzica.wedding_manager_api.repository.PromjenaRepository;
+import hr.jbrzica.wedding_manager_api.repository.VjencanjeRepository;
 import hr.jbrzica.wedding_manager_api.security.KorisnikPrincipal;
 import hr.jbrzica.wedding_manager_api.security.TrenutniKorisnik;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Povijest bitnih promjena. Zapis ide u istu transakciju kao i sama promjena,
@@ -38,16 +43,20 @@ public class PovijestServis {
             VrstaUplate.KAPARA, "kapara", VrstaUplate.RATA, "rata", VrstaUplate.OSTATAK, "ostatak");
     private static final DateTimeFormatter DATUM = DateTimeFormatter.ofPattern("d. M. yyyy.");
     private static final int NAJVISE = 200;
+    // Starija povijest se briše; za vođenje posla bitno je ono novije
+    private static final Duration CUVA_SE = Duration.ofDays(2 * 365);
 
     private final PromjenaRepository repository;
     private final KorisnikRepository korisnikRepository;
     private final TrenutniKorisnik trenutniKorisnik;
+    private final VjencanjeRepository vjencanjeRepository;
 
     public PovijestServis(PromjenaRepository repository, KorisnikRepository korisnikRepository,
-                          TrenutniKorisnik trenutniKorisnik) {
+                          TrenutniKorisnik trenutniKorisnik, VjencanjeRepository vjencanjeRepository) {
         this.repository = repository;
         this.korisnikRepository = korisnikRepository;
         this.trenutniKorisnik = trenutniKorisnik;
+        this.vjencanjeRepository = vjencanjeRepository;
     }
 
     @Transactional
@@ -72,7 +81,7 @@ public class PovijestServis {
     @Transactional(readOnly = true)
     public List<PromjenaResponse> zaVjencanje(Long vjencanjeId) {
         return repository.findByTvrtkaIdAndVjencanjeIdOrderByVrijemeDescIdDesc(trenutniKorisnik.tvrtkaId(), vjencanjeId)
-                .stream().map(PromjenaResponse::iz).toList();
+                .stream().map(p -> PromjenaResponse.iz(p, "AKTIVNO")).toList();
     }
 
     @Transactional(readOnly = true)
@@ -82,7 +91,19 @@ public class PovijestServis {
         List<Promjena> promjene = korisnikId == null
                 ? repository.findByTvrtkaIdOrderByVrijemeDescIdDesc(tvrtkaId, prvih)
                 : repository.findByTvrtkaIdAndKorisnikIdOrderByVrijemeDescIdDesc(tvrtkaId, korisnikId, prvih);
-        return promjene.stream().map(PromjenaResponse::iz).toList();
+        // Aktivna vjenčanja vidi običan upit, a ona u košu samo upit za koš (@SQLRestriction)
+        Set<Long> ids = promjene.stream().map(Promjena::getVjencanjeId).filter(java.util.Objects::nonNull).collect(Collectors.toSet());
+        Set<Long> aktivna = vjencanjeRepository.findAllById(ids).stream().map(Vjencanje::getId).collect(Collectors.toSet());
+        Set<Long> uKosu = vjencanjeRepository.uKosu(tvrtkaId).stream().map(Vjencanje::getId).collect(Collectors.toSet());
+        return promjene.stream().map(p -> PromjenaResponse.iz(p,
+                aktivna.contains(p.getVjencanjeId()) ? "AKTIVNO" : uKosu.contains(p.getVjencanjeId()) ? "U_KOSU" : "OBRISANO"))
+                .toList();
+    }
+
+    @Scheduled(cron = "0 50 4 * * *", zone = "Europe/Zagreb")
+    @Transactional
+    public void obrisiStaro() {
+        repository.obrisiStarijeOd(Instant.now().minus(CUVA_SE));
     }
 
     // ---------- tekstovi ----------

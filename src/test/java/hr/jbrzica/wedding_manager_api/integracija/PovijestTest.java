@@ -81,7 +81,18 @@ class PovijestTest {
         mvc.perform(get("/api/povijest").header("Authorization", "Bearer " + token))
                 .andExpect(jsonPath("$[0].opis").value("Obrisano zauvijek"))
                 .andExpect(jsonPath("$[0].vjencanje").value("Ana & Ivo"))
+                .andExpect(jsonPath("$[0].stanje").value("OBRISANO"))
                 .andExpect(jsonPath("$[*].opis", hasItem("Premješteno u koš")));
+    }
+
+    @Test
+    void vjencanjeUKosuImaStanjeUKosu() throws Exception {
+        mvc.perform(get("/api/povijest").header("Authorization", "Bearer " + token))
+                .andExpect(jsonPath("$[0].stanje").value("AKTIVNO"));
+        mvc.perform(delete("/api/vjencanja/" + vjencanje).header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/povijest").header("Authorization", "Bearer " + token))
+                .andExpect(jsonPath("$[0].stanje").value("U_KOSU"));
     }
 
     @Test

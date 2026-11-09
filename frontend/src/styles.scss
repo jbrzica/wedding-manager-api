@@ -41,6 +41,53 @@ html {
   --wm-neutralno-pozadina: #eeeae3;
   --wm-opasno: #a33a2e;
   --wm-opasno-pozadina: #f6e3df;
+  --wm-traka: rgba(255, 255, 255, .92);
+}
+
+// Tamna paleta: topla gotovo crna pozadina i svjetlija šampanjac boja, da zadrži isti karakter
+@mixin tamne-boje {
+  color-scheme: dark;
+  @include mat.theme((
+    color: (
+      primary: mat.$orange-palette,
+      theme-type: dark,
+    ),
+  ));
+
+  --mat-sys-primary: #d6b88a;
+  --mat-sys-on-primary: #2e2110;
+  --mat-sys-primary-container: #4a3a22;
+  --mat-sys-on-primary-container: #f0e2c6;
+  --mat-sys-secondary-container: #35312b;
+  --mat-sys-on-secondary-container: #ece6dc;
+  --mat-sys-surface: #141311;
+  --mat-sys-surface-container-lowest: #1c1b18;
+  --mat-sys-surface-container-low: #1a1916;
+  --mat-sys-surface-container: #22201d;
+  --mat-sys-surface-container-high: #2b2925;
+  --mat-sys-surface-container-highest: #34322d;
+  --mat-sys-on-surface: #ece8e1;
+  --mat-sys-on-surface-variant: #aca498;
+  --mat-sys-outline: #7c7569;
+  --mat-sys-outline-variant: #363430;
+  --mat-sys-error: #f0a093;
+
+  --wm-uspjeh: #9fca9f;
+  --wm-uspjeh-pozadina: #1f3122;
+  --wm-upozorenje: #e3c070;
+  --wm-upozorenje-pozadina: #3a2f15;
+  --wm-info: #a3bde0;
+  --wm-info-pozadina: #1d2a3b;
+  --wm-neutralno: #aca498;
+  --wm-neutralno-pozadina: #2b2925;
+  --wm-opasno: #f0a093;
+  --wm-opasno-pozadina: #3d211d;
+  --wm-traka: rgba(28, 27, 24, .92);
+}
+
+html.tamno { @include tamne-boje; }
+@media (prefers-color-scheme: dark) {
+  html:not(.svijetlo) { @include tamne-boje; }
 }
 
 html, body { height: 100%; }
@@ -73,7 +120,7 @@ a { color: var(--mat-sys-primary); }
 .auth-stranica {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   padding: 16px; box-sizing: border-box;
-  background: linear-gradient(170deg, #f3ead9 0%, var(--mat-sys-surface) 55%);
+  background: linear-gradient(170deg, var(--mat-sys-primary-container) 0%, var(--mat-sys-surface) 55%);
 }
 .auth-kartica {
   width: 100%; max-width: 400px; padding: 28px; box-sizing: border-box;

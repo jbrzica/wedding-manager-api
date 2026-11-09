@@ -6,6 +6,13 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#fdfcfa">
+  <!-- Tema prije učitavanja Angulara, da tamni način ne bljesne bijelo -->
+  <script>
+    try {
+      var t = localStorage.getItem('wm-tema');
+      if (t === 'tamno' || t === 'svijetlo') document.documentElement.classList.add(t);
+    } catch (e) {}
+  </script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <!-- Aplikacija se može dodati na početni zaslon mobitela i otvarati preko cijelog ekrana -->
   <link rel="manifest" href="manifest.webmanifest">

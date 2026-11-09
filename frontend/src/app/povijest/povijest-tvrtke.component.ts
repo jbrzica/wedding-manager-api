@@ -37,10 +37,12 @@ const PRIKAZI = 15;
               <strong>{{ p.korisnik }}</strong>
               @if (p.vjencanje) {
                 ·
-                @if (p.vjencanjeId && !p.opis.startsWith('Obrisano')) {
+                @if (p.stanje === 'AKTIVNO') {
                   <a [routerLink]="['/vjencanja', p.vjencanjeId]">{{ p.vjencanje }}</a>
+                } @else if (p.stanje === 'U_KOSU') {
+                  <a routerLink="/kos">{{ p.vjencanje }}</a> <span class="sivo">(u košu)</span>
                 } @else {
-                  {{ p.vjencanje }}
+                  {{ p.vjencanje }} <span class="sivo">(obrisano)</span>
                 }
               }
               <div>{{ p.opis }}</div>

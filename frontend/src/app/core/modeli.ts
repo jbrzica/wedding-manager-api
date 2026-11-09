@@ -127,6 +127,7 @@ export interface Promjena {
   vjencanjeId: number | null;
   vjencanje: string | null;
   opis: string;
+  stanje: 'AKTIVNO' | 'U_KOSU' | 'OBRISANO';
 }
 
 export interface KosStavka {

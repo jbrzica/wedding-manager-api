@@ -52,6 +52,7 @@ const TEME: Tema[] = [
     id: 'raspored', ikona: 'schedule', naslov: 'Raspored dana i dijeljenje',
     tekst: [
       'Na vjenčanju upiši raspored: vrijeme, što se događa i adresu (npr. 11:00 priprema kod mladenke, 15:00 crkva, 18:30 sala).',
+      'Svoj tipični dan spremi gumbom „Spremi kao predložak“ ispod rasporeda. Svako novo vjenčanje onda kreće od njega, a na postojećem ga možeš uzeti gumbom „Uzmi predložak“.',
       'Gumbom za dijeljenje raspored se na mobitelu šalje WhatsAppom ili Viberom, a na računalu se kopira. Šalje se bez cijena.',
       'Kontrolna lista na vjenčanju (ugovor poslan, potpisan, odabir fotografija…) pomaže da se ništa ne zaboravi. Stavke možeš dodavati i brisati.',
     ],

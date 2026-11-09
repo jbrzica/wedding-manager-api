@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  Dodatak, Dostupnost, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
+  Dodatak, Dostupnost, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
   Uplata, VjencanjeDetalji, Zadatak, VjencanjeSazetak, VjencanjeZahtjev, VrstaUplate,
 } from './modeli';
 
@@ -73,6 +73,14 @@ export class ApiService {
 
   obrisiVjencanje(id: number): Observable<void> {
     return this.http.delete<void>(`/api/vjencanja/${id}`);
+  }
+
+  predlozakRasporeda(): Observable<StavkaRasporeda[]> {
+    return this.http.get<StavkaRasporeda[]>('/api/tvrtka/predlozak-rasporeda');
+  }
+
+  spremiPredlozakRasporeda(stavke: StavkaRasporeda[]): Observable<StavkaRasporeda[]> {
+    return this.http.put<StavkaRasporeda[]>('/api/tvrtka/predlozak-rasporeda', stavke);
   }
 
   prviKoraci(): Observable<{ paketi: boolean; suradnici: boolean; vjencanje: boolean; kalendar: boolean }> {

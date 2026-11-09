@@ -140,7 +140,13 @@
           </div>
         </div>
       }
-      <button mat-stroked-button type="button" (click)="dodajStavku()"><mat-icon>add</mat-icon> Dodaj stavku</button>
+      <div class="gumbi-rasporeda">
+        <button mat-stroked-button type="button" (click)="dodajStavku()"><mat-icon>add</mat-icon> Dodaj stavku</button>
+        @if (predlozak().length) {
+          <button mat-button type="button" (click)="uzmiPredlozak()"><mat-icon>content_paste</mat-icon> Uzmi predložak</button>
+        }
+        <button mat-button type="button" (click)="spremiPredlozak()"><mat-icon>bookmark_add</mat-icon> Spremi kao predložak</button>
+      </div>
     </mat-card-content>
   </mat-card>
 

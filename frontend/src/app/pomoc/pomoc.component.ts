@@ -103,6 +103,7 @@ const TEME: Tema[] = [
     tekst: [
       'Obrisano vjenčanje ide u koš (izbornik računa → Koš), sa svim uplatama, rasporedom i ekipom. Odande ga možeš vratiti 30 dana.',
       'Nakon 30 dana briše se zauvijek. Ako želiš odmah, u košu odaberi „Obriši zauvijek“.',
+      'Svako brisanje i vraćanje ostaje zapisano u povijesti promjena (Postavke).',
     ],
   },
   {
@@ -127,6 +128,10 @@ const PITANJA: { pitanje: string; odgovor: string }[] = [
     odgovor: 'Vjerojatno je napravljen novi link. U Suradnicima mu pošalji link ponovno.' },
   { pitanje: 'Novo vjenčanje se ne vidi u Google kalendaru.',
     odgovor: 'Google osvježava pretplaćene kalendare svakih nekoliko sati. Pričekaj; iPhone je obično brži.' },
+  { pitanje: 'Zašto me aplikacija opet traži prijavu?',
+    odgovor: 'Prijava traje 30 dana od zadnjeg korištenja na tom uređaju. Traži se i nakon promjene lozinke na drugom uređaju ili nakon Odjave.' },
+  { pitanje: 'Ne vidim prognozu za vjenčanje.',
+    odgovor: 'Prognoza se prikazuje samo za vjenčanja u idućih 7 dana i kad se iz lokacije može prepoznati mjesto. Upiši lokaciju s gradom, npr. „Restoran Rubin, Đakovo“.' },
   { pitanje: 'Zašto je vjenčanje samo od sebe postalo Potvrđeno?',
     odgovor: 'Upisana je kapara. Kapara znači da je termin dogovoren, pa aplikacija sama mijenja status iz Upita u Potvrđeno.' },
 ];

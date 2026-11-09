@@ -85,6 +85,8 @@ import { AuthService } from '../core/auth.service';
       position: sticky; top: 0; z-index: 10;
       background: var(--wm-traka); backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--mat-sys-outline-variant);
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
     }
     .logo span { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
     .nav-desktop a { color: var(--mat-sys-on-surface-variant); }
@@ -98,17 +100,21 @@ import { AuthService } from '../core/auth.service';
     .aktivno { background: var(--mat-sys-secondary-container); }
     .korisnik-info { display: flex; flex-direction: column; padding: 8px 16px 12px; }
     .korisnik-info small { color: var(--mat-sys-on-surface-variant); }
-    .sadrzaj { max-width: 1100px; margin: 0 auto; padding: 24px 16px 96px; }
+    .sadrzaj {
+      max-width: 1100px; margin: 0 auto;
+      padding: 24px max(16px, env(safe-area-inset-right)) 96px max(16px, env(safe-area-inset-left));
+    }
     .nav-mobitel { display: none; }
 
     @media (max-width: 720px) {
       .nav-desktop { display: none; }
-      .sadrzaj { padding-top: 16px; }
+      .sadrzaj { padding-top: 16px; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
       .nav-mobitel {
         display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
         background: var(--wm-traka); backdrop-filter: blur(8px);
         border-top: 1px solid var(--mat-sys-outline-variant);
-        padding-bottom: env(safe-area-inset-bottom);
+        /* Iznad trake za povratak na početni zaslon i dalje od zaobljenih kutova */
+        padding: 0 max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
       }
       .nav-mobitel a {
         flex: 1; display: flex; flex-direction: column; align-items: center;

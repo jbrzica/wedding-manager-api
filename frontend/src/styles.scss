@@ -161,3 +161,11 @@ app-paketi, app-dodaci, app-suradnici, app-tvrtka {
 
 /* Podnaslov kartice manji i sivlji od naslova, da se ne čita kao glavni tekst */
 .mat-mdc-card-subtitle { color: var(--mat-sys-on-surface-variant) !important; font-size: 14px !important; font-weight: 400 !important; }
+
+/* Primjer (placeholder) se vidi tek kad se oznaka podigne (klik u polje). Dok oznaka stoji
+   u sredini polja, primjer je skriven, inače se tekstovi preklapaju ("Datum" preko "npr. 14.6.2027."). */
+.mat-form-field-hide-placeholder .mat-mdc-input-element::placeholder {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  opacity: 0 !important;
+}

@@ -29,6 +29,7 @@ export interface FilterVjencanja {
   godina: number | null;
   nenaplaceno: boolean;
   kasniIsporuka: boolean;
+  bezKapare: boolean;
 }
 
 export interface Korisnik {
@@ -173,6 +174,7 @@ export interface VjencanjeSazetak {
   uplaceno: number;
   preostalo: number;
   kaparaPlacena: boolean;
+  paket?: string | null;
 }
 
 export interface VjencanjeDetalji {
@@ -217,8 +219,20 @@ export interface VjencanjeZahtjev {
 export interface Pregled {
   sljedeceVjencanje?: VjencanjeSazetak | null;
   danaDoSljedeceg?: number | null;
+  pocetakSljedeceg?: string | null;
+  ekipaSljedeceg: number;
   brojOveGodine: number;
   ukupnoNenaplaceno: number;
+  kasniIsporuka: number;
+  bezKapare: number;
+  noviUpiti: number;
+}
+
+export interface BrziUpit {
+  datum: string;
+  ime: string;
+  telefon?: string | null;
+  napomena?: string | null;
 }
 
 export interface SazetakGodine {

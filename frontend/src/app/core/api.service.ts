@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  Dodatak, Dostupnost, Stranica, PodaciTvrtke, PredlozakUgovora, Prognoza, Promjena, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
+  BrziUpit, Dodatak, Dostupnost, Stranica, PodaciTvrtke, PredlozakUgovora, Prognoza, Promjena, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
   Uplata, VjencanjeDetalji, Zadatak, VjencanjeSazetak, VjencanjeZahtjev, VrstaUplate,
 } from './modeli';
 
@@ -25,6 +25,9 @@ export class ApiService {
     }
     if (filter.kasniIsporuka) {
       params = params.set('kasniIsporuka', true);
+    }
+    if (filter.bezKapare) {
+      params = params.set('bezKapare', true);
     }
     if (pretraga) {
       params = params.set('pretraga', pretraga);
@@ -60,6 +63,10 @@ export class ApiService {
 
   stvoriVjencanje(z: VjencanjeZahtjev): Observable<VjencanjeDetalji> {
     return this.http.post<VjencanjeDetalji>('/api/vjencanja', z);
+  }
+
+  brziUpit(upit: BrziUpit): Observable<VjencanjeDetalji> {
+    return this.http.post<VjencanjeDetalji>('/api/vjencanja/upit', upit);
   }
 
   izmijeniVjencanje(id: number, z: VjencanjeZahtjev): Observable<VjencanjeDetalji> {

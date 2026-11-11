@@ -169,3 +169,13 @@ app-paketi, app-dodaci, app-suradnici, app-tvrtka {
   -webkit-text-fill-color: transparent !important;
   opacity: 0 !important;
 }
+
+/* Na mobitelu se brzi unos otvara s dna ekrana, gdje je palac; na računalu ostaje običan prozor u sredini */
+@media (max-width: 720px) {
+  .cdk-global-overlay-wrapper:has(.donji-list) { align-items: flex-end !important; }
+  .donji-list {
+    width: 100vw !important;
+    --mat-dialog-container-shape: 20px 20px 0 0;
+    .mat-mdc-dialog-actions { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  }
+}

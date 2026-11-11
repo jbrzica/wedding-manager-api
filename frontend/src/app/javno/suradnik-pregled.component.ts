@@ -9,6 +9,7 @@ import { ApiService } from '../core/api.service';
 import { SuradnikPregled } from '../core/modeli';
 import { ULOGE_SURADNIKA } from '../core/oznake';
 import { izIso } from '../core/datumi';
+import { par } from '../core/imena';
 
 /**
  * Stranica koju suradnik otvara preko svog tajnog linka, bez prijave.
@@ -51,7 +52,7 @@ import { izIso } from '../core/datumi';
                 <span class="mjesec">{{ izIso(v.datum) | date: 'MMM yyyy' }}</span>
               </div>
               <div class="naslov">
-                <h2>{{ v.mlada?.ime }} & {{ v.mladozenja?.ime }}</h2>
+                <h2>{{ par(v.mlada?.ime, v.mladozenja?.ime) }}</h2>
                 <div class="sivo">{{ izIso(v.datum) | date: 'EEEE' }}@if (v.mojaUloga) { · {{ uloge[v.mojaUloga] }} }</div>
                 @if (!v.potvrdeno) { <span class="nepotvrdeno">Još nije potvrđeno</span> }
               </div>
@@ -145,6 +146,7 @@ export class SuradnikPregledComponent implements OnInit {
 
   readonly uloge = ULOGE_SURADNIKA;
   readonly izIso = izIso;
+  readonly par = par;
   pregled = signal<SuradnikPregled | null>(null);
   ucitava = signal(true);
   greska = signal(false);

@@ -3,6 +3,7 @@ package hr.jbrzica.wedding_manager_api.service;
 import hr.jbrzica.wedding_manager_api.dto.*;
 import hr.jbrzica.wedding_manager_api.entity.*;
 import hr.jbrzica.wedding_manager_api.repository.ClanEkipeRepository;
+import hr.jbrzica.wedding_manager_api.repository.PaketVjencanja;
 import hr.jbrzica.wedding_manager_api.repository.TvrtkaRepository;
 import hr.jbrzica.wedding_manager_api.repository.UplataRepository;
 import hr.jbrzica.wedding_manager_api.repository.VjencanjeFilter;
@@ -22,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -79,9 +81,9 @@ public class VjencanjeService {
 
     public Page<VjencanjeSazetak> popis(Razdoblje razdoblje, Integer godina, List<StatusVjencanja> statusi,
                                         String pretraga, boolean nenaplaceno, boolean kasniIsporuka,
-                                        int stranica, int velicina) {
+                                        boolean bezKapare, int stranica, int velicina) {
         VjencanjeFilter filter = new VjencanjeFilter(trenutniKorisnik.tvrtkaId(), razdoblje, godina, statusi,
-                pretraga, nenaplaceno, kasniIsporuka, LocalDate.now());
+                pretraga, nenaplaceno, kasniIsporuka, bezKapare, LocalDate.now());
         // Prošla vjenčanja od najnovijeg, ostala od najbližeg; id da redoslijed bude stalan između stranica
         Sort redoslijed = razdoblje == Razdoblje.PROSLA
                 ? Sort.by(Sort.Order.desc("datum"), Sort.Order.desc("id"))
@@ -130,7 +132,24 @@ public class VjencanjeService {
             }
         }
 
-        return new PregledResponse(sljedeceSazetak, danaDoSljedeceg, brojOveGodine, ukupnoNenaplaceno);
+        // Vrijeme prve stavke rasporeda: kad ekipa taj dan kreće
+        LocalTime pocetak = sljedece.flatMap(v -> v.getRaspored().stream()
+                .map(StavkaRasporeda::getVrijeme)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder())).orElse(null);
+        int ekipa = sljedece.map(v -> v.getEkipa().size()).orElse(0);
+
+        return new PregledResponse(sljedeceSazetak, danaDoSljedeceg, pocetak, ekipa, brojOveGodine, ukupnoNenaplaceno,
+                prebroji(tvrtkaId, Razdoblje.SVA, null, true, false, danas),
+                prebroji(tvrtkaId, Razdoblje.NADOLAZECA, null, false, true, danas),
+                prebroji(tvrtkaId, Razdoblje.NADOLAZECA, List.of(StatusVjencanja.UPIT), false, false, danas));
+    }
+
+    // Isti filter kao u popisu, da broj na početnom zaslonu odgovara onome što se otvori dodirom
+    private long prebroji(Long tvrtkaId, Razdoblje razdoblje, List<StatusVjencanja> statusi,
+                          boolean kasniIsporuka, boolean bezKapare, LocalDate danas) {
+        return vjencanjeRepository.count(new VjencanjeFilter(tvrtkaId, razdoblje, null, statusi, null,
+                false, kasniIsporuka, bezKapare, danas).uSpecifikaciju());
     }
 
     // Prognoza za vjenčanja idućih 7 dana, po id-u vjenčanja
@@ -222,6 +241,22 @@ public class VjencanjeService {
         Vjencanje spremljeno = vjencanjeRepository.save(vjencanje);
         povijest.zabiljezi(spremljeno, "Upisano vjenčanje");
         return uDetalje(spremljeno);
+    }
+
+    // Brzi upit: ime onoga tko se javio ide pod mladu, mladoženja se dopuni kasnije
+    @Transactional
+    public VjencanjeDetalji stvoriUpit(BrziUpitRequest upit) {
+        String[] dijelovi = upit.ime().trim().split("\\s+", 2);
+        OsobaDto mlada = new OsobaDto(dijelovi[0], dijelovi.length > 1 ? dijelovi[1] : "",
+                prazanUNull(upit.telefon()), null, null, null);
+        // Prazan tekst, a ne null: da su sva polja null, Hibernate bi cijelog mladoženju vratio kao null
+        OsobaDto mladozenja = new OsobaDto("", "", null, null, null, null);
+        return stvori(new VjencanjeRequest(upit.datum(), null, mlada, mladozenja, null, List.of(), null, null, null,
+                prazanUNull(upit.napomena()), null, null, null, List.of(), List.of()));
+    }
+
+    private static String prazanUNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
     }
 
     @Transactional
@@ -364,6 +399,10 @@ public class VjencanjeService {
         for (ZbrojPoVjencanju zbroj : uplataRepository.zbrojiPoVjencanju(ids)) {
             uplacenoPoVjencanju.put(zbroj.vjencanjeId(), zbroj.iznos());
         }
+        Map<Long, String> paketi = new HashMap<>();
+        for (PaketVjencanja paket : vjencanjeRepository.naziviPaketa(ids)) {
+            paketi.put(paket.vjencanjeId(), paket.naziv());
+        }
         Set<Long> sKaparom = new HashSet<>(uplataRepository.vjencanjaSUplatomVrste(VrstaUplate.KAPARA, ids));
 
         List<VjencanjeSazetak> sazeci = new ArrayList<>();
@@ -379,7 +418,8 @@ public class VjencanjeService {
                     v.getDogovorenaCijena(),
                     uplaceno,
                     v.getDogovorenaCijena().subtract(uplaceno),
-                    sKaparom.contains(v.getId())
+                    sKaparom.contains(v.getId()),
+                    paketi.get(v.getId())
             ));
         }
         return sazeci;

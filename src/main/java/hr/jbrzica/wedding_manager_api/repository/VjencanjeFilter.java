@@ -4,6 +4,7 @@ import hr.jbrzica.wedding_manager_api.dto.Razdoblje;
 import hr.jbrzica.wedding_manager_api.entity.StatusVjencanja;
 import hr.jbrzica.wedding_manager_api.entity.Uplata;
 import hr.jbrzica.wedding_manager_api.entity.Vjencanje;
+import hr.jbrzica.wedding_manager_api.entity.VrstaUplate;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
@@ -29,6 +30,7 @@ public record VjencanjeFilter(
         String pretraga,
         boolean nenaplaceno,
         boolean kasniIsporuka,
+        boolean bezKapare,
         LocalDate danas
 ) {
 
@@ -61,6 +63,16 @@ public record VjencanjeFilter(
                 uvjeti.add(cb.lessThan(datum, danas));
                 uvjeti.add(cb.lessThan(v.get("rokIsporuke"), danas));
                 uvjeti.add(cb.not(v.get("status").in(StatusVjencanja.ISPORUCENO, StatusVjencanja.OTKAZANO)));
+            }
+            if (bezKapare) {
+                // Potvrđeno je i tek dolazi, a nijedna uplata nije kapara
+                Subquery<Long> kapara = upit.subquery(Long.class);
+                Root<Uplata> u = kapara.from(Uplata.class);
+                kapara.select(u.get("id"))
+                        .where(cb.equal(u.get("vjencanje"), v), cb.equal(u.get("vrsta"), VrstaUplate.KAPARA));
+                uvjeti.add(cb.greaterThanOrEqualTo(datum, danas));
+                uvjeti.add(cb.equal(v.get("status"), StatusVjencanja.POTVRDENO));
+                uvjeti.add(cb.not(cb.exists(kapara)));
             }
             if (nenaplaceno) {
                 Subquery<BigDecimal> uplaceno = upit.subquery(BigDecimal.class);

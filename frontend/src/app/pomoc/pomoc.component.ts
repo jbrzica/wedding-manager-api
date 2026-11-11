@@ -19,7 +19,8 @@ const TEME: Tema[] = [
     tekst: [
       'Prvo upiši svoje pakete i dodatke (Paketi i ekipa). Kad poslije na vjenčanju odabereš paket, cijena se upiše sama.',
       'Zatim dodaj suradnike: snimatelje, druge fotografe, asistente. Njih stavljaš u ekipu pojedinog vjenčanja.',
-      'Onda upiši vjenčanja. Dovoljni su datum i imena mladenaca, sve ostalo možeš dopuniti kasnije.',
+      'Onda upiši vjenčanja na gumb +. Dovoljni su datum i imena mladenaca, sve ostalo možeš dopuniti kasnije.',
+      'Brzi upit (isto na gumbu +): kad netko nazove i pita za datum, upiši datum, ime i broj. Odmah vidiš je li datum slobodan, a upit ostane zapisan. Kad potvrde, otvori ga i dopuni ostalo.',
       'Na kraju stavi vjenčanja u kalendar na mobitelu (Postavke) i dodaj aplikaciju na početni zaslon.',
     ],
   },
@@ -95,8 +96,10 @@ const TEME: Tema[] = [
     id: 'trazenje', ikona: 'tune', naslov: 'Pretraga, filteri i provjera datuma',
     tekst: [
       'Na početnoj stranici pretražuješ po imenu, prezimenu ili lokaciji.',
-      'Filteri: razdoblje, više statusa odjednom, godina, „Nije plaćeno do kraja“ i „Kasni isporuka“. Filteri se pamte dok ih ne očistiš.',
-      'Provjera datuma: kad te netko pita jesi li slobodan, upiši datum i odmah vidiš je li dan slobodan, tko iz ekipe je zauzet i ima li vjenčanja dan prije ili poslije.',
+      'Tri kartice iznad popisa: Nadolazeća, Za isporuku (prošla vjenčanja koja još nisu označena kao isporučena) i Sva.',
+      'Obojene kućice na vrhu pokazuju što traži pažnju: kasni isporuka, potvrđena vjenčanja bez kapare i upiti. Dodir otvori baš ta vjenčanja, a još jedan dodir vrati obični popis.',
+      'Filteri (ikona kraj pretrage): više statusa odjednom, godina, „Nije plaćeno do kraja“, „Bez kapare“ i „Kasni isporuka“. Filteri se pamte dok ih ne očistiš.',
+      'Provjera datuma (na gumbu +): kad te netko pita jesi li slobodan, upiši datum i odmah vidiš je li dan slobodan, tko iz ekipe je zauzet i ima li vjenčanja dan prije ili poslije.',
     ],
   },
   {

@@ -10,6 +10,7 @@ import { ApiService } from '../core/api.service';
 import { VjencanjeSazetak } from '../core/modeli';
 import { danas, uIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
+import { par } from '../core/imena';
 import { VjencanjeRedComponent } from './vjencanje-red.component';
 
 interface Dan {
@@ -68,7 +69,7 @@ const DANI_TJEDNA = ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
                 (click)="odabrani.set(dan.iso)">
           <span class="broj">{{ dan.broj }}</span>
           @for (v of dan.vjencanja.slice(0, 2); track v.id) {
-            <span class="vjencanje" [class]="'vjencanje ' + v.status.toLowerCase()">{{ v.mlada.split(' ')[0] }} &amp; {{ v.mladozenja.split(' ')[0] }}</span>
+            <span class="vjencanje" [class]="'vjencanje ' + v.status.toLowerCase()">{{ par(v.mlada.split(' ')[0], v.mladozenja.split(' ')[0]) }}</span>
           }
           @if (dan.vjencanja.length > 2) {
             <span class="vise">+{{ dan.vjencanja.length - 2 }}</span>
@@ -156,6 +157,7 @@ export class KalendarComponent implements OnInit {
   private router = inject(Router);
 
   readonly daniTjedna = DANI_TJEDNA;
+  readonly par = par;
   readonly danasIso = danas();
   readonly mjeseci = Array.from({ length: 12 }, (_, i) => new Date(2000, i, 1));
 

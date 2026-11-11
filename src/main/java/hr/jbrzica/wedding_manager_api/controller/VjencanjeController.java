@@ -31,9 +31,10 @@ public class VjencanjeController {
             @RequestParam(required = false) String pretraga,
             @RequestParam(defaultValue = "false") boolean nenaplaceno,
             @RequestParam(defaultValue = "false") boolean kasniIsporuka,
+            @RequestParam(defaultValue = "false") boolean bezKapare,
             @RequestParam(defaultValue = "0") int stranica,
             @RequestParam(defaultValue = "50") int velicina) {
-        return new PagedModel<>(vjencanjeService.popis(razdoblje, godina, statusi, pretraga, nenaplaceno, kasniIsporuka,
+        return new PagedModel<>(vjencanjeService.popis(razdoblje, godina, statusi, pretraga, nenaplaceno, kasniIsporuka, bezKapare,
                 stranica, velicina));
     }
 
@@ -86,6 +87,12 @@ public class VjencanjeController {
     @ResponseStatus(HttpStatus.CREATED)
     public VjencanjeDetalji stvori(@Valid @RequestBody VjencanjeRequest request) {
         return vjencanjeService.stvori(request);
+    }
+
+    @PostMapping("/upit")
+    @ResponseStatus(HttpStatus.CREATED)
+    public VjencanjeDetalji brziUpit(@Valid @RequestBody BrziUpitRequest request) {
+        return vjencanjeService.stvoriUpit(request);
     }
 
     @PutMapping("/{id}")

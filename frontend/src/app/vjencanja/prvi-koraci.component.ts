@@ -43,14 +43,13 @@ function zapisi(kljuc: string): void {
   template: `
     @if (prikazi()) {
       <mat-card appearance="outlined" class="koraci">
-        <div class="vrh">
-          <div>
-            <h2>Prvi koraci</h2>
-            <p class="sivo">{{ gotovih() }} od {{ koraci().length }} gotovo. Za desetak minuta upoznaš sve važno.</p>
-          </div>
-          <button mat-button type="button" (click)="sakrij()">Sakrij</button>
-        </div>
+        <!-- Sklopljeno je jedan red, da ne gura vjenčanja ispod ekrana -->
+        <button type="button" class="vrh" (click)="otvoreno.set(!otvoreno())" [attr.aria-expanded]="otvoreno()">
+          <span class="naslov-koraka"><strong>Prvi koraci</strong> · {{ gotovih() }} od {{ koraci().length }} gotovo</span>
+          <mat-icon>{{ otvoreno() ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </button>
         <mat-progress-bar mode="determinate" [value]="(gotovih() / koraci().length) * 100" />
+        @if (otvoreno()) {
         <ol>
           @for (k of koraci(); track k.naslov) {
             <li [class.gotovo]="k.gotovo">
@@ -67,14 +66,19 @@ function zapisi(kljuc: string): void {
             Aplikaciju sam već dodao na početni zaslon
           </button>
         }
+        <button mat-button type="button" class="oznaci" (click)="sakrij()">Ne prikazuj više</button>
+        }
       </mat-card>
     }
   `,
   styles: `
-    .koraci { padding: 20px; margin-bottom: 16px; }
-    .vrh { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-    h2 { margin: 0; font-size: 18px; }
-    .vrh p { margin: 2px 0 12px; }
+    .koraci { padding: 12px 16px; margin-bottom: 12px; }
+    .vrh {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding: 0 0 10px;
+      border: 0; background: none; cursor: pointer; font: inherit; color: inherit; text-align: left;
+    }
+    .naslov-koraka { color: var(--mat-sys-on-surface-variant); }
+    .naslov-koraka strong { color: var(--mat-sys-on-surface); }
     ol { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
     li { display: flex; gap: 12px; align-items: flex-start; }
     .kvacica { color: var(--mat-sys-outline); flex-shrink: 0; }
@@ -90,6 +94,7 @@ export class PrviKoraciComponent implements OnInit {
 
   private podaci = signal<{ paketi: boolean; suradnici: boolean; vjencanje: boolean; kalendar: boolean } | null>(null);
   private skriveno = signal(procitaj(KLJUC_SKRIVENO));
+  otvoreno = signal(false);
   // Ako je aplikacija upravo otvorena s početnog zaslona, korak je sigurno gotov
   naZaslonu = signal(procitaj(KLJUC_ZASLON) || window.matchMedia?.('(display-mode: standalone)').matches);
 

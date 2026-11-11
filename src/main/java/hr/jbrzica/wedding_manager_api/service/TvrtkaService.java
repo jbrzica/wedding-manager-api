@@ -58,13 +58,19 @@ public class TvrtkaService {
         List<ClanTvrtkeResponse> clanovi = korisnikRepository.findByTvrtkaIdOrderByImeAsc(tvrtka.getId()).stream()
                 .map(ClanTvrtkeResponse::iz)
                 .toList();
-        return new TvrtkaResponse(tvrtka.getId(), tvrtka.getNaziv(), clanovi);
+        return new TvrtkaResponse(tvrtka.getId(), tvrtka.getNaziv(), tvrtka.getAdresa(), tvrtka.getOib(),
+                tvrtka.getTelefon(), tvrtka.getEmail(), clanovi);
     }
 
     @Transactional
     public TvrtkaResponse preimenuj(TvrtkaRequest request) {
         provjeriVlasnika();
-        mojaTvrtka().setNaziv(request.naziv());
+        Tvrtka tvrtka = mojaTvrtka();
+        tvrtka.setNaziv(request.naziv().trim());
+        tvrtka.setAdresa(prazno(request.adresa()));
+        tvrtka.setOib(prazno(request.oib()));
+        tvrtka.setTelefon(prazno(request.telefon()));
+        tvrtka.setEmail(prazno(request.email()));
         return moja();
     }
 
@@ -96,12 +102,16 @@ public class TvrtkaService {
         korisnikRepository.delete(clan);
     }
 
+    private static String prazno(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
+    }
+
     private Tvrtka mojaTvrtka() {
         return tvrtkaRepository.findById(trenutniKorisnik.tvrtkaId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tvrtka ne postoji"));
     }
 
-    private KorisnikPrincipal provjeriVlasnika() {
+    public KorisnikPrincipal provjeriVlasnika() {
         KorisnikPrincipal ja = trenutniKorisnik.get();
         if (ja.uloga() != UlogaKorisnika.VLASNIK) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ovo može samo vlasnik tvrtke");

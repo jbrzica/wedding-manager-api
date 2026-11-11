@@ -253,5 +253,24 @@ export interface ClanTvrtke {
 export interface Tvrtka {
   id: number;
   naziv: string;
+  adresa: string | null;
+  oib: string | null;
+  telefon: string | null;
+  email: string | null;
   clanovi: ClanTvrtke[];
+}
+
+export interface PodaciTvrtke {
+  naziv: string;
+  adresa: string | null;
+  oib: string | null;
+  telefon: string | null;
+  email: string | null;
+}
+
+// vlastiti = false: tvrtka koristi zadani predložak iz aplikacije
+export interface PredlozakUgovora {
+  vlastiti: boolean;
+  nazivDatoteke: string;
+  azurirano: string | null;
 }

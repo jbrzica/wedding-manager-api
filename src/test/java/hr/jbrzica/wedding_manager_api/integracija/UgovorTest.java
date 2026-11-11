@@ -88,7 +88,7 @@ class UgovorTest {
         String tekst = tekst(preuzmi("/api/vjencanja/" + vjencanje + "/ugovor")
                 .andExpect(header().string("Content-Type",
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
-                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("filename*=UTF-8''")))
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("filename=\"Ugovor - Ana Horvat i Ivo Kovac - 7.5.2027.docx\"")))
                 .andReturn().getResponse().getContentAsByteArray());
 
         assertThat(tekst)

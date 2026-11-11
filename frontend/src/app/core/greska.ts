@@ -16,3 +16,16 @@ export function porukaGreske(err: unknown): string {
   }
   return 'Nešto je pošlo po zlu.';
 }
+
+// Kad se traži datoteka (responseType 'blob'), i poruka o grešci stigne kao Blob pa je treba prvo pročitati
+export async function porukaGreskeDatoteke(err: unknown): Promise<string> {
+  if (err instanceof HttpErrorResponse && err.error instanceof Blob) {
+    try {
+      const tijelo = JSON.parse(await err.error.text());
+      return porukaGreske(new HttpErrorResponse({ error: tijelo, status: err.status }));
+    } catch {
+      // nije JSON, pada na opću poruku
+    }
+  }
+  return porukaGreske(err);
+}

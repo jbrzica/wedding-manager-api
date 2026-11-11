@@ -74,7 +74,7 @@ public class UgovorService {
         try {
             byte[] ugovor = WordPredlozak.popuni(predlozak, vrijednosti(v));
             String naziv = "Ugovor - " + narucitelj(v) + " - " + v.getDatum().format(DateTimeFormatter.ofPattern("d.M.yyyy")) + ".docx";
-            return new Datoteka(naziv, ugovor);
+            return new Datoteka(bezKvacica(naziv), ugovor);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
                     "Predložak ugovora nije moguće otvoriti. Učitajte ga ponovno u Postavkama.");
@@ -181,6 +181,12 @@ public class UgovorService {
         m.put(kljuc + "_telefon", ili(o == null ? null : o.getTelefon()));
         m.put(kljuc + "_email", ili(o == null ? null : o.getEmail()));
         m.put(kljuc + "_oib", ili(o == null ? null : o.getOib()));
+    }
+
+    // Ime datoteke bez č, ć, š, ž i đ: neki preglednici i mobiteli s njima pokvare ime pri spremanju
+    static String bezKvacica(String s) {
+        String bez = java.text.Normalizer.normalize(s.replace("đ", "dj").replace("Đ", "Dj"), java.text.Normalizer.Form.NFD);
+        return bez.replaceAll("\\p{M}", "");
     }
 
     static String narucitelj(Vjencanje v) {

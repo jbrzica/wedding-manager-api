@@ -242,7 +242,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
                   </mat-form-field>
                   <mat-form-field appearance="outline" subscriptSizing="dynamic">
                     <mat-label>Datum</mat-label>
-                    <input matInput [matDatepicker]="datumUplate" formControlName="datum" (click)="datumUplate.open()">
+                    <input matInput [matDatepicker]="datumUplate" formControlName="datum">
                     <mat-datepicker-toggle matIconSuffix [for]="datumUplate" />
                     <mat-datepicker #datumUplate />
                   </mat-form-field>

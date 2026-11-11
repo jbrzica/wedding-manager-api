@@ -15,7 +15,7 @@
     <mat-card-content class="red-2">
       <mat-form-field appearance="outline">
         <mat-label>Datum vjenčanja</mat-label>
-        <input matInput [matDatepicker]="datumBirac" formControlName="datum" placeholder="npr. 14.6.2027." (click)="datumBirac.open()">
+        <input matInput [matDatepicker]="datumBirac" formControlName="datum" placeholder="npr. 14.6.2027.">
         <mat-datepicker-toggle matIconSuffix [for]="datumBirac" />
         <mat-datepicker #datumBirac />
         @if (forma.controls.datum.hasError('required')) { <mat-error>Upišite ili odaberite datum</mat-error> }

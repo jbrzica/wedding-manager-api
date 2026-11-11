@@ -27,8 +27,9 @@ import { porukaGreske } from '../core/greska';
     <mat-dialog-content>
       <mat-form-field appearance="outline" class="datum" subscriptSizing="dynamic">
         <mat-label>Datum</mat-label>
-        <input matInput [matDatepicker]="birac" (dateChange)="provjeri($event.value)" (click)="birac.open()"
-               placeholder="npr. 14.6.2027." readonly>
+        <input matInput [matDatepicker]="birac" (dateChange)="provjeri($event.value)"
+               placeholder="npr. 14.6.2027.">
+        <mat-hint>Upiši datum i stisni Enter ili ga odaberi u kalendaru</mat-hint>
         <mat-datepicker-toggle matIconSuffix [for]="birac" />
         <mat-datepicker #birac />
       </mat-form-field>
@@ -119,6 +120,7 @@ export class ProvjeraDatumaComponent {
 
   provjeri(datum: Date | null): void {
     if (!datum) {
+      this.rezultat.set(null);
       return;
     }
     this.ucitava.set(true);

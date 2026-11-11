@@ -13,6 +13,7 @@ import { Dostupnost } from '../core/modeli';
 import { STATUSI, ULOGE_SURADNIKA } from '../core/oznake';
 import { izIso, uIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
+import { par } from '../core/imena';
 
 /**
  * „Jeste li slobodni 14. lipnja?“: jedan datum i odmah se vidi je li slobodan,
@@ -51,7 +52,7 @@ import { porukaGreske } from '../core/greska';
           <h3>Taj dan</h3>
           @for (v of r.vjencanja; track v.id) {
             <button type="button" class="red" (click)="otvori(v.id)">
-              <span>{{ v.mlada }} & {{ v.mladozenja }}</span>
+              <span>{{ par(v.mlada, v.mladozenja) }}</span>
               <span class="sivo">{{ statusi[v.status] }}</span>
             </button>
           }
@@ -76,7 +77,7 @@ import { porukaGreske } from '../core/greska';
           <h3>Koji dan prije ili poslije</h3>
           @for (v of r.blizu; track v.id) {
             <button type="button" class="red" (click)="otvori(v.id)">
-              <span>{{ izIso(v.datum) | date: 'EEE d. M.' }} · {{ v.mlada }} & {{ v.mladozenja }}</span>
+              <span>{{ izIso(v.datum) | date: 'EEE d. M.' }} · {{ par(v.mlada, v.mladozenja) }}</span>
               <span class="sivo">{{ statusi[v.status] }}</span>
             </button>
           }
@@ -112,6 +113,7 @@ export class ProvjeraDatumaComponent {
   private dialogRef = inject(MatDialogRef<ProvjeraDatumaComponent>);
 
   readonly izIso = izIso;
+  readonly par = par;
   readonly statusi = STATUSI;
   readonly uloge = ULOGE_SURADNIKA;
   rezultat = signal<Dostupnost | null>(null);

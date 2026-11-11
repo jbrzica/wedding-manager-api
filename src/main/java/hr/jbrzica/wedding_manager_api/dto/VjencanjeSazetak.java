@@ -16,6 +16,7 @@ public record VjencanjeSazetak(
         BigDecimal dogovorenaCijena,
         BigDecimal uplaceno,
         BigDecimal preostalo,
-        boolean kaparaPlacena
+        boolean kaparaPlacena,
+        String paket
 ) {
 }

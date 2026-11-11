@@ -34,6 +34,14 @@ public interface VjencanjeRepository extends JpaRepository<Vjencanje, Long>, Jpa
     long countByTvrtkaIdAndDatumBetweenAndStatusNotIn(
             Long tvrtkaId, LocalDate od, LocalDate doDatuma, Collection<StatusVjencanja> statusi);
 
+    // Nazivi paketa za cijeli popis jednim upitom (umjesto jednog upita po vjenčanju)
+    @Query("""
+            SELECT new hr.jbrzica.wedding_manager_api.repository.PaketVjencanja(v.id, p.naziv)
+            FROM Vjencanje v JOIN v.paket p
+            WHERE v.id IN :ids
+            """)
+    List<PaketVjencanja> naziviPaketa(@Param("ids") Collection<Long> ids);
+
     // ---------- statistika ----------
 
     // Paket se učita istim upitom (JOIN), a ne posebno za svako vjenčanje

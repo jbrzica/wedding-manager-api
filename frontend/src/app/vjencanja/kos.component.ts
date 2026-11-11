@@ -10,6 +10,7 @@ import { ApiService } from '../core/api.service';
 import { KosStavka } from '../core/modeli';
 import { izIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
+import { par } from '../core/imena';
 
 @Component({
   selector: 'app-kos',
@@ -24,7 +25,7 @@ import { porukaGreske } from '../core/greska';
       @for (s of stavke(); track s.id) {
         <mat-card appearance="outlined" class="stavka">
           <div class="podaci">
-            <strong>{{ s.mlada }} & {{ s.mladozenja }}</strong>
+            <strong>{{ par(s.mlada, s.mladozenja) }}</strong>
             <span class="sivo">
               {{ izIso(s.datum) | date: 'd. MMMM yyyy.' }}@if (s.lokacija) { · {{ s.lokacija }} }
             </span>
@@ -60,6 +61,7 @@ export class KosComponent implements OnInit {
   private snack = inject(MatSnackBar);
 
   readonly izIso = izIso;
+  readonly par = par;
   stavke = signal<KosStavka[]>([]);
   ucitava = signal(true);
 
@@ -78,7 +80,7 @@ export class KosComponent implements OnInit {
   }
 
   obrisiTrajno(s: KosStavka): void {
-    if (!confirm(`Zauvijek obrisati vjenčanje ${s.mlada} & ${s.mladozenja}? Ovo se ne može poništiti.`)) {
+    if (!confirm(`Zauvijek obrisati vjenčanje ${par(s.mlada, s.mladozenja)}? Ovo se ne može poništiti.`)) {
       return;
     }
     this.api.obrisiTrajno(s.id).subscribe({

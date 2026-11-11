@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
-import { ClanTvrtke, Tvrtka } from '../core/modeli';
+import { ClanTvrtke, PodaciTvrtke, Tvrtka } from '../core/modeli';
 import { porukaGreske } from '../core/greska';
 
 @Component({
@@ -17,17 +17,43 @@ import { porukaGreske } from '../core/greska';
   template: `
     @if (tvrtka(); as t) {
       <mat-card appearance="outlined">
-        <mat-card-header><mat-card-title>Naziv tvrtke</mat-card-title></mat-card-header>
+        <mat-card-header>
+          <mat-card-title>Podaci tvrtke</mat-card-title>
+          <mat-card-subtitle>idu u zaglavlje ugovora</mat-card-subtitle>
+        </mat-card-header>
         <mat-card-content>
           @if (auth.vlasnik()) {
-            <form (ngSubmit)="preimenuj()" class="u-redu">
-              <mat-form-field appearance="outline" subscriptSizing="dynamic">
-                <input matInput name="naziv" [(ngModel)]="naziv" required>
+            <form (ngSubmit)="spremi()" #f="ngForm" class="podaci">
+              <mat-form-field appearance="outline" class="cijelo">
+                <mat-label>Naziv</mat-label>
+                <input matInput name="naziv" [(ngModel)]="podaci.naziv" required>
               </mat-form-field>
-              <button mat-flat-button type="submit" [disabled]="!naziv.trim() || naziv === t.naziv">Spremi</button>
+              <mat-form-field appearance="outline" class="cijelo">
+                <mat-label>Adresa</mat-label>
+                <input matInput name="adresa" [(ngModel)]="podaci.adresa" placeholder="npr. Ulica 1, Đakovo">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>OIB</mat-label>
+                <input matInput name="oib" [(ngModel)]="podaci.oib" inputmode="numeric" maxlength="11" pattern="\d{11}">
+                <mat-error>OIB ima 11 znamenki</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Telefon</mat-label>
+                <input matInput name="telefon" [(ngModel)]="podaci.telefon" type="tel">
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="cijelo">
+                <mat-label>Email</mat-label>
+                <input matInput name="email" [(ngModel)]="podaci.email" type="email" email>
+                <mat-error>Email nije ispravan</mat-error>
+              </mat-form-field>
+              <div class="cijelo"><button mat-flat-button type="submit" [disabled]="f.invalid || !podaci.naziv.trim()">Spremi</button></div>
             </form>
           } @else {
-            <p>{{ t.naziv }}</p>
+            <p><strong>{{ t.naziv }}</strong></p>
+            @if (t.adresa) { <p>{{ t.adresa }}</p> }
+            @if (t.oib) { <p>OIB: {{ t.oib }}</p> }
+            @if (t.telefon) { <p>{{ t.telefon }}</p> }
+            @if (t.email) { <p>{{ t.email }}</p> }
           }
         </mat-card-content>
       </mat-card>
@@ -69,6 +95,10 @@ import { porukaGreske } from '../core/greska';
   `,
   styles: `
     :host { display: flex; flex-direction: column; gap: 16px; }
+    .podaci { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; margin-top: 8px; }
+    .cijelo { grid-column: 1 / -1; }
+    @media (max-width: 480px) { .podaci { grid-template-columns: 1fr; } }
+    mat-card-content p { margin: 4px 0; }
     .u-redu { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .u-redu mat-form-field { flex: 1; min-width: 220px; }
   `,
@@ -79,19 +109,23 @@ export class TvrtkaComponent implements OnInit {
   auth = inject(AuthService);
 
   tvrtka = signal<Tvrtka | null>(null);
-  naziv = '';
+  podaci: PodaciTvrtke = { naziv: '', adresa: null, oib: null, telefon: null, email: null };
   emailPoziva = '';
 
   ngOnInit(): void {
     this.ucitaj();
   }
 
-  preimenuj(): void {
-    this.api.preimenujTvrtku(this.naziv.trim()).subscribe({
+  spremi(): void {
+    // Prazno polje šalje se kao null, da backend ne dobije "" umjesto „nije upisano”
+    const prazno = (s: string | null) => (s?.trim() ? s.trim() : null);
+    const p = this.podaci;
+    this.api.spremiTvrtku({ naziv: p.naziv.trim(), adresa: prazno(p.adresa), oib: prazno(p.oib),
+      telefon: prazno(p.telefon), email: prazno(p.email) }).subscribe({
       next: (t) => {
         this.postavi(t);
         this.auth.osvjeziKorisnika();
-        this.poruka('Naziv je spremljen.');
+        this.poruka('Podaci su spremljeni.');
       },
       error: (err) => this.poruka(porukaGreske(err)),
     });
@@ -123,7 +157,7 @@ export class TvrtkaComponent implements OnInit {
 
   private postavi(t: Tvrtka): void {
     this.tvrtka.set(t);
-    this.naziv = t.naziv;
+    this.podaci = { naziv: t.naziv, adresa: t.adresa, oib: t.oib, telefon: t.telefon, email: t.email };
   }
 
   private poruka(tekst: string): void {

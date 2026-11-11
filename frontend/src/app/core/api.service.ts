@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  Dodatak, Dostupnost, Stranica, Prognoza, Promjena, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
+  Dodatak, Dostupnost, Stranica, PodaciTvrtke, PredlozakUgovora, Prognoza, Promjena, StavkaRasporeda, FilterVjencanja, KosStavka, SuradnikPregled, Financije, Statistika, Paket, Poruka, Pregled, StatusVjencanja, Suradnik, Tvrtka,
   Uplata, VjencanjeDetalji, Zadatak, VjencanjeSazetak, VjencanjeZahtjev, VrstaUplate,
 } from './modeli';
 
@@ -204,8 +204,32 @@ export class ApiService {
     return this.http.get<Tvrtka>('/api/tvrtka');
   }
 
-  preimenujTvrtku(naziv: string): Observable<Tvrtka> {
-    return this.http.put<Tvrtka>('/api/tvrtka', { naziv });
+  spremiTvrtku(podaci: PodaciTvrtke): Observable<Tvrtka> {
+    return this.http.put<Tvrtka>('/api/tvrtka', podaci);
+  }
+
+  // Ugovor
+
+  ugovor(vjencanjeId: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`/api/vjencanja/${vjencanjeId}/ugovor`, { observe: 'response', responseType: 'blob' });
+  }
+
+  predlozakUgovora(): Observable<PredlozakUgovora> {
+    return this.http.get<PredlozakUgovora>('/api/tvrtka/ugovor');
+  }
+
+  preuzmiPredlozakUgovora(): Observable<HttpResponse<Blob>> {
+    return this.http.get('/api/tvrtka/ugovor/predlozak', { observe: 'response', responseType: 'blob' });
+  }
+
+  ucitajPredlozakUgovora(datoteka: File): Observable<PredlozakUgovora> {
+    const podaci = new FormData();
+    podaci.append('datoteka', datoteka);
+    return this.http.put<PredlozakUgovora>('/api/tvrtka/ugovor/predlozak', podaci);
+  }
+
+  vratiZadaniPredlozak(): Observable<PredlozakUgovora> {
+    return this.http.delete<PredlozakUgovora>('/api/tvrtka/ugovor/predlozak');
   }
 
   kalendarLink(): Observable<{ putanja: string }> {

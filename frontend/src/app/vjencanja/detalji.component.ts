@@ -19,7 +19,8 @@ import { Osoba, Prognoza, StatusVjencanja, VjencanjeDetalji, VrstaUplate, Zadata
 import { opisVremena } from '../core/vrijeme';
 import { IZVORI_UPITA, STATUSI, ULOGE_SURADNIKA, VRSTE_UPLATE, kljucevi } from '../core/oznake';
 import { izIso, uIso } from '../core/datumi';
-import { porukaGreske } from '../core/greska';
+import { porukaGreske, porukaGreskeDatoteke } from '../core/greska';
+import { imeDatoteke, spremiIliPodijeli } from '../core/datoteka';
 import { StatusOznakaComponent } from './status-oznaka.component';
 
 @Component({
@@ -67,6 +68,7 @@ import { StatusOznakaComponent } from './status-oznaka.component';
         </button>
         <mat-menu #akcije="matMenu">
           <a mat-menu-item [routerLink]="['/vjencanja', v.id, 'uredi']"><mat-icon>edit</mat-icon> Uredi</a>
+          <button mat-menu-item (click)="ugovor(v)"><mat-icon>description</mat-icon> Ugovor</button>
           <button mat-menu-item (click)="podijeliRaspored()"><mat-icon>share</mat-icon> Podijeli raspored</button>
           <button mat-menu-item (click)="obrisi()" class="opasno"><mat-icon>delete</mat-icon> Obriši</button>
         </mat-menu>
@@ -478,6 +480,22 @@ export class DetaljiComponent implements OnInit {
     if (v) {
       this.v.set({ ...v, zadaci: promjena(v.zadaci) });
     }
+  }
+
+  ugovor(v: VjencanjeDetalji): void {
+    this.snack.open('Pripremam ugovor…');
+    this.api.ugovor(v.id).subscribe({
+      next: async (odgovor) => {
+        const ime = imeDatoteke(odgovor, 'ugovor.docx');
+        this.snack.dismiss();
+        // iPhone dopušta dijeljenje samo odmah nakon dodira; ako je preuzimanje trajalo, treba još jedan dodir
+        if (!(await spremiIliPodijeli(odgovor.body!, ime))) {
+          this.snack.open('Ugovor je spreman.', 'Otvori', { duration: 10000 }).onAction()
+            .subscribe(() => spremiIliPodijeli(odgovor.body!, ime));
+        }
+      },
+      error: async (err) => this.snack.open(await porukaGreskeDatoteke(err), 'OK', { duration: 5000 }),
+    });
   }
 
   obrisi(): void {

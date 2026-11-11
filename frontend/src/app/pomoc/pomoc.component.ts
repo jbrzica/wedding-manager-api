@@ -58,6 +58,16 @@ const TEME: Tema[] = [
     ],
   },
   {
+    id: 'ugovor', ikona: 'description', naslov: 'Ugovor',
+    tekst: [
+      'Na vjenčanju: tri točke gore desno → Ugovor. Aplikacija napravi Word ugovor s mladencima, datumom, adresama, paketom, cijenom, kaparom i dodacima.',
+      'Na mobitelu se otvori izbornik za dijeljenje: Spremi u Datoteke, Ispis, Mail ili WhatsApp. Na računalu se ugovor preuzme.',
+      'Ono što nije upisano na vjenčanju u ugovoru je crta, pa se može dopisati rukom. Crkva se uzima iz rasporeda dana (stavka koja se zove npr. Crkva).',
+      'Naziv, adresu, OIB, telefon i email tvrtke za zaglavlje ugovora upišite jednom u Postavkama → Podaci tvrtke.',
+      'Vlastiti ugovor: Postavke → Ugovor → Preuzmi predložak, u Wordu ga uredite (tekst, logo) i Učitaj svoj. Oznake poput {{narucitelj}} aplikacija zamijeni podacima; popis je u Postavkama.',
+    ],
+  },
+  {
     id: 'kalendar', ikona: 'event', naslov: 'Kalendar na mobitelu',
     tekst: [
       'U Postavkama je link za kalendar. Kopiraj ga i dodaj u kalendar.',

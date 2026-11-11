@@ -21,4 +21,15 @@ public class Tvrtka {
 
     @Column(unique = true, length = 64)
     private String kalendarToken;
+
+    // Za zaglavlje ugovora
+    private String adresa;
+
+    @Column(length = 11)
+    private String oib;
+
+    @Column(length = 50)
+    private String telefon;
+
+    private String email;
 }

@@ -46,11 +46,13 @@ public class TvrtkaService {
     // Kalendar se računa kao povezan čim je link za kalendar jednom otvoren u Postavkama
     public PrviKoraciResponse prviKoraci() {
         Long tvrtkaId = trenutniKorisnik.tvrtkaId();
+        long brojVjencanja = vjencanjeRepository.countByTvrtkaId(tvrtkaId);
         return new PrviKoraciResponse(
                 paketRepository.countByTvrtkaId(tvrtkaId) > 0,
                 suradnikRepository.countByTvrtkaId(tvrtkaId) > 0,
-                vjencanjeRepository.countByTvrtkaId(tvrtkaId) > 0,
-                mojaTvrtka().getKalendarToken() != null);
+                brojVjencanja > 0,
+                mojaTvrtka().getKalendarToken() != null,
+                brojVjencanja);
     }
 
     public TvrtkaResponse moja() {

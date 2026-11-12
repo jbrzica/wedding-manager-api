@@ -37,6 +37,8 @@ function zapisi(kljuc: string): void {
  * Lista „Prvi koraci“ na početnoj stranici. Koraci se označavaju sami prema podacima,
  * a lista nestaje kad je sve gotovo ili kad je korisnik sakrije.
  */
+const DOVOLJNO_VJENCANJA = 3;
+
 @Component({
   selector: 'app-prvi-koraci',
   imports: [RouterLink, MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule],
@@ -92,7 +94,7 @@ function zapisi(kljuc: string): void {
 export class PrviKoraciComponent implements OnInit {
   private api = inject(ApiService);
 
-  private podaci = signal<{ paketi: boolean; suradnici: boolean; vjencanje: boolean; kalendar: boolean } | null>(null);
+  private podaci = signal<{ paketi: boolean; suradnici: boolean; vjencanje: boolean; kalendar: boolean; brojVjencanja: number } | null>(null);
   private skriveno = signal(procitaj(KLJUC_SKRIVENO));
   otvoreno = signal(false);
   // Ako je aplikacija upravo otvorena s početnog zaslona, korak je sigurno gotov
@@ -114,7 +116,9 @@ export class PrviKoraciComponent implements OnInit {
     ];
   });
   gotovih = computed(() => this.koraci().filter((k) => k.gotovo).length);
-  prikazi = computed(() => this.podaci() !== null && !this.skriveno() && this.gotovih() < this.koraci().length);
+  // Tko ima nekoliko vjenčanja, aplikaciju već koristi i vodič mu samo zauzima mjesto
+  prikazi = computed(() => this.podaci() !== null && !this.skriveno() && this.gotovih() < this.koraci().length
+    && this.podaci()!.brojVjencanja < DOVOLJNO_VJENCANJA);
 
   ngOnInit(): void {
     if (!this.skriveno()) {

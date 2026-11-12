@@ -90,8 +90,8 @@ export class ApiService {
     return this.http.put<StavkaRasporeda[]>('/api/tvrtka/predlozak-rasporeda', stavke);
   }
 
-  prviKoraci(): Observable<{ paketi: boolean; suradnici: boolean; vjencanje: boolean; kalendar: boolean }> {
-    return this.http.get<{ paketi: boolean; suradnici: boolean; vjencanje: boolean; kalendar: boolean }>('/api/tvrtka/prvi-koraci');
+  prviKoraci(): Observable<{ paketi: boolean; suradnici: boolean; vjencanje: boolean; kalendar: boolean; brojVjencanja: number }> {
+    return this.http.get<{ paketi: boolean; suradnici: boolean; vjencanje: boolean; kalendar: boolean; brojVjencanja: number }>('/api/tvrtka/prvi-koraci');
   }
 
   dostupnost(datum: string): Observable<Dostupnost> {

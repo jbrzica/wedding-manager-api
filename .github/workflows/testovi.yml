@@ -35,7 +35,8 @@ jobs:
           path: build/reports/tests/test
 
   frontend:
-    name: Frontend testovi i build
+    # Ime mora ostati "Frontend build": pravilo na grani main traži provjeru baš s tim imenom
+    name: Frontend build
     runs-on: ubuntu-latest
     defaults:
       run:

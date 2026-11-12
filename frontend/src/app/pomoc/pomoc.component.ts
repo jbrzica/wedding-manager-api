@@ -114,9 +114,9 @@ const TEME: Tema[] = [
   {
     id: 'kos', ikona: 'delete', naslov: 'Brisanje i koš',
     tekst: [
-      'Obrisano vjenčanje ide u koš (Više → Koš; na računalu krug s inicijalom gore desno), sa svim uplatama, rasporedom i ekipom. Odande ga možeš vratiti 30 dana.',
+      'Obrisano vjenčanje ide u koš (krug s inicijalom gore desno → Koš), sa svim uplatama, rasporedom i ekipom. Odande ga možeš vratiti 30 dana.',
       'Nakon 30 dana briše se zauvijek. Ako želiš odmah, u košu odaberi „Obriši zauvijek“.',
-      'Svako brisanje i vraćanje ostaje zapisano u povijesti promjena (Više → Povijest promjena).',
+      'Svako brisanje i vraćanje ostaje zapisano u povijesti promjena (Postavke → Račun → Povijest promjena).',
     ],
   },
   {
@@ -126,7 +126,7 @@ const TEME: Tema[] = [
       'Član tvrtke vidi i mijenja sve, uključujući cijene i zaradu.',
       'Zaboravljena lozinka: na stranici za prijavu odaberi „Zaboravljena lozinka“ i dobit ćeš šifru mailom.',
       'Prijava traje 30 dana na svakom uređaju. Promjena lozinke odjavljuje sve ostale uređaje, a Odjava samo onaj na kojem jesi.',
-      'Povijest promjena: na svakom vjenčanju vidiš tko je i kada mijenjao cijenu, datum, status ili uplate, a pod Više → Povijest promjena sve promjene u tvrtki, i za obrisana vjenčanja.',
+      'Povijest promjena: na svakom vjenčanju vidiš tko je i kada mijenjao cijenu, datum, status ili uplate, a pod Postavke → Račun → Povijest promjena sve promjene u tvrtki, i za obrisana vjenčanja.',
       'Podaci se svaku noć spremaju u sigurnosnu kopiju.',
     ],
   },
@@ -134,7 +134,7 @@ const TEME: Tema[] = [
 
 const PITANJA: { pitanje: string; odgovor: string }[] = [
   { pitanje: 'Kako uključiti tamni način?',
-    odgovor: 'Više → Postavke → Izgled. „Kao uređaj” prati noćni način mobitela. Izbor vrijedi na uređaju na kojem je promijenjen.' },
+    odgovor: 'Krug s inicijalom gore desno → Postavke → Izgled. „Kao uređaj” prati noćni način mobitela. Izbor vrijedi na uređaju na kojem je promijenjen.' },
   { pitanje: 'Ne vidim sva vjenčanja na popisu.',
     odgovor: 'Popis prikazuje 30 po 30. Na dnu dodirni Prikaži još. Provjeri i filtere iznad popisa.' },
   { pitanje: 'Promijenio sam cijenu paketa, a stara vjenčanja imaju staru cijenu?',

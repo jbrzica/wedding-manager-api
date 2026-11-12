@@ -14,6 +14,7 @@ import { STATUSI, ULOGE_SURADNIKA } from '../core/oznake';
 import { izIso, uIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
 import { par } from '../core/imena';
+import { OPIS_STANJA, stanjeDatuma } from '../core/dostupnost';
 
 /**
  * „Jeste li slobodni 14. lipnja?“: jedan datum i odmah se vidi je li slobodan,
@@ -40,10 +41,10 @@ import { par } from '../core/imena';
       }
 
       @if (rezultat(); as r) {
-        <div class="ishod" [class.slobodno]="r.slobodno" [class.zauzeto]="!r.slobodno">
-          <mat-icon>{{ r.slobodno ? 'event_available' : 'event_busy' }}</mat-icon>
+        <div [class]="'ishod ' + stanje(r)">
+          <mat-icon>{{ opis[stanje(r)].ikona }}</mat-icon>
           <div>
-            <strong>{{ r.slobodno ? 'Slobodno' : 'Zauzeto' }}</strong>
+            <strong>{{ opis[stanje(r)].naslov }}</strong>
             <div>{{ izIso(r.datum) | date: 'EEEE, d. MMMM yyyy.' }}</div>
           </div>
         </div>
@@ -95,6 +96,7 @@ import { par } from '../core/imena';
     .ishod strong { font-size: 17px; }
     .slobodno { background: var(--wm-uspjeh-pozadina); color: var(--wm-uspjeh); }
     .zauzeto { background: var(--wm-opasno-pozadina); color: var(--wm-opasno); }
+    .upit { background: var(--wm-upozorenje-pozadina); color: var(--wm-upozorenje); }
     h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
          color: var(--mat-sys-on-surface-variant); margin: 18px 0 6px; }
     .red { display: flex; justify-content: space-between; gap: 12px; width: 100%; padding: 10px 0; border: none;
@@ -114,6 +116,8 @@ export class ProvjeraDatumaComponent {
 
   readonly izIso = izIso;
   readonly par = par;
+  readonly stanje = stanjeDatuma;
+  readonly opis = OPIS_STANJA;
   readonly statusi = STATUSI;
   readonly uloge = ULOGE_SURADNIKA;
   rezultat = signal<Dostupnost | null>(null);

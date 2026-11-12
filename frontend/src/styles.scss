@@ -91,6 +91,13 @@ html.tamno { @include tamne-boje; }
 }
 
 html, body { height: 100%; }
+/* Zaslon se na mobitelu ne smije povlačiti lijevo-desno. "clip" odreže ono što viri, a za razliku od
+   "hidden" ne napravi novi prostor za skrolanje, pa gornja traka i dalje ostaje zalijepljena. */
+html { overflow-x: hidden; }
+@supports (overflow: clip) {
+  html, body { overflow-x: clip; }
+}
+html, body { overscroll-behavior-x: none; }
 body {
   margin: 0;
   font-family: Inter, 'Helvetica Neue', sans-serif;

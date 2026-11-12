@@ -47,6 +47,7 @@ class PrviKoraciTest {
         mvc.perform(get("/api/tvrtka/prvi-koraci").header("Authorization", "Bearer " + token))
                 .andExpect(jsonPath("$.paketi").value(true))
                 .andExpect(jsonPath("$.kalendar").value(true))
-                .andExpect(jsonPath("$.vjencanje").value(false));
+                .andExpect(jsonPath("$.vjencanje").value(false))
+                .andExpect(jsonPath("$.brojVjencanja").value(0));
     }
 }

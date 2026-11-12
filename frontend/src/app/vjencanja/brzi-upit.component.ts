@@ -12,6 +12,7 @@ import { ApiService } from '../core/api.service';
 import { Dostupnost } from '../core/modeli';
 import { izIso, uIso } from '../core/datumi';
 import { par } from '../core/imena';
+import { OPIS_STANJA, stanjeDatuma } from '../core/dostupnost';
 import { porukaGreske } from '../core/greska';
 
 /**
@@ -34,10 +35,10 @@ import { porukaGreske } from '../core/greska';
         </mat-form-field>
 
         @if (dostupnost(); as d) {
-          <div class="ishod" [class.slobodno]="d.slobodno" [class.zauzeto]="!d.slobodno">
-            <mat-icon>{{ d.slobodno ? 'event_available' : 'event_busy' }}</mat-icon>
+          <div [class]="'ishod ' + stanje(d)">
+            <mat-icon>{{ opis[stanje(d)].ikona }}</mat-icon>
             <div>
-              <strong>{{ d.slobodno ? 'Slobodno' : 'Zauzeto' }}</strong> · {{ izIso(d.datum) | date: 'EEEE, d. MMMM yyyy.' }}
+              <strong>{{ opis[stanje(d)].naslov }}</strong> · {{ izIso(d.datum) | date: 'EEEE, d. MMMM yyyy.' }}
               @for (v of d.vjencanja; track v.id) {
                 <div>{{ par(v.mlada, v.mladozenja) }}</div>
               }
@@ -75,6 +76,7 @@ import { porukaGreske } from '../core/greska';
     .ishod { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; font-size: 14px; }
     .slobodno { background: var(--wm-uspjeh-pozadina); color: var(--wm-uspjeh); }
     .zauzeto { background: var(--wm-opasno-pozadina); color: var(--wm-opasno); }
+    .upit { background: var(--wm-upozorenje-pozadina); color: var(--wm-upozorenje); }
   `,
 })
 export class BrziUpitComponent {
@@ -84,6 +86,8 @@ export class BrziUpitComponent {
 
   readonly izIso = izIso;
   readonly par = par;
+  readonly stanje = stanjeDatuma;
+  readonly opis = OPIS_STANJA;
   dostupnost = signal<Dostupnost | null>(null);
   sprema = signal(false);
   greska = signal('');

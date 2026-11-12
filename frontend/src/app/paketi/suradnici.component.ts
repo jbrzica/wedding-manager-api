@@ -18,8 +18,8 @@ import { porukaGreske } from '../core/greska';
   imports: [ReactiveFormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatMenuModule],
   template: `
     <p class="opis">
-      Vanjski snimatelji, fotografi, asistenti... Dodajete ih u ekipu pojedinog vjenčanja.
-      Svaki suradnik ima svoj link (<mat-icon inline>link</mat-icon>) na kojem vidi samo svoja vjenčanja, bez cijena.
+      Vanjski snimatelji, fotografi, asistenti... Dodaješ ih u ekipu pojedinog vjenčanja.
+      Svaki suradnik ima svoj link na kojem vidi samo svoja vjenčanja, bez cijena.
     </p>
 
     <mat-card appearance="outlined" class="lista">
@@ -28,18 +28,23 @@ import { porukaGreske } from '../core/greska';
           <div class="glavno">
             <strong>{{ s.ime }}</strong> <span class="sivo">· {{ oznake[s.uloga] }}</span>
             <div class="sivo">
-              @if (s.telefon) { <a [href]="'tel:' + s.telefon">{{ s.telefon }}</a> }
-              @if (s.email) { · {{ s.email }} }
+              {{ s.telefon }}@if (s.telefon && s.email) { · }{{ s.email }}
+            </div>
+            <!-- Dvije stvari koje se sa suradnikom stvarno rade: nazvati ga i poslati mu njegov link -->
+            <div class="radnje">
+              @if (s.telefon) {
+                <a mat-stroked-button [href]="'tel:' + s.telefon"><mat-icon>call</mat-icon> Nazovi</a>
+              }
+              <button mat-stroked-button type="button" (click)="posaljiLink(s)"><mat-icon>send</mat-icon> Pošalji link</button>
             </div>
           </div>
-          <button mat-icon-button [matMenuTriggerFor]="izbornikLinka" aria-label="Link za suradnika"><mat-icon>link</mat-icon></button>
-          <mat-menu #izbornikLinka="matMenu">
-            <button mat-menu-item (click)="posaljiLink(s)"><mat-icon>send</mat-icon> Pošalji link suradniku</button>
+          <button mat-icon-button [matMenuTriggerFor]="izbornik" [attr.aria-label]="'Više za ' + s.ime"><mat-icon>more_vert</mat-icon></button>
+          <mat-menu #izbornik="matMenu">
+            <button mat-menu-item (click)="uredi(s)"><mat-icon>edit</mat-icon> Uredi</button>
             <button mat-menu-item (click)="kopirajLink(s)"><mat-icon>content_copy</mat-icon> Kopiraj link</button>
             <button mat-menu-item (click)="noviLink(s)"><mat-icon>refresh</mat-icon> Napravi novi link</button>
+            <button mat-menu-item (click)="obrisi(s)"><mat-icon>delete_outline</mat-icon> Obriši</button>
           </mat-menu>
-          <button mat-icon-button (click)="uredi(s)" aria-label="Uredi"><mat-icon>edit</mat-icon></button>
-          <button mat-icon-button (click)="obrisi(s)" aria-label="Obriši"><mat-icon>delete_outline</mat-icon></button>
         </div>
       } @empty {
         <p class="prazno">Još nemaš suradnika. Dodaj snimatelje, fotografe ili asistente s kojima radiš, pa ih možeš stavljati u ekipu vjenčanja.</p>
@@ -79,6 +84,10 @@ import { porukaGreske } from '../core/greska';
         </form>
       </mat-card-content>
     </mat-card>
+  `,
+  styles: `
+    .red { align-items: flex-start; padding-top: 12px; padding-bottom: 12px; }
+    .radnje { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   `,
 })
 export class SuradniciComponent implements OnInit {
@@ -149,7 +158,7 @@ export class SuradniciComponent implements OnInit {
             // korisnik je odustao ili dijeljenje nije dostupno, pa kopiramo
           }
         }
-        this.kopiraj(tekst, 'Poruka s linkom je kopirana, zalijepite je suradniku.');
+        this.kopiraj(tekst, 'Poruka s linkom je kopirana, zalijepi je suradniku.');
       },
       error: (err) => this.poruka(porukaGreske(err)),
     });
@@ -163,7 +172,7 @@ export class SuradniciComponent implements OnInit {
   }
 
   noviLink(s: Suradnik): void {
-    if (!confirm(`Stari link za "${s.ime}" prestat će raditi. Novi link morate mu ponovno poslati. Nastaviti?`)) {
+    if (!confirm(`Stari link za "${s.ime}" prestat će raditi. Novi link moraš mu ponovno poslati. Nastaviti?`)) {
       return;
     }
     this.api.noviSuradnikLink(s.id).subscribe({

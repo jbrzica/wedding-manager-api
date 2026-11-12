@@ -17,7 +17,7 @@ import { porukaGreske } from '../core/greska';
       <mat-card-header><mat-card-title>Kalendar na mobitelu</mat-card-title></mat-card-header>
       <mat-card-content>
         <p class="sivo">
-          Dodajte ovaj link u Google ili Apple kalendar i sva vjenčanja pojavit će se u kalendaru na mobitelu.
+          Dodaj ovaj link u Google ili Apple kalendar i sva vjenčanja pojavit će se u kalendaru na mobitelu.
           Novo vjenčanje se pojavi samo, ali Google kalendar osvježava i do nekoliko sati.
         </p>
 
@@ -32,20 +32,20 @@ import { porukaGreske } from '../core/greska';
 
         <h3>Google kalendar</h3>
         <ol>
-          <li>Na računalu otvorite <strong>calendar.google.com</strong>.</li>
-          <li>Lijevo kod „Ostali kalendari” kliknite <strong>+</strong> → <strong>Iz URL-a</strong>.</li>
-          <li>Zalijepite link i kliknite <strong>Dodaj kalendar</strong>. Pojavit će se i na mobitelu.</li>
+          <li>Na računalu otvori <strong>calendar.google.com</strong>.</li>
+          <li>Lijevo kod „Ostali kalendari” klikni <strong>+</strong> → <strong>Iz URL-a</strong>.</li>
+          <li>Zalijepi link i klikni <strong>Dodaj kalendar</strong>. Pojavit će se i na mobitelu.</li>
         </ol>
 
         <h3>iPhone</h3>
         <ol>
           <li><strong>Postavke</strong> → <strong>Kalendar</strong> → <strong>Računi</strong> → <strong>Dodaj račun</strong> → <strong>Ostalo</strong>.</li>
-          <li><strong>Dodaj pretplatnički kalendar</strong>, zalijepite link i spremite.</li>
+          <li><strong>Dodaj pretplatnički kalendar</strong>, zalijepi link i spremi.</li>
         </ol>
 
         <p class="upozorenje">
           <mat-icon inline>lock</mat-icon>
-          Tko ima ovaj link vidi vjenčanja i brojeve mladenaca. Ne šaljite ga nikome izvan tvrtke.
+          Tko ima ovaj link vidi vjenčanja i brojeve mladenaca. Ne šalji ga nikome izvan tvrtke.
         </p>
         @if (auth.vlasnik()) {
           <button mat-stroked-button type="button" (click)="noviLink()">
@@ -80,12 +80,12 @@ export class KalendarLinkComponent implements OnInit {
   kopiraj(link: string): void {
     navigator.clipboard.writeText(link).then(
       () => this.poruka('Link je kopiran.'),
-      () => this.poruka('Kopiranje nije uspjelo, označite link i kopirajte ga ručno.'),
+      () => this.poruka('Kopiranje nije uspjelo, označi link i kopiraj ga ručno.'),
     );
   }
 
   noviLink(): void {
-    if (!confirm('Stari link prestat će raditi i kalendar ćete morati ponovno dodati na svim mobitelima. Nastaviti?')) {
+    if (!confirm('Stari link prestat će raditi i kalendar ćeš morati ponovno dodati na svim mobitelima. Nastaviti?')) {
       return;
     }
     this.api.noviKalendarLink().subscribe({

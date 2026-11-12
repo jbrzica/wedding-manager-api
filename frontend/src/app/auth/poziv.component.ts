@@ -15,7 +15,7 @@ import { porukaGreske } from '../core/greska';
     <div class="auth-stranica">
       <mat-card class="auth-kartica" appearance="outlined">
         <h1>Pridruži se tvrtki</h1>
-        <p class="podnaslov">Upišite email na koji je stigao poziv i šifru iz poziva.</p>
+        <p class="podnaslov">Upiši email na koji je stigao poziv i šifru iz poziva.</p>
 
         <form [formGroup]="forma" (ngSubmit)="posalji()">
           <mat-form-field appearance="outline">
@@ -27,7 +27,7 @@ import { porukaGreske } from '../core/greska';
             <input matInput formControlName="kod" inputmode="numeric" maxlength="6" class="sifra">
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Vaše ime</mat-label>
+            <mat-label>Tvoje ime</mat-label>
             <input matInput formControlName="ime" autocomplete="name">
           </mat-form-field>
           <mat-form-field appearance="outline">

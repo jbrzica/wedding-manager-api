@@ -7,7 +7,12 @@ mat-card-content { padding-top: 8px; }
 .plus { color: var(--wm-uspjeh); }
 .minus { color: var(--mat-sys-error); }
 
-.kartice { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.glavne { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat.velika { padding: 20px; }
+.stat.velika .vrijednost { font-size: 36px; }
+.naplaceno { height: 6px; border-radius: 3px; margin: 6px 0 4px; overflow: hidden; background: var(--mat-sys-surface-container-high); }
+.naplaceno div { height: 100%; border-radius: 3px; background: var(--wm-uspjeh); }
+.kartice { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .stat.upozorenje .vrijednost { color: var(--wm-upozorenje); }
 .stat { padding: 16px; display: flex; flex-direction: column; gap: 2px; }
 .oznaka { font-size: 12px; text-transform: uppercase; color: var(--mat-sys-on-surface-variant); }
@@ -34,7 +39,6 @@ mat-card-content { padding-top: 8px; }
 .mjesec { font-size: 12px; margin-top: 4px; }
 .broj { font-size: 11px; height: 14px; color: var(--mat-sys-on-surface-variant); }
 
-.dva { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
 .tri { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
 
 .izvor { margin-bottom: 12px; }
@@ -43,23 +47,17 @@ mat-card-content { padding-top: 8px; }
 .upiti { height: 100%; background: var(--mat-sys-primary-container); border-radius: 5px; overflow: hidden; }
 .posao { height: 100%; background: var(--mat-sys-primary); }
 
-.subote { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; }
-.subota, .kocka { border-radius: 6px; background: var(--wm-uspjeh-pozadina); color: var(--wm-uspjeh); }
-.subota { padding: 6px 0; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
-.zauzeto { background: var(--mat-sys-surface-container-high); color: var(--mat-sys-on-surface-variant); text-decoration: line-through; }
-.upit { background: var(--wm-upozorenje-pozadina); color: var(--wm-upozorenje); }
-.kocka { display: inline-block; width: 12px; height: 12px; vertical-align: -1px; margin-right: 4px; }
-.legenda-subote { display: flex; gap: 16px; padding: 0 16px 16px; font-size: 13px; color: var(--mat-sys-on-surface-variant); }
-
 .redak { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--mat-sys-outline-variant); }
 .redak:last-child { border-bottom: 0; }
 
 @media (max-width: 900px) {
   .kartice { grid-template-columns: 1fr 1fr; }
-  .dva, .tri { grid-template-columns: 1fr; }
+  .tri { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
+  .glavne { grid-template-columns: 1fr; }
   .vrijednost { font-size: 22px; }
+  .stat.velika .vrijednost { font-size: 32px; }
   .graf { gap: 2px; height: 180px; }
   .iznos { display: none; }
   .mjesec { font-size: 10px; }

@@ -199,7 +199,7 @@ public class VjencanjeService {
 
         for (Vjencanje v : vjencanjeRepository.findByTvrtkaIdAndDatum(tvrtkaId, datum)) {
             if (!v.getId().equals(izuzmiId) && v.getStatus() != StatusVjencanja.OTKAZANO) {
-                upozorenja.add("Na taj datum već imate vjenčanje: " + parMladenaca(v));
+                upozorenja.add("Na taj datum već imaš vjenčanje: " + parMladenaca(v));
             }
         }
 

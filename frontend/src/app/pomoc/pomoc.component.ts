@@ -64,8 +64,8 @@ const TEME: Tema[] = [
       'Na vjenčanju: tri točke gore desno → Ugovor. Aplikacija napravi Word ugovor s mladencima, datumom, adresama, paketom, cijenom, kaparom i dodacima.',
       'Na mobitelu se otvori izbornik za dijeljenje: Spremi u Datoteke, Ispis, Mail ili WhatsApp. Na računalu se ugovor preuzme.',
       'Ono što nije upisano na vjenčanju u ugovoru je crta, pa se može dopisati rukom. Crkva se uzima iz rasporeda dana (stavka koja se zove npr. Crkva).',
-      'Naziv, adresu, OIB, telefon i email tvrtke za zaglavlje ugovora upišite jednom u Postavkama → Podaci tvrtke.',
-      'Vlastiti ugovor: Postavke → Ugovor → Preuzmi predložak, u Wordu ga uredite (tekst, logo) i Učitaj svoj. Oznake poput {{narucitelj}} aplikacija zamijeni podacima; popis je u Postavkama.',
+      'Naziv, adresu, OIB, telefon i email tvrtke za zaglavlje ugovora upiši jednom u Postavkama → Podaci tvrtke.',
+      'Vlastiti ugovor: Postavke → Ugovor → Preuzmi predložak, u Wordu ga uredi (tekst, logo) i Učitaj svoj. Oznake poput {{narucitelj}} aplikacija zamijeni podacima; popis je u Postavkama.',
     ],
   },
   {
@@ -108,15 +108,15 @@ const TEME: Tema[] = [
       'Prihod je zbroj dogovorenih cijena potvrđenih vjenčanja u godini; upiti i otkazana se ne broje.',
       'Upiti → posao: koliko upisanih termina je postalo stvarni posao. Po izvorima vidiš isplati li se Instagram, Google ili preporuke.',
       'Još za naplatiti: koliko od dogovorenog posla te godine još nije uplaćeno.',
-      'Slobodne subote pokazuju koliko termina u sezoni još možeš prodati.',
+      'Slobodne subote (koliko termina u sezoni još možeš prodati) su ispod kalendara. Dodir na subotu otvori taj dan.',
     ],
   },
   {
     id: 'kos', ikona: 'delete', naslov: 'Brisanje i koš',
     tekst: [
-      'Obrisano vjenčanje ide u koš (izbornik računa → Koš), sa svim uplatama, rasporedom i ekipom. Odande ga možeš vratiti 30 dana.',
+      'Obrisano vjenčanje ide u koš (Više → Koš; na računalu krug s inicijalom gore desno), sa svim uplatama, rasporedom i ekipom. Odande ga možeš vratiti 30 dana.',
       'Nakon 30 dana briše se zauvijek. Ako želiš odmah, u košu odaberi „Obriši zauvijek“.',
-      'Svako brisanje i vraćanje ostaje zapisano u povijesti promjena (Postavke).',
+      'Svako brisanje i vraćanje ostaje zapisano u povijesti promjena (Više → Povijest promjena).',
     ],
   },
   {
@@ -126,7 +126,7 @@ const TEME: Tema[] = [
       'Član tvrtke vidi i mijenja sve, uključujući cijene i zaradu.',
       'Zaboravljena lozinka: na stranici za prijavu odaberi „Zaboravljena lozinka“ i dobit ćeš šifru mailom.',
       'Prijava traje 30 dana na svakom uređaju. Promjena lozinke odjavljuje sve ostale uređaje, a Odjava samo onaj na kojem jesi.',
-      'Povijest promjena: na svakom vjenčanju vidiš tko je i kada mijenjao cijenu, datum, status ili uplate, a u Postavkama sve promjene u tvrtki, i za obrisana vjenčanja.',
+      'Povijest promjena: na svakom vjenčanju vidiš tko je i kada mijenjao cijenu, datum, status ili uplate, a pod Više → Povijest promjena sve promjene u tvrtki, i za obrisana vjenčanja.',
       'Podaci se svaku noć spremaju u sigurnosnu kopiju.',
     ],
   },
@@ -134,9 +134,9 @@ const TEME: Tema[] = [
 
 const PITANJA: { pitanje: string; odgovor: string }[] = [
   { pitanje: 'Kako uključiti tamni način?',
-    odgovor: 'Izbornik računa → Postavke → Izgled. „Kao uređaj” prati noćni način mobitela. Izbor vrijedi na uređaju na kojem ste ga promijenili.' },
+    odgovor: 'Više → Postavke → Izgled. „Kao uređaj” prati noćni način mobitela. Izbor vrijedi na uređaju na kojem je promijenjen.' },
   { pitanje: 'Ne vidim sva vjenčanja na popisu.',
-    odgovor: 'Popis prikazuje 30 po 30. Na dnu kliknite Prikaži još. Provjerite i filtere iznad popisa.' },
+    odgovor: 'Popis prikazuje 30 po 30. Na dnu dodirni Prikaži još. Provjeri i filtere iznad popisa.' },
   { pitanje: 'Promijenio sam cijenu paketa, a stara vjenčanja imaju staru cijenu?',
     odgovor: 'Tako je namjerno: na vjenčanju se pamti cijena koju ste dogovorili. Ako treba, promijeni cijenu na samom vjenčanju.' },
   { pitanje: 'Slučajno sam obrisao vjenčanje.',

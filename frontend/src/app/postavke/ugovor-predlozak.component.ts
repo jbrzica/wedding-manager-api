@@ -48,7 +48,7 @@ const OZNAKE: { oznaka: string; opis: string }[] = [
         @if (info(); as i) {
           <p>
             @if (i.vlastiti) {
-              Koristi se vaš predložak <strong>{{ i.nazivDatoteke }}</strong>
+              Koristi se tvoj predložak <strong>{{ i.nazivDatoteke }}</strong>
               <span class="sivo"> · učitan {{ i.azurirano | date: 'd. M. yyyy.' }}</span>
             } @else {
               Koristi se zadani predložak aplikacije.
@@ -68,8 +68,8 @@ const OZNAKE: { oznaka: string; opis: string }[] = [
           }
         </div>
         <p class="sivo">
-          Preuzmite predložak, u Wordu promijenite tekst ili dodajte logo i učitajte ga natrag.
-          Na mjesta gdje treba doći podatak upišite oznaku u vitičastim zagradama, npr. {{ primjer }}.
+          Preuzmi predložak, u Wordu promijeni tekst ili dodaj logo i učitaj ga natrag.
+          Na mjesta gdje treba doći podatak upiši oznaku u vitičastim zagradama, npr. {{ primjer }}.
           Ako podatak nije upisan, u ugovoru je crta za dopisivanje rukom.
         </p>
         <mat-expansion-panel class="oznake">
@@ -141,7 +141,7 @@ export class UgovorPredlozakComponent implements OnInit {
   }
 
   vratiZadani(): void {
-    if (!confirm('Vratiti zadani predložak? Vaš predložak će se obrisati iz aplikacije.')) {
+    if (!confirm('Vratiti zadani predložak? Tvoj predložak će se obrisati iz aplikacije.')) {
       return;
     }
     this.api.vratiZadaniPredlozak().subscribe({

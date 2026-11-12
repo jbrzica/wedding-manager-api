@@ -588,7 +588,7 @@ export class DetaljiComponent implements OnInit {
   }
 
   obrisi(): void {
-    if (!confirm('Premjestiti vjenčanje u koš? Iz koša ga možete vratiti 30 dana.')) {
+    if (!confirm('Premjestiti vjenčanje u koš? Iz koša ga možeš vratiti 30 dana.')) {
       return;
     }
     const id = this.v()!.id;
@@ -628,7 +628,7 @@ export class DetaljiComponent implements OnInit {
     }
     try {
       await navigator.clipboard.writeText(tekst);
-      this.poruka('Raspored je kopiran, zalijepite ga u poruku.');
+      this.poruka('Raspored je kopiran, zalijepi ga u poruku.');
     } catch {
       this.poruka('Kopiranje nije uspjelo.');
     }

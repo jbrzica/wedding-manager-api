@@ -31,7 +31,7 @@ import { par } from '../core/imena';
         <mat-card appearance="outlined" class="poruka">
           <mat-icon>link_off</mat-icon>
           <h1>Link ne vrijedi</h1>
-          <p class="sivo">Možda je zamijenjen novim. Zatražite novi link od fotografa.</p>
+          <p class="sivo">Možda je zamijenjen novim. Zatraži novi link od fotografa.</p>
         </mat-card>
       } @else if (pregled(); as p) {
         <h1>Bok, {{ p.ime.split(' ')[0] }}</h1>

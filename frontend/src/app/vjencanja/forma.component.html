@@ -18,8 +18,8 @@
         <input matInput [matDatepicker]="datumBirac" formControlName="datum" placeholder="npr. 14.6.2027.">
         <mat-datepicker-toggle matIconSuffix [for]="datumBirac" />
         <mat-datepicker #datumBirac />
-        @if (forma.controls.datum.hasError('required')) { <mat-error>Upišite ili odaberite datum</mat-error> }
-        @if (forma.controls.datum.hasError('matDatepickerParse')) { <mat-error>Datum upišite kao 14.6.2027.</mat-error> }
+        @if (forma.controls.datum.hasError('required')) { <mat-error>Upiši ili odaberi datum</mat-error> }
+        @if (forma.controls.datum.hasError('matDatepickerParse')) { <mat-error>Datum upiši kao 14.6.2027.</mat-error> }
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Lokacija (sala)</mat-label>
@@ -54,20 +54,27 @@
             <mat-label>Telefon</mat-label>
             <input matInput type="tel" formControlName="telefon">
           </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Email</mat-label>
-            <input matInput type="email" formControlName="email">
-            <mat-error>Email nije ispravan</mat-error>
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="cijeli-red">
-            <mat-label>Adresa</mat-label>
-            <input matInput formControlName="adresa">
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>OIB</mat-label>
-            <input matInput formControlName="oib" inputmode="numeric" maxlength="11">
-            <mat-error>OIB nije ispravan (11 znamenki)</mat-error>
-          </mat-form-field>
+          <!-- Za upit su dovoljni ime i telefon; ostalo treba tek za ugovor, pa je sklopljeno -->
+          @if (prosireno()[uloga]) {
+            <mat-form-field appearance="outline">
+              <mat-label>Email</mat-label>
+              <input matInput type="email" formControlName="email">
+              <mat-error>Email nije ispravan</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="cijeli-red">
+              <mat-label>Adresa</mat-label>
+              <input matInput formControlName="adresa">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>OIB</mat-label>
+              <input matInput formControlName="oib" inputmode="numeric" maxlength="11">
+              <mat-error>OIB nije ispravan (11 znamenki)</mat-error>
+            </mat-form-field>
+          } @else {
+            <button mat-button type="button" class="cijeli-red prosiri" (click)="prosiri(uloga)">
+              <mat-icon>expand_more</mat-icon> Email, adresa i OIB (za ugovor)
+            </button>
+          }
         </mat-card-content>
       </mat-card>
     }
@@ -84,7 +91,7 @@
             <mat-option [value]="p.id">{{ p.naziv }} · {{ p.cijena | currency: 'EUR' }}</mat-option>
           }
         </mat-select>
-        @if (!paketi().length) { <mat-hint>Pakete dodajete u izborniku Paketi i ekipa</mat-hint> }
+        @if (!paketi().length) { <mat-hint>Pakete dodaješ pod Paketi i ekipa</mat-hint> }
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Dodaci</mat-label>
@@ -153,7 +160,7 @@
   <mat-card appearance="outlined">
     <mat-card-header><mat-card-title>Ekipa</mat-card-title></mat-card-header>
     <mat-card-content formArrayName="ekipa">
-      <p class="sivo">Npr. vanjski snimatelj kad vi samo fotografirate. Honorar se oduzima od zarade.</p>
+      <p class="sivo">Npr. vanjski snimatelj kad ti samo fotografiraš. Honorar se oduzima od zarade.</p>
       @for (c of ekipa.controls; track c; let i = $index) {
         <div class="stavka" [formGroupName]="i">
           <mat-form-field appearance="outline" class="naziv" subscriptSizing="dynamic">
@@ -182,14 +189,20 @@
       @if (suradnici().length) {
         <button mat-stroked-button type="button" (click)="dodajClana()"><mat-icon>add</mat-icon> Dodaj člana ekipe</button>
       } @else {
-        <p class="sivo">Suradnike prvo dodajte u izborniku <a routerLink="/paketi">Paketi i ekipa</a>.</p>
+        <p class="sivo">Suradnike prvo dodaj pod <a routerLink="/paketi">Paketi i ekipa</a>.</p>
       }
     </mat-card-content>
   </mat-card>
 
   <mat-card appearance="outlined">
-    <mat-card-header><mat-card-title>Ostalo</mat-card-title></mat-card-header>
-    <mat-card-content class="red-2">
+    <button type="button" class="naslov-sklopivog" (click)="ostaloOtvoreno.set(!ostaloOtvoreno())" [attr.aria-expanded]="ostaloOtvoreno()">
+      <span>
+        <span class="mat-mdc-card-title">Ostalo</span>
+        <span class="sivo">rok isporuke, broj gostiju, izvor upita, galerija, napomene</span>
+      </span>
+      <mat-icon>{{ ostaloOtvoreno() ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </button>
+    <mat-card-content class="red-2" [class.skriveno]="!ostaloOtvoreno()">
       <mat-form-field appearance="outline">
         <mat-label>Rok isporuke</mat-label>
         <input matInput [matDatepicker]="rokBirac" formControlName="rokIsporuke" placeholder="npr. 1.9.2027.">

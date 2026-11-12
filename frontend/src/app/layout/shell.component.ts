@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -74,6 +74,12 @@ import { inicijali } from '../core/imena';
       </button>
     </mat-menu>
 
+    @if (bezMreze()) {
+      <div class="bez-mreze" role="status">
+        <mat-icon inline>cloud_off</mat-icon> Nema interneta. Vidiš zadnje spremljene podatke; promjene se sada ne mogu spremiti.
+      </div>
+    }
+
     <main class="sadrzaj">
       <router-outlet />
     </main>
@@ -125,6 +131,10 @@ import { inicijali } from '../core/imena';
       padding: 24px max(16px, env(safe-area-inset-right)) 96px max(16px, env(safe-area-inset-left));
     }
     .nav-mobitel { display: none; }
+    .bez-mreze {
+      padding: 8px max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left)); font-size: 13px; text-align: center;
+      background: var(--wm-upozorenje-pozadina); color: var(--wm-upozorenje);
+    }
 
     @media (max-width: 720px) {
       .nav-desktop, .novo-desktop { display: none; }
@@ -160,6 +170,18 @@ export class ShellComponent {
   private dialog = inject(MatDialog);
 
   readonly danas = new Date();
+  bezMreze = signal(!navigator.onLine);
+
+  constructor() {
+    const osvjezi = () => this.bezMreze.set(!navigator.onLine);
+    window.addEventListener('online', osvjezi);
+    window.addEventListener('offline', osvjezi);
+    // Shell živi koliko i prijava; slušači se skidaju da se nakon odjave i ponovne prijave ne gomilaju
+    inject(DestroyRef).onDestroy(() => {
+      window.removeEventListener('online', osvjezi);
+      window.removeEventListener('offline', osvjezi);
+    });
+  }
   inicijali = computed(() => inicijali(this.auth.korisnik()?.ime) || '?');
 
   // Prozori se učitaju tek na dodir, da ne usporavaju prvo otvaranje aplikacije

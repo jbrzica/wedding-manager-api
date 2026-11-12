@@ -10,6 +10,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
+import { Observable } from 'rxjs';
+import type { PotvrdaOdabir, PotvrdaPodaci } from './potvrda.component';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -78,6 +81,13 @@ import { StatusOznakaComponent } from './status-oznaka.component';
           </div>
         }
       </div>
+
+      @if (v.status === 'UPIT') {
+        <div class="potvrdi">
+          <span>Ovo je još upit. Kad par potvrdi, jednim dodirom upiši kaparu i napravi ugovor.</span>
+          <button mat-flat-button type="button" (click)="potvrdi(v)"><mat-icon>check</mat-icon> Potvrdi</button>
+        </div>
+      }
 
       <div class="radnje">
         @if (telefon(); as t) {
@@ -335,6 +345,12 @@ import { StatusOznakaComponent } from './status-oznaka.component';
     .prognoza { margin-top: 8px; display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 14px;
                 background: var(--wm-info-pozadina); color: var(--wm-info); }
 
+    .potvrdi {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 12px; border-radius: 14px; max-width: 520px;
+      font-size: 14px; background: var(--wm-upozorenje-pozadina); color: var(--wm-upozorenje);
+    }
+    .potvrdi span { flex: 1; }
+    .potvrdi button { flex-shrink: 0; }
     .radnje { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; max-width: 520px; }
     .radnje a, .radnje button {
       display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 4px 10px;
@@ -441,6 +457,7 @@ export class DetaljiComponent implements OnInit {
   private api = inject(ApiService);
   private router = inject(Router);
   private snack = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
   prognoza = signal<Prognoza | null>(null);
   readonly vrijeme = opisVremena;
 
@@ -512,6 +529,32 @@ export class DetaljiComponent implements OnInit {
       next: (v) => this.v.set(v),
       error: (err) => this.poruka(porukaGreske(err)),
     });
+  }
+
+  // Upit postaje posao: kapara (ako je plaćena) sama potvrdi vjenčanje, inače se mijenja samo status
+  async potvrdi(v: VjencanjeDetalji): Promise<void> {
+    const { PotvrdaComponent } = await import('./potvrda.component');
+    const podaci: PotvrdaPodaci = { imena: this.imena(), imaCijenu: v.financije.dogovorenaCijena > 0 };
+    this.dialog.open(PotvrdaComponent, { width: '420px', maxWidth: '100vw', autoFocus: false, panelClass: 'donji-list', data: podaci })
+      .afterClosed().subscribe((odabir: PotvrdaOdabir | undefined) => {
+        if (!odabir) {
+          return;
+        }
+        const spremanje: Observable<unknown> = odabir.kapara
+          ? this.api.dodajUplatu(v.id, { iznos: odabir.kapara, vrsta: 'KAPARA', datum: odabir.datum, opis: null })
+          : this.api.promijeniStatus(v.id, 'POTVRDENO');
+        spremanje.subscribe({
+          next: () => {
+            this.ucitaj();
+            if (odabir.ugovor) {
+              this.ugovor(v);
+            } else {
+              this.poruka('Vjenčanje je potvrđeno.');
+            }
+          },
+          error: (err) => this.poruka(porukaGreske(err)),
+        });
+      });
   }
 
   dodajUplatu(): void {

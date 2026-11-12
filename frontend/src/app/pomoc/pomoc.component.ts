@@ -21,6 +21,8 @@ const TEME: Tema[] = [
       'Zatim dodaj suradnike: snimatelje, druge fotografe, asistente. Njih stavljaš u ekipu pojedinog vjenčanja.',
       'Onda upiši vjenčanja na gumb +. Dovoljni su datum i imena mladenaca, sve ostalo možeš dopuniti kasnije.',
       'Brzi upit (isto na gumbu +): kad netko nazove i pita za datum, upiši datum, ime i broj. Odmah vidiš je li datum slobodan, a upit ostane zapisan. Kad potvrde, otvori ga i dopuni ostalo.',
+      'Kad par potvrdi, na upitu dodirni Potvrdi: upišeš kaparu (ako je plaćena) i odmah dobiješ ugovor. Status se sam promijeni u Potvrđeno.',
+      'Bez interneta (crkva, sala): aplikacija se otvori i pokaže zadnje spremljene podatke. Vjenčanja idućih tjedan dana spreme se sama čim otvoriš aplikaciju dok imaš signal. Bez interneta se ništa ne može mijenjati.',
       'Na kraju stavi vjenčanja u kalendar na mobitelu (Postavke) i dodaj aplikaciju na početni zaslon.',
     ],
   },

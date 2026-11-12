@@ -1,4 +1,4 @@
-# Na svaki pull request i push na main: backend testovi (s pravom bazom u Dockeru) i build frontenda.
+# Na svaki pull request i push na main: backend testovi (s pravom bazom u Dockeru), frontend testovi i build frontenda.
 name: Testovi
 
 on:
@@ -35,7 +35,7 @@ jobs:
           path: build/reports/tests/test
 
   frontend:
-    name: Frontend build
+    name: Frontend testovi i build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -50,4 +50,5 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - run: npm ci
+      - run: npx ng test --watch=false
       - run: npx ng build

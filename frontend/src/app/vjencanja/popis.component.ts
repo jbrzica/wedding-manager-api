@@ -411,6 +411,23 @@ export class PopisComponent implements OnInit {
     // Prognoza je dodatak: ako servis ne odgovori, popis radi i bez nje
     this.api.prognoze().subscribe({ next: (p) => this.prognoze.set(p), error: () => undefined });
     this.ucitaj();
+    this.spremiZaRadBezMreze();
+  }
+
+  // Vjenčanja idućih tjedan dana otvore se u pozadini, pa ih service worker spremi na uređaj
+  // i raspored s kontaktima se vidi i u crkvi bez signala, iako ih danas nitko nije otvorio.
+  private spremiZaRadBezMreze(): void {
+    const doDatuma = new Date();
+    doDatuma.setDate(doDatuma.getDate() + 7);
+    const filter: FilterVjencanja = {
+      razdoblje: 'NADOLAZECA', statusi: [], godina: null, nenaplaceno: false, kasniIsporuka: false, bezKapare: false,
+    };
+    this.api.popis(filter, '', 0, 10).subscribe({
+      next: (s) => s.content
+        .filter((v) => v.status !== 'OTKAZANO' && izIso(v.datum) <= doDatuma)
+        .forEach((v) => this.api.detalji(v.id).subscribe({ error: () => undefined })),
+      error: () => undefined,
+    });
   }
 
   postavi(promjena: Partial<OdabirFiltera>): void {

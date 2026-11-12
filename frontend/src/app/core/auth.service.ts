@@ -1,8 +1,32 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, catchError, finalize, of, shareReplay, tap } from 'rxjs';
 import { Korisnik, Poruka, TokenOdgovor } from './modeli';
+
+// Ime i tvrtka zadnjeg prijavljenog (bez tokena), da se bez mreže zna čiji su spremljeni podaci
+const KLJUC_KORISNIKA = 'wm-korisnik';
+// Prijavljen bez mreže: zahtjevi idu bez tokena, a čim se mreža vrati prvi 401 dohvati pravi
+const BEZ_TOKENA = '';
+
+function procitajKorisnika(): Korisnik | null {
+  try {
+    const spremljen = localStorage.getItem(KLJUC_KORISNIKA);
+    return spremljen ? (JSON.parse(spremljen) as Korisnik) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Nakon odjave na uređaju ne smiju ostati vjenčanja koja je service worker spremio za rad bez mreže
+function obrisiSpremljenePodatke(): void {
+  if (typeof caches === 'undefined') {
+    return;
+  }
+  caches.keys()
+    .then((imena) => Promise.all(imena.filter((ime) => ime.includes(':data:')).map((ime) => caches.delete(ime))))
+    .catch(() => undefined);
+}
 
 /**
  * Access token (JWT, 15 minuta) drži se samo u memoriji, a ne u localStorageu,
@@ -72,7 +96,16 @@ export class AuthService {
     if (!this.osvjezavanjeUTijeku) {
       this.osvjezavanjeUTijeku = this.http.post<TokenOdgovor>('/api/auth/osvjezi', {}).pipe(
         tap((o) => this.spremi(o)),
-        catchError(() => {
+        catchError((err: HttpErrorResponse) => {
+          // Bez mreže (0) ili kad service worker ne dobije server (504) prijava nije istekla, samo se
+          // ne može provjeriti. Tko je na ovom uređaju već bio prijavljen, vidi spremljene podatke.
+          const bezMreze = err.status === 0 || err.status === 504;
+          const spremljen = bezMreze ? procitajKorisnika() : null;
+          if (spremljen) {
+            this._token.set(BEZ_TOKENA);
+            this._korisnik.set(spremljen);
+            return of(null);
+          }
           this.ocisti();
           return of(null);
         }),
@@ -103,10 +136,21 @@ export class AuthService {
   private spremi(o: TokenOdgovor): void {
     this._token.set(o.token);
     this._korisnik.set(o.korisnik);
+    try {
+      localStorage.setItem(KLJUC_KORISNIKA, JSON.stringify(o.korisnik));
+    } catch {
+      // bez pohrane nema rada bez mreže, sve ostalo radi
+    }
   }
 
   private ocisti(): void {
     this._token.set(null);
     this._korisnik.set(null);
+    try {
+      localStorage.removeItem(KLJUC_KORISNIKA);
+    } catch {
+      // nema se što brisati
+    }
+    obrisiSpremljenePodatke();
   }
 }

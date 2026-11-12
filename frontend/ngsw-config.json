@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "aplikacija",
+      "installMode": "prefetch",
+      "resources": {
+        "files": ["/favicon.ico", "/index.html", "/manifest.webmanifest", "/*.css", "/*.js"]
+      }
+    },
+    {
+      "name": "slike-i-fontovi",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": ["/*.png", "/media/**"],
+        "urls": ["https://fonts.googleapis.com/**", "https://fonts.gstatic.com/**"]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "vjencanja",
+      "urls": ["/api/vjencanja**", "/api/tvrtka/prvi-koraci"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "timeout": "5s",
+        "maxAge": "14d",
+        "maxSize": 150
+      }
+    }
+  ],
+  "navigationUrls": ["/**", "!/api/**", "!/swagger-ui/**", "!/swagger-ui.html", "!/v3/**", "!/actuator/**", "!/**/*.*"]
+}

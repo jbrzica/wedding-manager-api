@@ -32,7 +32,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       return auth.osvjezi().pipe(
         switchMap((o) => {
           if (!o) {
-            auth.istekla();
+            // Bez mreže prijava ostaje (vide se spremljeni podaci); na prijavu vodi samo stvarno istekla
+            if (!auth.prijavljen()) {
+              auth.istekla();
+            }
             return throwError(() => err);
           }
           return next(sTokenom(req, o.token));

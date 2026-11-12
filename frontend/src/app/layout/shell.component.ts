@@ -60,13 +60,6 @@ import { inicijali } from '../core/imena';
         <small>{{ auth.korisnik()?.nazivTvrtke }}</small>
         <small>{{ auth.korisnik()?.email }}</small>
       </div>
-      <!-- Na mobitelu ovo nije u donjoj traci, pa je ovdje -->
-      <a mat-menu-item routerLink="/paketi" class="samo-mobitel">
-        <mat-icon>inventory_2</mat-icon> Paketi i ekipa
-      </a>
-      <a mat-menu-item routerLink="/povijest">
-        <mat-icon>history</mat-icon> Povijest promjena
-      </a>
       <a mat-menu-item routerLink="/postavke">
         <mat-icon>settings</mat-icon> Postavke
       </a>
@@ -99,9 +92,9 @@ import { inicijali } from '../core/imena';
       <a routerLink="/statistika" routerLinkActive="aktivno">
         <mat-icon>bar_chart</mat-icon><span>Statistika</span>
       </a>
-      <button type="button" [matMenuTriggerFor]="izbornik">
-        <mat-icon>menu</mat-icon><span>Više</span>
-      </button>
+      <a routerLink="/paketi" routerLinkActive="aktivno">
+        <mat-icon>inventory_2</mat-icon><span>Paketi</span>
+      </a>
     </nav>
   `,
   styles: `
@@ -115,7 +108,7 @@ import { inicijali } from '../core/imena';
     }
     .logo { display: flex; flex-direction: column; color: inherit; text-decoration: none; margin-right: 24px; min-width: 0; }
     .tvrtka { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; }
-    .danas { display: none; font-size: 12px; font-weight: 400; line-height: 1.2; color: var(--mat-sys-on-surface-variant); }
+    .danas { font-size: 12px; font-weight: 400; line-height: 1.2; color: var(--mat-sys-on-surface-variant); }
     .nav-desktop a { color: var(--mat-sys-on-surface-variant); }
     .nav-desktop a.aktivno { color: var(--mat-sys-on-surface); }
     .razmak { flex: 1; }
@@ -127,7 +120,6 @@ import { inicijali } from '../core/imena';
     }
     .korisnik-info { display: flex; flex-direction: column; padding: 8px 16px 12px; }
     .korisnik-info small { color: var(--mat-sys-on-surface-variant); }
-    .samo-mobitel { display: none; }
     .sadrzaj {
       max-width: 1100px; margin: 0 auto;
       padding: 24px max(16px, env(safe-area-inset-right)) 96px max(16px, env(safe-area-inset-left));
@@ -136,8 +128,6 @@ import { inicijali } from '../core/imena';
 
     @media (max-width: 720px) {
       .nav-desktop, .novo-desktop { display: none; }
-      .danas { display: block; }
-      .samo-mobitel { display: flex; }
       .sadrzaj { padding-top: 16px; padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
       .nav-mobitel {
         display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
@@ -147,10 +137,9 @@ import { inicijali } from '../core/imena';
            od iPhonea (34 pt) izgleda kao prazan prozor; tekst smije ići do same crtice, ne preko nje. */
         padding: 0 max(8px, env(safe-area-inset-right)) max(4px, calc(env(safe-area-inset-bottom) - 16px)) max(8px, env(safe-area-inset-left));
       }
-      .nav-mobitel > a, .nav-mobitel > button {
+      .nav-mobitel > a {
         flex: 1; display: flex; flex-direction: column; align-items: center;
-        padding: 8px 0 6px; font: inherit; font-size: 12px; text-decoration: none;
-        border: 0; background: none; cursor: pointer;
+        padding: 8px 0 6px; font-size: 12px; text-decoration: none;
         color: var(--mat-sys-on-surface-variant);
       }
       .nav-mobitel > a.aktivno { color: var(--mat-sys-primary); background: none; }

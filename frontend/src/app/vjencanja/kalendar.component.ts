@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { ApiService } from '../core/api.service';
-import { VjencanjeSazetak } from '../core/modeli';
+import { Statistika, VjencanjeSazetak } from '../core/modeli';
 import { danas, uIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
 import { par } from '../core/imena';
@@ -74,8 +74,13 @@ const DANI_TJEDNA = ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
           @if (dan.vjencanja.length > 2) {
             <span class="vise">+{{ dan.vjencanja.length - 2 }}</span>
           }
+          <!-- Na mobitelu nema mjesta za imena: točka po vjenčanju, u boji statusa -->
           @if (dan.vjencanja.length > 0) {
-            <span class="tocka">{{ dan.vjencanja.length }}</span>
+            <span class="tocke">
+              @for (v of dan.vjencanja.slice(0, 3); track v.id) {
+                <span [class]="'tocka ' + v.status.toLowerCase()"></span>
+              }
+            </span>
           }
         </button>
       }
@@ -95,6 +100,40 @@ const DANI_TJEDNA = ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
       } @else {
         <p class="slobodno">Slobodan dan.</p>
       }
+    }
+
+    <h2 class="naslov-popisa">{{ mjeseci[mjesec()] | date: 'LLLL' }} {{ godina() }} <span>{{ vjencanjaMjeseca().length }}</span></h2>
+    @if (vjencanjaMjeseca().length) {
+      <mat-card appearance="outlined" class="lista">
+        @for (v of vjencanjaMjeseca(); track v.id) {
+          <app-vjencanje-red [v]="v" />
+        }
+      </mat-card>
+    } @else {
+      <p class="slobodno">Ovaj mjesec nema vjenčanja. Dodirni dan u kalendaru pa „Dodaj vjenčanje”.</p>
+    }
+
+    @if (subote().length) {
+      <mat-card appearance="outlined" class="subote-kartica">
+        <mat-card-header>
+          <mat-card-title>Slobodne subote {{ godina() }}</mat-card-title>
+          <mat-card-subtitle>svibanj – rujan · slobodno {{ slobodnihSubota() }} od {{ subote().length }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="subote">
+          @for (d of subote(); track d.datum) {
+            <button type="button" class="subota" [class.zauzeta]="d.dogovoreno > 0" [class.s-upitom]="d.dogovoreno === 0 && d.upita > 0"
+                    [attr.aria-label]="d.datum + (d.dogovoreno > 0 ? ', zauzeto' : d.upita > 0 ? ', samo upit' : ', slobodno')"
+                    (click)="otvoriDan(d.datum)">
+              {{ kratkiDatum(d.datum) }}
+            </button>
+          }
+        </mat-card-content>
+        <div class="legenda-subote">
+          <span><span class="kocka"></span> slobodno</span>
+          <span><span class="kocka s-upitom"></span> samo upit</span>
+          <span><span class="kocka zauzeta"></span> zauzeto</span>
+        </div>
+      </mat-card>
     }
   `,
   styles: `
@@ -135,20 +174,33 @@ const DANI_TJEDNA = ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
     .isporuceno { background: var(--wm-neutralno-pozadina); }
     .otkazano { background: var(--wm-opasno-pozadina); text-decoration: line-through; opacity: .7; }
     .vise { font-size: 11px; color: var(--mat-sys-on-surface-variant); }
-    .tocka { display: none; }
+    .tocke { display: none; gap: 3px; }
+    .tocka { width: 7px; height: 7px; border-radius: 50%; }
+    .tocka.upit { background: var(--wm-upozorenje); }
+    .tocka.potvrdeno { background: var(--wm-uspjeh); }
+    .tocka.odradeno { background: var(--wm-info); }
+    .tocka.isporuceno { background: var(--wm-neutralno); }
+    .tocka.otkazano { background: var(--wm-opasno); opacity: .5; }
+    .naslov-popisa { font-size: 16px; margin: 28px 4px 0; text-transform: capitalize; }
+    .naslov-popisa span { color: var(--mat-sys-on-surface-variant); font-weight: 400; margin-left: 4px; }
+    .subote-kartica { margin-top: 24px; }
+    .subote { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 6px; padding-top: 8px; }
+    .subota, .kocka { border-radius: 6px; background: var(--wm-uspjeh-pozadina); color: var(--wm-uspjeh); }
+    .subota { padding: 7px 0; border: 0; cursor: pointer; font: inherit; font-size: 13px; text-align: center; font-variant-numeric: tabular-nums; }
+    .zauzeta { background: var(--mat-sys-surface-container-high); color: var(--mat-sys-on-surface-variant); text-decoration: line-through; }
+    .s-upitom { background: var(--wm-upozorenje-pozadina); color: var(--wm-upozorenje); }
+    .kocka { display: inline-block; width: 12px; height: 12px; vertical-align: -1px; margin-right: 4px; }
+    .legenda-subote { display: flex; gap: 16px; padding: 0 16px 16px; font-size: 13px; color: var(--mat-sys-on-surface-variant); }
     .odabrani-dan { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 24px; flex-wrap: wrap; }
     .odabrani-dan h2 { font-size: 18px; margin: 0; }
     .lista { margin-top: 12px; overflow: hidden; }
     .slobodno { color: var(--mat-sys-on-surface-variant); }
 
-    /* Na mobitelu nema mjesta za imena, pa prikazujemo samo broj vjenčanja */
+    /* Na mobitelu nema mjesta za imena, pa se vide samo točke */
     @media (max-width: 720px) {
       .dan { min-height: 52px; align-items: center; }
       .vjencanje, .vise { display: none; }
-      .tocka {
-        display: block; font-size: 10px; min-width: 16px; height: 16px; line-height: 16px;
-        border-radius: 8px; text-align: center; background: var(--mat-sys-primary); color: var(--mat-sys-on-primary);
-      }
+      .tocke { display: flex; }
     }
   `,
 })
@@ -203,6 +255,15 @@ export class KalendarComponent implements OnInit {
   });
 
   vjencanjaOdabranog = computed(() => this.vjencanja().filter((v) => v.datum === this.odabrani()));
+  // Mreža pokazuje i rubne dane susjednih mjeseci; popis ispod samo prikazani mjesec
+  vjencanjaMjeseca = computed(() => {
+    const prefiks = `${this.godina()}-${String(this.mjesec() + 1).padStart(2, '0')}-`;
+    return this.vjencanja().filter((v) => v.datum.startsWith(prefiks));
+  });
+
+  subote = signal<Statistika['subote']>([]);
+  slobodnihSubota = computed(() => this.subote().filter((s) => s.dogovoreno === 0).length);
+  private godinaSubota: number | null = null;
 
   ngOnInit(): void {
     this.ucitaj();
@@ -226,6 +287,20 @@ export class KalendarComponent implements OnInit {
     this.odabrani.set(this.danasIso);
   }
 
+  // "2027-06-05" -> "5.6."
+  kratkiDatum(iso: string): string {
+    const [, m, d] = iso.split('-').map(Number);
+    return `${d}.${m}.`;
+  }
+
+  // Dodir na subotu otvori taj mjesec i označi dan
+  otvoriDan(iso: string): void {
+    const [g, m] = iso.split('-').map(Number);
+    this.idiNa(g, m - 1);
+    this.odabrani.set(iso);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   dodaj(iso: string): void {
     this.router.navigate(['/vjencanja/novo'], { queryParams: { datum: iso } });
   }
@@ -238,5 +313,17 @@ export class KalendarComponent implements OnInit {
       next: (lista) => this.vjencanja.set(lista),
       error: (err) => this.greska.set(porukaGreske(err)),
     });
+    this.ucitajSubote();
+  }
+
+  // Subote dolaze sa statistikom godine; dohvaćaju se samo kad se godina promijeni
+  private ucitajSubote(): void {
+    const godina = this.godina();
+    if (godina === this.godinaSubota) {
+      return;
+    }
+    this.godinaSubota = godina;
+    // Dodatak: ako ne uspije, kalendar radi i bez njega
+    this.api.statistika(godina).subscribe({ next: (s) => this.subote.set(s.subote), error: () => this.subote.set([]) });
   }
 }

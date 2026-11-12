@@ -17,7 +17,7 @@ import { MatTimepickerModule } from '@angular/material/timepicker';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../core/api.service';
 import {
-  Dodatak, IzvorUpita, Paket, StavkaRasporeda, Suradnik, UlogaSuradnika, VjencanjeDetalji, VjencanjeZahtjev,
+  Dodatak, IzvorUpita, Osoba, Paket, StavkaRasporeda, Suradnik, UlogaSuradnika, VjencanjeDetalji, VjencanjeZahtjev,
 } from '../core/modeli';
 import { IZVORI_UPITA, ULOGE_SURADNIKA, kljucevi } from '../core/oznake';
 import { porukaGreske } from '../core/greska';
@@ -52,6 +52,9 @@ export class FormaComponent implements OnInit {
   ucitava = signal(true);
   sprema = signal(false);
   greska = signal('');
+  // Sklopljeni dijelovi forme; otvore se sami kad u njima već ima podataka ili greška
+  prosireno = signal<Record<string, boolean>>({ mlada: false, mladozenja: false });
+  ostaloOtvoreno = signal(false);
 
   // Dok korisnik sam ne promijeni cijenu, računamo je iz paketa i dodataka
   private cijenaRucno = false;
@@ -233,7 +236,10 @@ export class FormaComponent implements OnInit {
   spremi(): void {
     if (this.forma.invalid) {
       this.forma.markAllAsTouched();
-      this.greska.set('Popunite obavezna polja (označena crveno).');
+      // Greška može biti u sklopljenom dijelu (npr. OIB), pa se sve otvori da se vidi
+      this.prosireno.set({ mlada: true, mladozenja: true });
+      this.ostaloOtvoreno.set(true);
+      this.greska.set('Popuni obavezna polja (označena crveno).');
       return;
     }
     this.sprema.set(true);
@@ -249,6 +255,10 @@ export class FormaComponent implements OnInit {
         this.greska.set(porukaGreske(err));
       },
     });
+  }
+
+  prosiri(uloga: string): void {
+    this.prosireno.update((p) => ({ ...p, [uloga]: true }));
   }
 
   private izracunajCijenu(): void {
@@ -289,6 +299,9 @@ export class FormaComponent implements OnInit {
       ostaliTroskovi: v.financije.ostaliTroskovi || null,
       linkGalerije: v.linkGalerije ?? '',
     });
+    const imaZaUgovor = (o: Osoba) => !!(o.email || o.adresa || o.oib);
+    this.prosireno.set({ mlada: imaZaUgovor(v.mlada), mladozenja: imaZaUgovor(v.mladozenja) });
+    this.ostaloOtvoreno.set(!!(v.rokIsporuke || v.brojGostiju || v.izvorUpita || v.linkGalerije || v.napomene));
     v.raspored.forEach((s) => this.dodajStavku(s.vrijeme?.slice(0, 5) ?? '', s.naziv, s.adresa ?? '', s.napomena ?? ''));
     v.ekipa.forEach((c) => this.dodajClana(c.suradnikId, c.uloga, c.honorar ?? null));
     this.ucitava.set(false);

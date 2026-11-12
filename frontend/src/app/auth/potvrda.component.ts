@@ -14,7 +14,7 @@ import { porukaGreske } from '../core/greska';
   template: `
     <div class="auth-stranica">
       <mat-card class="auth-kartica" appearance="outlined">
-        <h1>Potvrdite email</h1>
+        <h1>Potvrdi email</h1>
         <p class="podnaslov">Poslali smo šesteroznamenkastu šifru na <strong>{{ email() }}</strong>.</p>
 
         <form (ngSubmit)="potvrdi()">

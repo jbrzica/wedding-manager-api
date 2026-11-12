@@ -15,7 +15,7 @@ import { porukaGreske } from '../core/greska';
   selector: 'app-paketi',
   imports: [CurrencyPipe, ReactiveFormsModule, MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule],
   template: `
-    <p class="opis">Vaši paketi i cijene. Kod unosa vjenčanja odabirom paketa automatski se upisuje cijena.</p>
+    <p class="opis">Tvoji paketi i cijene. Kad na vjenčanju odabereš paket, cijena se upiše sama.</p>
 
     <mat-card appearance="outlined" class="lista">
       @for (p of paketi(); track p.id) {

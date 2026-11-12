@@ -18,7 +18,7 @@ import { porukaGreske } from '../core/greska';
         <h1>Nova lozinka</h1>
 
         @if (!poslano()) {
-          <p class="podnaslov">Upišite email računa. Poslat ćemo vam šifru za novu lozinku.</p>
+          <p class="podnaslov">Upiši email računa. Poslat ćemo ti šifru za novu lozinku.</p>
           <form (ngSubmit)="posaljiSifru()">
             <mat-form-field appearance="outline">
               <mat-label>Email</mat-label>

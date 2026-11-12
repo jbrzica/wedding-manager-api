@@ -77,7 +77,7 @@ public class UgovorService {
             return new Datoteka(bezKvacica(naziv), ugovor);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Predložak ugovora nije moguće otvoriti. Učitajte ga ponovno u Postavkama.");
+                    "Predložak ugovora nije moguće otvoriti. Učitaj ga ponovno u Postavkama.");
         }
     }
 
@@ -106,7 +106,7 @@ public class UgovorService {
         }
         if (nazivDatoteke == null || !nazivDatoteke.toLowerCase(Locale.ROOT).endsWith(".docx")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Predložak mora biti Word datoteka (.docx). Stari .doc spremite kao .docx.");
+                    "Predložak mora biti Word datoteka (.docx). Stari .doc spremi kao .docx.");
         }
         // Otvori ga odmah, da se loša datoteka odbije sad, a ne tek kad netko zatraži ugovor
         try (XWPFDocument ignored = new XWPFDocument(new ByteArrayInputStream(sadrzaj))) {

@@ -15,7 +15,7 @@ import { porukaGreske } from '../core/greska';
     <div class="auth-stranica">
       <mat-card class="auth-kartica" appearance="outlined">
         <h1>Nova tvrtka</h1>
-        <p class="podnaslov">Vi postajete vlasnik računa i kasnije možete pozvati ostale.</p>
+        <p class="podnaslov">Postaješ vlasnik računa i kasnije možeš pozvati ostale.</p>
 
         <form [formGroup]="forma" (ngSubmit)="posalji()">
           <mat-form-field appearance="outline">
@@ -23,7 +23,7 @@ import { porukaGreske } from '../core/greska';
             <input matInput formControlName="nazivTvrtke" placeholder="npr. Foto Video Brzica">
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Vaše ime</mat-label>
+            <mat-label>Tvoje ime</mat-label>
             <input matInput formControlName="ime" autocomplete="name">
           </mat-form-field>
           <mat-form-field appearance="outline">
@@ -43,7 +43,7 @@ import { porukaGreske } from '../core/greska';
           <button mat-flat-button type="submit" [disabled]="forma.invalid || salje()">Registriraj se</button>
         </form>
 
-        <p class="dno">Već imate račun? <a routerLink="/prijava">Prijava</a></p>
+        <p class="dno">Već imaš račun? <a routerLink="/prijava">Prijava</a></p>
       </mat-card>
     </div>
   `,

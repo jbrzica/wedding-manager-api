@@ -46,8 +46,8 @@ const TEME: Tema[] = [
     id: 'ekipa', ikona: 'groups', naslov: 'Ekipa i link suradnika',
     tekst: [
       'Na vjenčanju dodaješ ekipu i honorar svakome. Honorari ulaze u zaradu i u statistiku honorara.',
-      'Svaki suradnik ima svoj link (Paketi i ekipa → Suradnici → ikona lanca). Na njemu bez prijave vidi samo vjenčanja na kojima radi: datum, raspored s adresama i kontakte. Cijene, uplate i honorari se ne vide.',
-      'Ako suradnik više ne radi s vama, odaberi „Napravi novi link“ i stari odmah prestaje raditi.',
+      'Svaki suradnik ima svoj link (Paketi i ekipa → Suradnici → gumb Pošalji link). Na njemu bez prijave vidi samo vjenčanja na kojima radi: datum, raspored s adresama i kontakte. Cijene, uplate i honorari se ne vide.',
+      'Ako suradnik više ne radi s vama, kod njega dodirni tri točkice → „Napravi novi link“ i stari odmah prestaje raditi.',
       'Suradnike ne pozivaj kao članove tvrtke: članovi vide sve, i cijene.',
     ],
   },
@@ -56,16 +56,16 @@ const TEME: Tema[] = [
     tekst: [
       'Na vjenčanju upiši raspored: vrijeme, što se događa i adresu (npr. 11:00 priprema kod mladenke, 15:00 crkva, 18:30 sala).',
       'Svoj tipični dan spremi gumbom „Spremi kao predložak“ ispod rasporeda. Svako novo vjenčanje onda kreće od njega, a na postojećem ga možeš uzeti gumbom „Uzmi predložak“.',
-      'Gumbom za dijeljenje raspored se na mobitelu šalje WhatsAppom ili Viberom, a na računalu se kopira. Šalje se bez cijena.',
+      'Gumbom Raspored na vrhu vjenčanja (ili „Pošalji raspored“ kod ekipe) raspored se na mobitelu šalje WhatsAppom ili Viberom, a na računalu se kopira. Šalje se bez cijena.',
       'Kontrolna lista na vjenčanju (ugovor poslan, potpisan, odabir fotografija…) pomaže da se ništa ne zaboravi. Stavke možeš dodavati i brisati.',
     ],
   },
   {
     id: 'ugovor', ikona: 'description', naslov: 'Ugovor',
     tekst: [
-      'Na vjenčanju: tri točke gore desno → Ugovor. Aplikacija napravi Word ugovor s mladencima, datumom, adresama, paketom, cijenom, kaparom i dodacima.',
+      'Na vjenčanju dodirni gumb Ugovor. Aplikacija napravi Word ugovor s mladencima, datumom, adresama, paketom, cijenom, kaparom i dodacima.',
       'Na mobitelu se otvori izbornik za dijeljenje: Spremi u Datoteke, Ispis, Mail ili WhatsApp. Na računalu se ugovor preuzme.',
-      'Ono što nije upisano na vjenčanju u ugovoru je crta, pa se može dopisati rukom. Crkva se uzima iz rasporeda dana (stavka koja se zove npr. Crkva).',
+      'Adresu i OIB mladenaca upisuješ u formi vjenčanja pod „Email, adresa i OIB (za ugovor)“. Ono što nije upisano u ugovoru je crta, pa se može dopisati rukom. Crkva se uzima iz rasporeda dana (stavka koja se zove npr. Crkva).',
       'Naziv, adresu, OIB, telefon i email tvrtke za zaglavlje ugovora upiši jednom u Postavkama → Podaci tvrtke.',
       'Vlastiti ugovor: Postavke → Ugovor → Preuzmi predložak, u Wordu ga uredi (tekst, logo) i Učitaj svoj. Oznake poput {{narucitelj}} aplikacija zamijeni podacima; popis je u Postavkama.',
     ],
@@ -77,6 +77,7 @@ const TEME: Tema[] = [
       'Google kalendar: na računalu otvori calendar.google.com → kod „Ostali kalendari“ klikni + → Iz URL-a → zalijepi link. Kalendar se onda pojavi i na mobitelu.',
       'iPhone: Postavke → Kalendar → Računi → Dodaj račun → Ostalo → Dodaj pretplatnički kalendar.',
       'Nova vjenčanja pojave se sama. Google kalendar zna kasniti i nekoliko sati, to je normalno.',
+      'Kalendar u aplikaciji: na mobitelu točka u danu znači vjenčanje (žuta upit, zelena potvrđeno). Ispod je popis svih vjenčanja u tom mjesecu i slobodne subote u sezoni.',
     ],
   },
   {
@@ -102,6 +103,7 @@ const TEME: Tema[] = [
       'Obojene kućice na vrhu pokazuju što traži pažnju: kasni isporuka, potvrđena vjenčanja bez kapare i upiti. Dodir otvori baš ta vjenčanja, a još jedan dodir vrati obični popis.',
       'Filteri (ikona kraj pretrage): više statusa odjednom, godina, „Nije plaćeno do kraja“, „Bez kapare“ i „Kasni isporuka“. Filteri se pamte dok ih ne očistiš.',
       'Provjera datuma (na gumbu +): kad te netko pita jesi li slobodan, upiši datum i odmah vidiš je li dan slobodan, tko iz ekipe je zauzet i ima li vjenčanja dan prije ili poslije.',
+      '„Samo upit“ (žuto) znači da se za taj datum netko raspitivao, ali nije potvrdio. Datum još nije prodan, pa ga smiješ ponuditi drugom paru.',
     ],
   },
   {
@@ -137,12 +139,14 @@ const TEME: Tema[] = [
 const PITANJA: { pitanje: string; odgovor: string }[] = [
   { pitanje: 'Kako uključiti tamni način?',
     odgovor: 'Krug s inicijalom gore desno → Postavke → Izgled. „Kao uređaj” prati noćni način mobitela. Izbor vrijedi na uređaju na kojem je promijenjen.' },
+  { pitanje: 'Stranica se sama ponovno učitala.',
+    odgovor: 'Stigla je nova verzija aplikacije. Učita se sama čim je spremna; usred unosa samo ponudi „Osvježi”, da se upisano ne izgubi.' },
   { pitanje: 'Ne vidim sva vjenčanja na popisu.',
     odgovor: 'Popis prikazuje 30 po 30. Na dnu dodirni Prikaži još. Provjeri i filtere iznad popisa.' },
   { pitanje: 'Promijenio sam cijenu paketa, a stara vjenčanja imaju staru cijenu?',
     odgovor: 'Tako je namjerno: na vjenčanju se pamti cijena koju ste dogovorili. Ako treba, promijeni cijenu na samom vjenčanju.' },
   { pitanje: 'Slučajno sam obrisao vjenčanje.',
-    odgovor: 'Otvori izbornik računa → Koš i klikni Vrati. Vjenčanje se vraća sa svim podacima.' },
+    odgovor: 'Krug s inicijalom gore desno → Koš, pa Vrati. Vjenčanje se vraća sa svim podacima.' },
   { pitanje: 'Suradniku link ne radi.',
     odgovor: 'Vjerojatno je napravljen novi link. U Suradnicima mu pošalji link ponovno.' },
   { pitanje: 'Novo vjenčanje se ne vidi u Google kalendaru.',

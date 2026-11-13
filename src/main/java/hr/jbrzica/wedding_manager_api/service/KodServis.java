@@ -1,5 +1,8 @@
 package hr.jbrzica.wedding_manager_api.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import hr.jbrzica.wedding_manager_api.entity.EmailKod;
 import hr.jbrzica.wedding_manager_api.entity.SvrhaKoda;
 import hr.jbrzica.wedding_manager_api.entity.Tvrtka;
@@ -20,6 +23,10 @@ public class KodServis {
 
     private static final int TRAJANJE_MINUTA = 15;
     private static final int MAX_POKUSAJA = 5;
+    // Najviše šifri na isti email u sat vremena. Bez granice bi se preko aplikacije moglo
+    // zatrpati nečiji sandučić, trošiti Brevo kvota i dobivati nove pokušaje pogađanja.
+    static final int MAX_SIFRI_NA_SAT = 5;
+    private static final Logger log = LoggerFactory.getLogger(KodServis.class);
 
     private final EmailKodRepository emailKodRepository;
     private final PasswordEncoder passwordEncoder;
@@ -35,6 +42,12 @@ public class KodServis {
 
     @Transactional
     public void posaljiKod(String email, SvrhaKoda svrha, Tvrtka tvrtka, String naslov, String uvod) {
+        Instant prijeSat = Instant.now().minus(60 - TRAJANJE_MINUTA, ChronoUnit.MINUTES);
+        if (emailKodRepository.countByEmailAndIstjeceAfter(email, prijeSat) >= MAX_SIFRI_NA_SAT) {
+            // Tiho: poruka o grešci bi otkrila postoji li račun s tim emailom
+            log.warn("Preskočeno slanje šifre: previše zahtjeva za isti email u sat vremena");
+            return;
+        }
         // Nova šifra poništava sve stare za isti email i svrhu
         for (EmailKod stari : emailKodRepository.findByEmailAndSvrhaAndIskoristenFalse(email, svrha)) {
             stari.setIskoristen(true);

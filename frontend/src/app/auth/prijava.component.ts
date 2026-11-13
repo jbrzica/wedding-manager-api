@@ -36,7 +36,9 @@ import { porukaGreske } from '../core/greska';
         </form>
 
         <p class="dno"><a routerLink="/zaboravljena-lozinka">Zaboravljena lozinka?</a></p>
-        <p class="dno">Nemaš račun? <a routerLink="/registracija">Registriraj tvrtku</a></p>
+        @if (registracijaOtvorena()) {
+          <p class="dno">Nemaš račun? <a routerLink="/registracija">Registriraj tvrtku</a></p>
+        }
         <p class="dno">Imaš poziv? <a routerLink="/poziv">Pridruži se tvrtki</a></p>
       </mat-card>
     </div>
@@ -52,6 +54,11 @@ export class PrijavaComponent {
   });
   greska = signal('');
   salje = signal(false);
+  registracijaOtvorena = signal(false);
+
+  constructor() {
+    this.auth.postavke().subscribe({ next: (p) => this.registracijaOtvorena.set(p.registracijaOtvorena), error: () => undefined });
+  }
 
   posalji(): void {
     const { email, lozinka } = this.forma.getRawValue();

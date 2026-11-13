@@ -14,6 +14,13 @@ class JwtServisTest {
 
     private final JwtServis jwtServis = new JwtServis(TAJNA, 15);
 
+    // Bez tajne ili s kratkom aplikacija se ne smije pokrenuti, da na serveru ne ostane javna ili slaba tajna
+    @Test
+    void bezTajneIliSKratkomSeNePokrece() {
+        assertThrows(IllegalStateException.class, () -> new JwtServis("", 15));
+        assertThrows(IllegalStateException.class, () -> new JwtServis("a3JhdGth", 15));
+    }
+
     @Test
     void napravljeniToken_vracaIdKorisnika() {
         String token = jwtServis.napravi(korisnik(42L));

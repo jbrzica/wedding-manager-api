@@ -25,7 +25,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Prijava daje kratki access token i refresh token u HttpOnly kolačiću.
  * Refresh token se kod svakog osvježavanja zamjenjuje novim; stari se ne može ponovno upotrijebiti.
  */
-@SpringBootTest
+// Bez razdoblja milosti: ovdje se provjerava da ponovna upotreba starog kolačića odmah opoziva prijavu
+@SpringBootTest(properties = "app.refresh.milost-sekundi=0")
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class OsvjezavanjeTest {

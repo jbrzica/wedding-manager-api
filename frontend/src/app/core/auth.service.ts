@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, catchError, finalize, of, shareReplay, tap } from 'rxjs';
+import { Observable, catchError, finalize, of, retry, shareReplay, tap, throwError, timer } from 'rxjs';
 import { Korisnik, Poruka, TokenOdgovor } from './modeli';
 
 // Ime i tvrtka zadnjeg prijavljenog (bez tokena), da se bez mreže zna čiji su spremljeni podaci
@@ -91,10 +91,18 @@ export class AuthService {
       .pipe(tap((o) => this.spremi(o)));
   }
 
+  // Može li se registrirati nova tvrtka; stranica za prijavu prema tome pokaže ili sakrije poveznicu
+  postavke(): Observable<{ registracijaOtvorena: boolean }> {
+    return this.http.get<{ registracijaOtvorena: boolean }>('/api/auth/postavke');
+  }
+
   // Novi access token preko kolačića; null ako prijave nema ili je istekla
   osvjezi(): Observable<TokenOdgovor | null> {
     if (!this.osvjezavanjeUTijeku) {
       this.osvjezavanjeUTijeku = this.http.post<TokenOdgovor>('/api/auth/osvjezi', {}).pipe(
+        // Druga kartica je možda upravo zamijenila kolačić; preglednik ga je već spremio, pa jedan
+        // ponovni pokušaj s novim kolačićem uspije umjesto da se korisnika odjavi
+        retry({ count: 1, delay: (err: HttpErrorResponse) => (err.status === 401 ? timer(500) : throwError(() => err)) }),
         tap((o) => this.spremi(o)),
         catchError((err: HttpErrorResponse) => {
           // Bez mreže (0) ili kad service worker ne dobije server (504) prijava nije istekla, samo se

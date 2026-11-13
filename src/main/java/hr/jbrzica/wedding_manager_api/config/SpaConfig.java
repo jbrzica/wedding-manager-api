@@ -25,8 +25,9 @@ public class SpaConfig implements WebMvcConfigurer {
                 .addResolver(new PathResourceResolver() {
                     @Override
                     protected Resource getResource(String putanja, Resource lokacija) throws IOException {
-                        Resource datoteka = lokacija.createRelative(putanja);
-                        if (datoteka.exists() && datoteka.isReadable()) {
+                        // Standardni resolver provjerava da datoteka stvarno leži unutar static/ (nema ../)
+                        Resource datoteka = super.getResource(putanja, lokacija);
+                        if (datoteka != null) {
                             return datoteka;
                         }
                         if (putanja.startsWith("api/")) {

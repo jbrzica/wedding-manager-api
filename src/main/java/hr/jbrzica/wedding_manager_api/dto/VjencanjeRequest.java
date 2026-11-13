@@ -3,6 +3,7 @@ package hr.jbrzica.wedding_manager_api.dto;
 import hr.jbrzica.wedding_manager_api.entity.IzvorUpita;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
@@ -23,7 +24,7 @@ public record VjencanjeRequest(
         String napomene,
         @PositiveOrZero(message = "Broj gostiju ne smije biti negativan") Integer brojGostiju,
         @PositiveOrZero(message = "Troškovi ne smiju biti negativni") BigDecimal ostaliTroskovi,
-        String linkGalerije,
+        @Size(max = 1000, message = "Link galerije je predug") String linkGalerije,
         List<@Valid StavkaRasporedaDto> raspored,
         List<@Valid ClanEkipeRequest> ekipa
 ) {

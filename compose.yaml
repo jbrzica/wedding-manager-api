@@ -25,6 +25,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: wedding
       SPRING_MAIL_HOST: mailpit
       SPRING_MAIL_PORT: "1025"
+      # Samo za lokalno pokretanje; na serveru je druga tajna u varijablama okruženja
+      JWT_TAJNA: bG9rYWxuby1zYW1vLXphLXJhenZvai1uaWthZC1uYS1zZXJ2ZXJ1LTEyMzQ1Njc4
+      REGISTRACIJA_OTVORENA: "true"
+      SWAGGER_UKLJUCEN: "true"
     depends_on:
       db:
         condition: service_healthy

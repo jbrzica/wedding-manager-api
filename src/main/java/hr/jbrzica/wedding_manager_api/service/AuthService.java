@@ -1,5 +1,9 @@
 package hr.jbrzica.wedding_manager_api.service;
 
+import hr.jbrzica.wedding_manager_api.dto.AuthPostavkeResponse;
+import org.springframework.beans.factory.annotation.Value;
+import java.util.Optional;
+
 import hr.jbrzica.wedding_manager_api.dto.*;
 import hr.jbrzica.wedding_manager_api.entity.*;
 import hr.jbrzica.wedding_manager_api.repository.KorisnikRepository;
@@ -23,10 +27,14 @@ public class AuthService {
     private final JwtServis jwtServis;
     private final TrenutniKorisnik trenutniKorisnik;
     private final PrijavaLimiter prijavaLimiter;
+    private final boolean registracijaOtvorena;
+    // Hash nepostojeće lozinke: prijava s nepoznatim emailom troši jednako vremena kao s postojećim
+    private final String laziHash;
 
     public AuthService(KorisnikRepository korisnikRepository, TvrtkaRepository tvrtkaRepository,
                        PasswordEncoder passwordEncoder, KodServis kodServis, JwtServis jwtServis,
-                       TrenutniKorisnik trenutniKorisnik, PrijavaLimiter prijavaLimiter) {
+                       TrenutniKorisnik trenutniKorisnik, PrijavaLimiter prijavaLimiter,
+                       @Value("${app.registracija.otvorena:false}") boolean registracijaOtvorena) {
         this.korisnikRepository = korisnikRepository;
         this.tvrtkaRepository = tvrtkaRepository;
         this.passwordEncoder = passwordEncoder;
@@ -34,11 +42,22 @@ public class AuthService {
         this.jwtServis = jwtServis;
         this.trenutniKorisnik = trenutniKorisnik;
         this.prijavaLimiter = prijavaLimiter;
+        this.registracijaOtvorena = registracijaOtvorena;
+        this.laziHash = passwordEncoder.encode(java.util.UUID.randomUUID().toString());
+    }
+
+    public AuthPostavkeResponse postavke() {
+        return new AuthPostavkeResponse(registracijaOtvorena);
     }
 
     // Nova tvrtka i njezin vlasnik; račun je aktivan tek nakon potvrde emaila.
     @Transactional
     public PorukaResponse registracija(RegistracijaRequest request) {
+        // Zatvorena registracija: nitko ne može napraviti račun s tuđim emailom ni slati mailove preko aplikacije
+        if (!registracijaOtvorena) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Registracija novih tvrtki je zatvorena. Za pristup se javi vlasniku aplikacije.");
+        }
         String email = normaliziraj(request.email());
         if (korisnikRepository.existsByEmail(email)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Račun s tim emailom već postoji");
@@ -87,8 +106,11 @@ public class AuthService {
     public TokenResponse prijava(PrijavaRequest request) {
         String email = normaliziraj(request.email());
         prijavaLimiter.provjeri(email);
-        Korisnik korisnik = korisnikRepository.findByEmail(email)
-                .filter(k -> passwordEncoder.matches(request.lozinka(), k.getLozinkaHash()))
+        Optional<Korisnik> nadjen = korisnikRepository.findByEmail(email);
+        // BCrypt se računa i kad račun ne postoji, da se po brzini odgovora ne vidi koji emailovi imaju račun
+        boolean lozinkaOk = passwordEncoder.matches(request.lozinka(),
+                nadjen.map(Korisnik::getLozinkaHash).orElse(laziHash));
+        Korisnik korisnik = nadjen.filter(k -> lozinkaOk)
                 .orElseThrow(() -> {
                     prijavaLimiter.neuspjeh(email);
                     return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Pogrešan email ili lozinka");
@@ -106,11 +128,11 @@ public class AuthService {
     @Transactional
     public TokenResponse prihvatiPoziv(PrihvatiPozivRequest request) {
         String email = normaliziraj(request.email());
+        // Prvo šifra, pa tek onda postoji li račun: bez ispravne šifre odgovor ne smije otkriti tko ima račun
+        EmailKod poziv = kodServis.provjeri(email, SvrhaKoda.POZIV, request.kod());
         if (korisnikRepository.existsByEmail(email)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Račun s tim emailom već postoji");
         }
-
-        EmailKod poziv = kodServis.provjeri(email, SvrhaKoda.POZIV, request.kod());
         Long tvrtkaId = poziv.getTvrtka().getId();
 
         Korisnik korisnik = new Korisnik();

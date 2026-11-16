@@ -36,13 +36,16 @@ public class RefreshTokenServis {
     private final KorisnikRepository korisnikRepository;
     private final JwtServis jwtServis;
     private final Duration trajanje;
+    private final Duration milost;
 
     public RefreshTokenServis(RefreshTokenRepository repository, KorisnikRepository korisnikRepository,
-                              JwtServis jwtServis, @Value("${app.refresh.trajanje-dana}") long trajanjeDana) {
+                              JwtServis jwtServis, @Value("${app.refresh.trajanje-dana}") long trajanjeDana,
+                              @Value("${app.refresh.milost-sekundi:30}") long milostSekundi) {
         this.repository = repository;
         this.korisnikRepository = korisnikRepository;
         this.jwtServis = jwtServis;
         this.trajanje = Duration.ofDays(trajanjeDana);
+        this.milost = Duration.ofSeconds(milostSekundi);
     }
 
     public Duration trajanje() {
@@ -58,10 +61,15 @@ public class RefreshTokenServis {
     // noRollbackFor: opoziv ukradene obitelji mora ostati spremljen iako metoda baci 401
     @Transactional(noRollbackFor = ResponseStatusException.class)
     public Osvjezeno osvjezi(String token) {
-        RefreshToken stari = repository.findByTokenHash(hash(token))
+        RefreshToken stari = repository.zakljucajPoHashu(hash(token))
                 .orElseThrow(RefreshTokenServis::neispravan);
         if (stari.getIskoristen() != null) {
-            repository.obrisiObitelj(stari.getObitelj());
+            // Upravo zamijenjen: druga kartica ili aplikacija na istom uređaju osvježila je u isto vrijeme.
+            // Taj zahtjev se odbije, ali prijava ostaje; tek kasnija upotreba znači krađu.
+            boolean nedavno = stari.getIskoristen().plus(milost).isAfter(Instant.now());
+            if (!nedavno) {
+                repository.obrisiObitelj(stari.getObitelj());
+            }
             throw neispravan();
         }
         if (stari.getIstjece().isBefore(Instant.now()) || !stari.getKorisnik().isEmailPotvrden()) {

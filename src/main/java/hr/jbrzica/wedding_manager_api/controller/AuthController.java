@@ -24,6 +24,11 @@ public class AuthController {
         this.kolacic = kolacic;
     }
 
+    @GetMapping("/postavke")
+    public AuthPostavkeResponse postavke() {
+        return authService.postavke();
+    }
+
     @PostMapping("/registracija")
     @ResponseStatus(HttpStatus.CREATED)
     public PorukaResponse registracija(@Valid @RequestBody RegistracijaRequest request) {

@@ -41,6 +41,18 @@ describe('AuthService', () => {
     expect(auth.token()).toBe('');
   });
 
+  it('nakon 401 pokuša još jednom i uspije s kolačićem koji je druga kartica upravo dobila', () => {
+    vi.useFakeTimers();
+    auth.osvjezi().subscribe();
+    http.expectOne('/api/auth/osvjezi').flush({}, { status: 401, statusText: 'Unauthorized' });
+    vi.advanceTimersByTime(500);
+    http.expectOne('/api/auth/osvjezi').flush({ token: 'novi', korisnik: KORISNIK });
+    vi.useRealTimers();
+
+    expect(auth.prijavljen()).toBe(true);
+    expect(auth.token()).toBe('novi');
+  });
+
   it('bez mreže i bez ranije prijave nije prijavljen', () => {
     auth.osvjezi().subscribe();
     http.expectOne('/api/auth/osvjezi').error(new ProgressEvent('error'), { status: 0 });
@@ -49,10 +61,15 @@ describe('AuthService', () => {
   });
 
   it('istekla prijava (401) odjavljuje i briše spremljenog korisnika', () => {
+    vi.useFakeTimers();
     localStorage.setItem('wm-korisnik', JSON.stringify(KORISNIK));
 
     auth.osvjezi().subscribe();
     http.expectOne('/api/auth/osvjezi').flush({ poruka: 'Prijava je istekla' }, { status: 401, statusText: 'Unauthorized' });
+    // Jedan ponovni pokušaj, jer je druga kartica možda upravo zamijenila kolačić
+    vi.advanceTimersByTime(500);
+    http.expectOne('/api/auth/osvjezi').flush({ poruka: 'Prijava je istekla' }, { status: 401, statusText: 'Unauthorized' });
+    vi.useRealTimers();
 
     expect(auth.prijavljen()).toBe(false);
     expect(localStorage.getItem('wm-korisnik')).toBeNull();

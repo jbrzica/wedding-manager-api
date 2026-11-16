@@ -255,6 +255,22 @@ public class VjencanjeService {
                 prazanUNull(upit.napomena()), null, null, null, List.of(), List.of()));
     }
 
+    // Link se prikazuje kao poveznica, pa smije biti samo http(s): javascript: ili data: bi se izvršio na klik.
+    // "galerija.hr/ana" bez sheme se dopuni s https://, da ne pukne uređivanje starih vjenčanja.
+    static String linkGalerije(String link) {
+        if (link == null || link.isBlank()) {
+            return null;
+        }
+        String l = link.trim();
+        if (!l.matches("(?i)^[a-z][a-z0-9+.-]*:.*")) {
+            l = "https://" + l;
+        }
+        if (!l.matches("(?i)^https?://\\S+$")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Link galerije mora počinjati s http:// ili https://");
+        }
+        return l;
+    }
+
     private static String prazanUNull(String s) {
         return s == null || s.isBlank() ? null : s.trim();
     }
@@ -345,7 +361,7 @@ public class VjencanjeService {
         vjencanje.setNapomene(request.napomene());
         vjencanje.setBrojGostiju(request.brojGostiju());
         vjencanje.setOstaliTroskovi(request.ostaliTroskovi());
-        vjencanje.setLinkGalerije(request.linkGalerije());
+        vjencanje.setLinkGalerije(linkGalerije(request.linkGalerije()));
 
         Paket paket = request.paketId() != null ? paketService.dohvatiEntitet(request.paketId()) : null;
         vjencanje.setPaket(paket);

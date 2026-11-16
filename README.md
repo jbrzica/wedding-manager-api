@@ -29,6 +29,14 @@ Aplikacija radi na `http://localhost:8080`.
 Mailovi (šifre za potvrdu i pozive) lokalno se vide u Mailpitu: **http://localhost:8025**
 Dokumentacija i testiranje API-ja: **http://localhost:8080/swagger-ui.html**
 
+`compose.yaml` lokalno postavlja `JWT_TAJNA`, uključuje Swagger i registraciju. Na serveru se postavljaju varijable:
+
+| Varijabla | Obavezno | Opis |
+|---|---|---|
+| `JWT_TAJNA` | da | Base64, najmanje 32 bajta (npr. `openssl rand -base64 48`); bez nje se aplikacija ne pokrene |
+| `REGISTRACIJA_OTVORENA` | ne | `true` dopušta registraciju novih tvrtki; zadano je zatvoreno |
+| `SWAGGER_UKLJUCEN` | ne | `true` uključuje Swagger; zadano je isključen |
+
 Gašenje:
 
 ```bash

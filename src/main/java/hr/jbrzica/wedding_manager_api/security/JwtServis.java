@@ -18,7 +18,15 @@ public class JwtServis {
 
     public JwtServis(@Value("${app.jwt.tajna}") String tajna,
                      @Value("${app.jwt.trajanje-minuta}") long trajanjeMinuta) {
-        this.kljuc = Keys.hmacShaKeyFor(Decoders.BASE64.decode(tajna));
+        if (tajna == null || tajna.isBlank()) {
+            throw new IllegalStateException("JWT_TAJNA nije postavljena. Postavi je kao varijablu okruženja (Base64, najmanje 32 bajta).");
+        }
+        byte[] bajtovi = Decoders.BASE64.decode(tajna.trim());
+        // HS256 traži barem 256 bita; kraća tajna se može pogoditi
+        if (bajtovi.length < 32) {
+            throw new IllegalStateException("JWT_TAJNA je prekratka: treba najmanje 32 bajta, a ima " + bajtovi.length + ".");
+        }
+        this.kljuc = Keys.hmacShaKeyFor(bajtovi);
         // Kratko: ukradeni access token vrijedi samo par minuta, a prijavu drži refresh token
         this.trajanjeMs = trajanjeMinuta * 60 * 1000;
     }

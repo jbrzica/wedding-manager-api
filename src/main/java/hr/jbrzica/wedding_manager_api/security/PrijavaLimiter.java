@@ -21,6 +21,7 @@ public class PrijavaLimiter {
 
     static final int MAX_POKUSAJA = 5;
     static final Duration PROZOR = Duration.ofMinutes(15);
+    static final int MAX_UNOSA = 10_000;
 
     private final Map<String, List<Instant>> neuspjeli = new ConcurrentHashMap<>();
     private final Clock sat;
@@ -47,6 +48,17 @@ public class PrijavaLimiter {
 
     public void neuspjeh(String email) {
         Instant sada = sat.instant();
+        // Svaki izmišljeni email je novi unos; povremeno se počiste stari da memorija ne raste bez kraja
+        if (neuspjeli.size() > MAX_UNOSA) {
+            Instant granica = sada.minus(PROZOR);
+            for (String kljuc : List.copyOf(neuspjeli.keySet())) {
+                // computeIfPresent drži ključ zaključanim, pa se lista ne mijenja dok je čistimo
+                neuspjeli.computeIfPresent(kljuc, (k, lista) -> {
+                    lista.removeIf(t -> !t.isAfter(granica));
+                    return lista.isEmpty() ? null : lista;
+                });
+            }
+        }
         neuspjeli.compute(email, (kljuc, lista) -> {
             List<Instant> nova = lista == null ? new ArrayList<>() : lista;
             nova.add(sada);

@@ -1,5 +1,7 @@
 package hr.jbrzica.wedding_manager_api.security;
 
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+
 import hr.jbrzica.wedding_manager_api.repository.KorisnikRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,10 +33,18 @@ public class SecurityConfig {
                 // CSRF zaštita treba kod prijave preko cookieja; mi šaljemo token u zaglavlju
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
+                // Uz zadana zaglavlja Spring Securityja (X-Frame-Options, nosniff, HSTS):
+                // stranica se ne smije prikazati u tuđem okviru (clickjacking), bez pluginova i tuđeg <base>
+                .headers(h -> h
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"))
+                        .referrerPolicy(r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .permissionsPolicyHeader(p -> p.policy("camera=(), microphone=(), geolocation=(), payment=()")))
                 // Server ne pamti sesije: svaki zahtjev nosi svoj token
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                "/api/auth/postavke",
                                 "/api/auth/registracija",
                                 "/api/auth/potvrdi-email",
                                 "/api/auth/ponovno-posalji-kod",

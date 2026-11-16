@@ -99,7 +99,7 @@ public final class TerminiDto {
     }
 
     public record JavniDogadjaj(String naziv, String opis, String lokacija, String tvrtka, String telefonTvrtke,
-                                boolean otvoren, int korakMinuta, List<JavniPaket> paketi, List<JavniDan> dani) {
+                                boolean otvoren, int korakMinuta, int otkazSati, List<JavniPaket> paketi, List<JavniDan> dani) {
     }
 
     public record JavnaRezervacijaRequest(
@@ -119,6 +119,7 @@ public final class TerminiDto {
 
     public record PotvrdaRezervacije(String dogadjaj, String tvrtka, String telefonTvrtke, String lokacija,
                                      LocalDate datum, LocalTime vrijeme, String nazivPaketa, int trajanjeMinuta,
-                                     BigDecimal cijena, String ime, boolean otkazano, boolean moguceOtkazati) {
+                                     BigDecimal cijena, String ime, boolean otkazano, boolean moguceOtkazati,
+                                     boolean terminProsao, int otkazSati) {
     }
 }

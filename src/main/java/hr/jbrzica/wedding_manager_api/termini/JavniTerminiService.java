@@ -41,6 +41,8 @@ public class JavniTerminiService {
 
     // Isti email smije imati najviše toliko aktivnih termina na jednom događaju, da netko ne zauzme sve
     static final int NAJVISE_PO_EMAILU = 2;
+    // Klijent sam otkazuje najkasnije toliko sati prije termina; poslije toga zove studio
+    static final int OTKAZ_SATI = 24;
     static final ZoneId ZONA = ZoneId.of("Europe/Zagreb");
     private static final Locale HR = Locale.forLanguageTag("hr-HR");
     private static final DateTimeFormatter DAN = DateTimeFormatter.ofPattern("EEEE, d. MMMM yyyy.", HR);
@@ -87,7 +89,7 @@ public class JavniTerminiService {
                     return new JavniDan(datum, sva.size(), slobodno);
                 }).toList();
         return new JavniDogadjaj(d.getNaziv(), d.getOpis(), d.getLokacija(), t.getNaziv(), t.getTelefon(),
-                d.isOtvoren(), d.getKorakMinuta(), paketi, dani);
+                d.isOtvoren(), d.getKorakMinuta(), OTKAZ_SATI, paketi, dani);
     }
 
     @Transactional
@@ -130,7 +132,11 @@ public class JavniTerminiService {
         RezervacijaTermina r = poOtkaznom(otkazniKod);
         if (r.getOtkazano() == null) {
             if (!moguceOtkazati(r)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Termin je već prošao, ne može se otkazati.");
+                Tvrtka t = r.getDogadjaj().getTvrtka();
+                String poruka = terminProsao(r) ? "Termin je već prošao, ne može se otkazati."
+                        : "Online otkazivanje je moguće najkasnije " + OTKAZ_SATI + " sata prije termina."
+                        + (t.getTelefon() == null ? " Javi se studiju." : " Nazovi studio: " + t.getTelefon());
+                throw new ResponseStatusException(HttpStatus.CONFLICT, poruka);
             }
             r.setOtkazano(Instant.now());
             obavijestiStudioOtkazano(r);
@@ -152,7 +158,15 @@ public class JavniTerminiService {
     }
 
     private boolean moguceOtkazati(RezervacijaTermina r) {
-        return r.getOtkazano() == null && r.getDatum().atTime(r.getVrijeme()).isAfter(LocalDateTime.now(sat));
+        return r.getOtkazano() == null && rokOtkaza(r).isAfter(LocalDateTime.now(sat));
+    }
+
+    private boolean terminProsao(RezervacijaTermina r) {
+        return !r.getDatum().atTime(r.getVrijeme()).isAfter(LocalDateTime.now(sat));
+    }
+
+    private static LocalDateTime rokOtkaza(RezervacijaTermina r) {
+        return r.getDatum().atTime(r.getVrijeme()).minusHours(OTKAZ_SATI);
     }
 
     private PotvrdaRezervacije potvrda(RezervacijaTermina r) {
@@ -160,7 +174,7 @@ public class JavniTerminiService {
         Tvrtka t = d.getTvrtka();
         return new PotvrdaRezervacije(d.getNaziv(), t.getNaziv(), t.getTelefon(), d.getLokacija(), r.getDatum(),
                 r.getVrijeme(), r.getNazivPaketa(), r.getTrajanjeMinuta(), r.getCijena(), r.getIme(),
-                r.getOtkazano() != null, moguceOtkazati(r));
+                r.getOtkazano() != null, moguceOtkazati(r), terminProsao(r), OTKAZ_SATI);
     }
 
     private void posaljiPotvrdu(RezervacijaTermina r, String otkazniKod) {
@@ -176,8 +190,12 @@ public class JavniTerminiService {
         if (d.getLokacija() != null) {
             tekst.append(d.getLokacija()).append('\n');
         }
-        tekst.append("\nAko ne možeš doći, otkaži termin ovdje, da ga može uzeti netko drugi:\n")
-                .append(javnaAdresa).append("/rezervacija/otkazi/").append(otkazniKod).append("\n\n")
+        LocalDateTime rok = rokOtkaza(r);
+        tekst.append("\nAko ne možeš doći, otkaži termin najkasnije ").append(OTKAZ_SATI)
+                .append(" sata prije (do ").append(rok.format(TerminiService.DATUM)).append(" u ")
+                .append(rok.toLocalTime()).append("), da ga može uzeti netko drugi:\n")
+                .append(javnaAdresa).append("/rezervacija/otkazi/").append(otkazniKod).append('\n')
+                .append("Kasnije od toga nazovi studio.\n\n")
                 .append(t.getNaziv());
         if (t.getTelefon() != null) {
             tekst.append(", ").append(t.getTelefon());

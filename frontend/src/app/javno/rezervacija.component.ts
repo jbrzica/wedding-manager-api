@@ -141,6 +141,7 @@ type Korak = 1 | 2 | 3;
                 <mat-checkbox formControlName="privola">
                   Pristajem da {{ d()!.tvrtka }} čuva moje podatke radi ovog termina.
                 </mat-checkbox>
+                <p class="sivo rok">Ako ne možeš doći, termin otkažeš linkom iz maila najkasnije {{ d()!.otkazSati }} sata prije.</p>
               </form>
             }
             @if (greska()) { <p class="greska">{{ greska() }}</p> }
@@ -192,6 +193,7 @@ type Korak = 1 | 2 | 3;
     .sredina { flex: 1; display: flex; flex-direction: column; gap: 2px; }
     .cijena { font-weight: 700; font-size: 18px; white-space: nowrap; }
     .sivo { color: #6f675c; font-size: 13.5px; }
+    .rok { margin: 8px 2px 0; }
     .mali { font-size: 12.5px; margin-top: 10px; }
     .natrag { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; font: inherit; color: #6f675c; padding: 4px 0; cursor: pointer; }
     .dani { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }

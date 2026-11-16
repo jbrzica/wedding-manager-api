@@ -17,6 +17,7 @@ import { FilterVjencanja, Pregled, Prognoza, Stranica, StatusVjencanja, Vjencanj
 import { STATUSI } from '../core/oznake';
 import { izIso } from '../core/datumi';
 import { par, zaKoliko } from '../core/imena';
+import { PrekidacComponent } from '../termini/prekidac.component';
 import { opisVremena } from '../core/vrijeme';
 import { porukaGreske } from '../core/greska';
 import { VjencanjeRedComponent } from './vjencanje-red.component';
@@ -86,10 +87,11 @@ interface Grupa {
 @Component({
   selector: 'app-popis',
   imports: [
-    RouterLink, DatePipe, CurrencyPipe, DecimalPipe, MatCardModule, MatButtonModule, MatChipsModule, MatSelectModule,
+    PrekidacComponent, RouterLink, DatePipe, CurrencyPipe, DecimalPipe, MatCardModule, MatButtonModule, MatChipsModule, MatSelectModule,
     MatFormFieldModule, MatInputModule, MatIconModule, MatProgressBarModule, VjencanjeRedComponent, PrviKoraciComponent,
   ],
   template: `
+    <app-prekidac />
     <app-prvi-koraci />
 
     @if (pregled(); as p) {

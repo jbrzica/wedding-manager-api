@@ -35,6 +35,16 @@ export const routes: Routes = [
     loadComponent: () => import('./javno/suradnik-pregled.component').then((m) => m.SuradnikPregledComponent),
   },
 
+  // Javna rezervacija termina (npr. Božićno fotografiranje) i otkazivanje iz maila: bez prijave
+  {
+    path: 'rezervacija/otkazi/:kod',
+    loadComponent: () => import('./javno/otkazivanje.component').then((m) => m.OtkazivanjeComponent),
+  },
+  {
+    path: 'rezervacija/:kod',
+    loadComponent: () => import('./javno/rezervacija.component').then((m) => m.RezervacijaComponent),
+  },
+
   // Aplikacija: samo za prijavljene
   {
     path: '',
@@ -60,6 +70,22 @@ export const routes: Routes = [
       {
         path: 'vjencanja/:id',
         loadComponent: () => import('./vjencanja/detalji.component').then((m) => m.DetaljiComponent),
+      },
+      {
+        path: 'termini',
+        loadComponent: () => import('./termini/termini.component').then((m) => m.TerminiComponent),
+      },
+      {
+        path: 'termini/novi',
+        loadComponent: () => import('./termini/dogadjaj-forma.component').then((m) => m.DogadjajFormaComponent),
+      },
+      {
+        path: 'termini/:id/uredi',
+        loadComponent: () => import('./termini/dogadjaj-forma.component').then((m) => m.DogadjajFormaComponent),
+      },
+      {
+        path: 'termini/:id',
+        loadComponent: () => import('./termini/dogadjaj.component').then((m) => m.DogadjajComponent),
       },
       {
         path: 'statistika',

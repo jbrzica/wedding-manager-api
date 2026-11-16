@@ -27,10 +27,13 @@ import { porukaGreske } from '../core/greska';
         @if (r.otkazano) {
           <p>Vrijeme je ponovno slobodno za druge. Hvala što si javio/la.</p>
         } @else if (r.moguceOtkazati) {
-          <p>Ne možeš doći? Otkaži termin, da ga može uzeti netko drugi.</p>
+          <p>Ne možeš doći? Otkaži termin, da ga može uzeti netko drugi. Online otkazivanje je moguće najkasnije {{ r.otkazSati }} sata prije termina.</p>
           <button mat-flat-button type="button" class="otkazi" [disabled]="salje()" (click)="otkazi()">Otkaži termin</button>
-        } @else {
+        } @else if (r.terminProsao) {
           <p class="sivo">Termin je prošao.</p>
+        } @else {
+          <p>Online otkazivanje je moguće najkasnije {{ r.otkazSati }} sata prije termina.
+            @if (r.telefonTvrtke) { Ako ne možeš doći, nazovi studio. } @else { Ako ne možeš doći, javi se studiju. }</p>
         }
         @if (r.telefonTvrtke) { <p class="sivo">Za promjenu termina nazovi {{ r.tvrtka }}: <a [href]="'tel:' + r.telefonTvrtke">{{ r.telefonTvrtke }}</a></p> }
         @if (greska()) { <p class="greska">{{ greska() }}</p> }

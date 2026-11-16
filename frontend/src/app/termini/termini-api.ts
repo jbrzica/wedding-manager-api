@@ -96,6 +96,7 @@ export interface JavniDogadjaj {
   telefonTvrtke: string | null;
   otvoren: boolean;
   korakMinuta: number;
+  otkazSati: number;
   paketi: { id: number; naziv: string; opis: string | null; trajanjeMinuta: number; cijena: number }[];
   dani: { datum: string; ukupno: number; slobodno: string[] }[];
 }
@@ -125,6 +126,8 @@ export interface PotvrdaRezervacije {
   ime: string;
   otkazano: boolean;
   moguceOtkazati: boolean;
+  terminProsao: boolean;
+  otkazSati: number;
 }
 
 // Javni link za klijente; isti oblik koristi i backend kad šalje mail

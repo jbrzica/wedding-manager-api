@@ -133,6 +133,35 @@ class TerminiTest {
         mvc.perform(get("/api/javno/otkazivanje/izmisljeno")).andExpect(status().isNotFound());
     }
 
+    // Manje od 24 h prije termina klijent više ne može sam otkazati; studio može uvijek
+    @Test
+    void manjeOd24SataPrijeSeNeMozeOtkazatiLinkom() throws Exception {
+        String sutra = LocalDate.now(java.time.ZoneId.of("Europe/Zagreb")).plusDays(1).toString();
+        String odgovor = fotograf(post("/api/termini"), dogadjaj("00:00", "01:00", 30).replace(dan, sutra))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String sutraKod = JsonPath.read(odgovor, "$.javniKod");
+        long paket = ((Number) JsonPath.read(odgovor, "$.paketi[0].id")).longValue();
+        mvc.perform(get("/api/javno/termini/" + sutraKod)).andExpect(jsonPath("$.otkazSati").value(24));
+
+        mvc.perform(post("/api/javno/termini/" + sutraKod + "/rezervacije").contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"paketId": %d, "datum": "%s", "vrijeme": "00:00", "ime": "Ana Horvat", "telefon": "091 111 2222",
+                         "email": "kasno@test.hr", "privola": true}
+                        """.formatted(paket, sutra)))
+                .andExpect(status().isCreated());
+        ArgumentCaptor<String> tekst = ArgumentCaptor.forClass(String.class);
+        verify(emailServis).posalji(eq("kasno@test.hr"), anyString(), tekst.capture());
+        assertThat(tekst.getValue()).contains("najkasnije 24 sata prije");
+        String otkazniKod = tekst.getValue().replaceAll("(?s).*/rezervacija/otkazi/(\\S+).*", "$1");
+
+        mvc.perform(get("/api/javno/otkazivanje/" + otkazniKod))
+                .andExpect(jsonPath("$.moguceOtkazati").value(false))
+                .andExpect(jsonPath("$.terminProsao").value(false));
+        mvc.perform(post("/api/javno/otkazivanje/" + otkazniKod))
+                .andExpect(status().isConflict())
+                .andExpect(content().string(containsString("24 sata")));
+    }
+
     @Test
     void zatvorenDogadjajIStariLinkNeRade() throws Exception {
         fotograf(put("/api/termini/" + id), dogadjaj("10:00", "12:00", 30).replace("\"otvoren\": true", "\"otvoren\": false"))

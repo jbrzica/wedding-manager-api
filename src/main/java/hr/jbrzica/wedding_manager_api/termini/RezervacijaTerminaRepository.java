@@ -23,4 +23,12 @@ public interface RezervacijaTerminaRepository extends JpaRepository<RezervacijaT
     Optional<RezervacijaTermina> findByIdAndDogadjajTvrtkaId(Long id, Long tvrtkaId);
 
     Optional<RezervacijaTermina> findByOtkazniHash(String otkazniHash);
+
+    // Online rezervacije tvrtke nakon zadanog trenutka (ručno upisane studio ionako zna)
+    @Query("""
+            SELECT r FROM RezervacijaTermina r JOIN FETCH r.dogadjaj d
+            WHERE d.tvrtka.id = :tvrtkaId AND r.otkazano IS NULL AND r.rucno = false AND r.kreirano > :od
+            ORDER BY r.kreirano DESC
+            """)
+    List<RezervacijaTermina> noveOd(@Param("tvrtkaId") Long tvrtkaId, @Param("od") java.time.Instant od);
 }

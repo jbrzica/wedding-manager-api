@@ -239,16 +239,18 @@ public class JavniTerminiService {
         if (t.getTelefon() != null) {
             tekst.append(", ").append(t.getTelefon());
         }
-        posalji(r.getEmail(), "Termin je rezerviran: " + d.getNaziv(), tekst.toString());
+        // Klijent vidi naziv studija kao pošiljatelja, a "Odgovori" ide na mail studija
+        posalji(r.getEmail(), "Termin je rezerviran: " + d.getNaziv(), tekst.toString(), t.getNaziv(), t.getEmail());
     }
 
     private void obavijestiStudio(RezervacijaTermina r) {
         String email = r.getDogadjaj().getTvrtka().getEmail();
         if (email != null) {
+            // "Odgovori" ide izravno klijentu
             posalji(email, "Nova rezervacija: " + r.getDatum().format(TerminiService.DATUM) + " u " + r.getVrijeme(),
                     r.getIme() + ", " + r.getTelefon() + "\n" + r.getNazivPaketa() + ", " + novac(r)
                             + (r.getNapomena() == null ? "" : "\nNapomena: " + r.getNapomena())
-                            + "\n\nSve rezervacije su u aplikaciji pod Termini.");
+                            + "\n\nOtvori u aplikaciji:\n" + linkUAplikaciji(r), null, r.getEmail());
         }
     }
 
@@ -256,14 +258,19 @@ public class JavniTerminiService {
         String email = r.getDogadjaj().getTvrtka().getEmail();
         if (email != null) {
             posalji(email, "Otkazan termin: " + r.getDatum().format(TerminiService.DATUM) + " u " + r.getVrijeme(),
-                    r.getIme() + " je otkazao/la termin. Vrijeme je ponovno slobodno.");
+                    r.getIme() + " je otkazao/la termin. Vrijeme je ponovno slobodno.\n\n" + linkUAplikaciji(r), null, null);
         }
     }
 
+    // Raspored fotografiranja otvoren na danu i terminu te rezervacije
+    private String linkUAplikaciji(RezervacijaTermina r) {
+        return javnaAdresa + "/termini/" + r.getDogadjaj().getId() + "?dan=" + r.getDatum() + "&rezervacija=" + r.getId();
+    }
+
     // Rezervacija je već spremljena; ako mail ne ode, ne smije se poništiti
-    private void posalji(String prima, String naslov, String tekst) {
+    private void posalji(String prima, String naslov, String tekst, String ime, String odgovorNa) {
         try {
-            emailServis.posalji(prima, naslov, tekst);
+            emailServis.posalji(prima, naslov, tekst, ime, odgovorNa);
         } catch (RuntimeException e) {
             log.warn("Mail za termin nije poslan: {}", e.getMessage());
         }

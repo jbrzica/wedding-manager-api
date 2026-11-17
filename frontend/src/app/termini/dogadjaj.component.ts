@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, OnInit, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,13 +8,15 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { DogadjajDetalji, javniLink, kratkiLinkUrl, RezervacijaTermina, TerminiApi } from './termini-api';
-import { izIso } from '../core/datumi';
+import { izIso, uIso } from '../core/datumi';
+import { DanUKalendaru, KalendarDanaComponent } from './kalendar-dana.component';
+import { NoveRezervacijeService } from './nove-rezervacije.service';
 import { porukaGreske } from '../core/greska';
 
 // Jedno fotografiranje: koliko je zauzeto, link za klijente i raspored po danima
 @Component({
   selector: 'app-dogadjaj',
-  imports: [CurrencyPipe, DatePipe, RouterLink, MatButtonModule, MatIconModule, MatMenuModule, MatProgressBarModule],
+  imports: [CurrencyPipe, DatePipe, RouterLink, MatButtonModule, MatIconModule, MatMenuModule, MatProgressBarModule, KalendarDanaComponent],
   template: `
     @if (!d()) {
       @if (greska()) { <p class="greska">{{ greska() }}</p> } @else { <mat-progress-bar mode="indeterminate" /> }
@@ -53,15 +55,21 @@ import { porukaGreske } from '../core/greska';
         <a [routerLink]="['/termini', d.id, 'uredi']"><mat-icon>edit_calendar</mat-icon><span>Dani i sati</span></a>
       </div>
 
-      @for (dan of d.raspored; track dan.datum + dan.od) {
+      @if (daniKalendara().length) {
+        <div class="kalendar">
+          <app-kalendar-dana [dani]="daniKalendara()" [odabran]="odabraniDan()" (odaberi)="odabraniDan.set($event)" />
+        </div>
+      }
+
+      @if (odabraniDan(); as datum) {
         <div class="dan">
-          <span>{{ izIso(dan.datum) | date: 'EEEE, d. MMMM' }}</span>
-          <span>{{ zauzetoNaDan(dan.mjesta) }} od {{ dan.mjesta.length }}</span>
+          <span>{{ izIso(datum) | date: 'EEEE, d. MMMM' }}</span>
+          <span>{{ zauzetoNaDan(mjestaDana()) }} od {{ mjestaDana().length }} zauzeto</span>
         </div>
         <div class="lista">
-          @for (m of dan.mjesta; track m.vrijeme) {
+          @for (m of mjestaDana(); track m.vrijeme) {
             @if (m.rezervacija; as r) {
-              <div class="mjesto">
+              <div class="mjesto" [class.istaknuto]="istaknuta() === r.id" [attr.data-rezervacija]="r.id">
                 <span class="v">{{ m.vrijeme.slice(0, 5) }}</span>
                 <button type="button" class="tko" [matMenuTriggerFor]="rez" [matMenuTriggerData]="{ r }">
                   <strong>{{ r.ime }}</strong>
@@ -73,7 +81,7 @@ import { porukaGreske } from '../core/greska';
                 }
               </div>
             } @else {
-              <button type="button" class="mjesto slobodno" (click)="dodaj(dan.datum, m.vrijeme)">
+              <button type="button" class="mjesto slobodno" (click)="dodaj(datum, m.vrijeme)">
                 <span class="v">{{ m.vrijeme.slice(0, 5) }}</span><span>slobodno</span>
               </button>
             }
@@ -118,6 +126,9 @@ import { porukaGreske } from '../core/greska';
              background: var(--mat-sys-secondary-container); color: var(--mat-sys-on-secondary-container); }
     .poziv { background: var(--wm-uspjeh-pozadina); color: var(--wm-uspjeh); flex: none; }
     .slobodno { cursor: pointer; color: var(--mat-sys-on-surface-variant); }
+    .kalendar { margin: 16px 0 0; max-width: 520px; }
+    .istaknuto { animation: istakni 2.4s ease-out; scroll-margin-top: 90px; }
+    @keyframes istakni { 0%, 40% { background: color-mix(in srgb, var(--mat-sys-primary) 18%, transparent); } 100% { background: transparent; } }
     .slobodno .v { font-weight: 500; }
     .opasno { color: var(--mat-sys-error); }
     .greska { color: var(--mat-sys-error); }
@@ -128,15 +139,62 @@ export class DogadjajComponent implements OnInit {
   private router = inject(Router);
   private snack = inject(MatSnackBar);
   private dialog = inject(MatDialog);
-  private id = Number(inject(ActivatedRoute).snapshot.paramMap.get('id'));
+  private ruta = inject(ActivatedRoute);
+  private el = inject(ElementRef<HTMLElement>);
+  private nove = inject(NoveRezervacijeService);
+  private destroy = inject(DestroyRef);
+  private id = Number(this.ruta.snapshot.paramMap.get('id'));
 
   readonly izIso = izIso;
   d = signal<DogadjajDetalji | null>(null);
   greska = signal('');
+  odabraniDan = signal<string | null>(null);
+  istaknuta = signal<number | null>(null);
   link = () => (this.d() ? javniLink(this.d()!.javniKod) : '');
 
+  // Isti dan može imati više blokova (npr. 10-13 i 14-18); u kalendaru je jedan dan
+  daniKalendara = computed<DanUKalendaru[]>(() => {
+    const poDanu = new Map<string, DanUKalendaru>();
+    for (const r of this.d()?.raspored ?? []) {
+      const dan = poDanu.get(r.datum) ?? { datum: r.datum, zauzeto: 0, ukupno: 0 };
+      dan.ukupno += r.mjesta.length;
+      dan.zauzeto += this.zauzetoNaDan(r.mjesta);
+      poDanu.set(r.datum, dan);
+    }
+    return [...poDanu.values()].sort((a, b) => a.datum.localeCompare(b.datum));
+  });
+
+  mjestaDana = computed(() => (this.d()?.raspored ?? []).filter((r) => r.datum === this.odabraniDan()).flatMap((r) => r.mjesta));
+
   ngOnInit(): void {
+    // Dolazak iz obavijesti ili maila: ?dan=2026-12-13&rezervacija=42 otvori taj dan i istakne termin
+    const pretplata = this.ruta.queryParamMap.subscribe((q) => {
+      this.zeljeniDan = q.get('dan');
+      this.istaknuta.set(Number(q.get('rezervacija')) || null);
+      if (this.d()) {
+        this.postaviDan();
+      }
+    });
+    this.destroy.onDestroy(() => pretplata.unsubscribe());
     this.ucitaj();
+    // Tko otvori raspored, vidio je nove rezervacije
+    this.nove.procitano();
+  }
+
+  private zeljeniDan: string | null = null;
+
+  // Redom: dan iz linka, već odabrani, danas, prvi sljedeći dan, zadnji dan
+  private postaviDan(): void {
+    const dani = this.daniKalendara().map((d) => d.datum);
+    const danas = uIso(new Date());
+    const dan = [this.zeljeniDan, this.odabraniDan()].find((x) => x && dani.includes(x))
+      ?? dani.find((x) => x >= danas) ?? dani[dani.length - 1] ?? null;
+    this.zeljeniDan = null;
+    this.odabraniDan.set(dan);
+    const id = this.istaknuta();
+    if (id) {
+      setTimeout(() => this.el.nativeElement.querySelector(`[data-rezervacija="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+    }
   }
 
   zauzetoNaDan(mjesta: { rezervacija: RezervacijaTermina | null }[]): number {
@@ -205,7 +263,7 @@ export class DogadjajComponent implements OnInit {
 
   private ucitaj(): void {
     this.api.detalji(this.id).subscribe({
-      next: (d) => this.d.set(d),
+      next: (d) => { this.d.set(d); this.postaviDan(); },
       error: (err) => this.greska.set(porukaGreske(err)),
     });
   }

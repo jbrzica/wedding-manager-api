@@ -93,6 +93,13 @@ public final class TerminiDto {
     ) {
     }
 
+    public record NovaRezervacija(Long id, Long dogadjajId, String dogadjaj, LocalDate datum, LocalTime vrijeme,
+                                  String ime, String nazivPaketa, java.time.Instant kreirano) {
+    }
+
+    public record NoveRezervacije(int broj, List<NovaRezervacija> rezervacije) {
+    }
+
     // ---------- javno ----------
 
     public record JavniPaket(Long id, String naziv, String opis, int trajanjeMinuta, BigDecimal cijena) {

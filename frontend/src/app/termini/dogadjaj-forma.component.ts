@@ -46,6 +46,12 @@ const ZADANI_PAKETI: PaketTermina[] = [
             <mat-label>Opis za klijente (nije obavezno)</mat-label>
             <textarea matInput formControlName="opis" rows="3" placeholder="npr. Dođite u svečanoj odjeći. Plaćanje u studiju."></textarea>
           </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Kratki link (nije obavezno)</mat-label>
+            <input matInput formControlName="kratkiLink" placeholder="npr. bozicno" autocapitalize="off" autocomplete="off" spellcheck="false">
+            <mat-hint>{{ forma.value.kratkiLink ? kratkiPrimjer(forma.value.kratkiLink) : 'Za objave i story: kratka adresa umjesto dugog linka' }}</mat-hint>
+            <mat-error>Samo mala slova bez kvačica, brojke i crtica (npr. bozicno)</mat-error>
+          </mat-form-field>
           <div class="slika-polje">
             @if (pregled(); as url) {
               <div class="pregled" [style.background-image]="'url(' + url + ')'"></div>
@@ -188,6 +194,7 @@ export class DogadjajFormaComponent implements OnInit, OnDestroy {
     lokacija: ['', Validators.maxLength(255)],
     opis: ['', Validators.maxLength(2000)],
     korakMinuta: [30, Validators.required],
+    kratkiLink: ['', [Validators.maxLength(40), Validators.pattern(/^([a-z0-9]([a-z0-9-]*[a-z0-9])?)?$/)]],
     otvoren: [true],
     paketi: this.fb.array([] as ReturnType<DogadjajFormaComponent['paketGrupa']>[]),
     dani: this.fb.array([] as ReturnType<DogadjajFormaComponent['danGrupa']>[]),
@@ -229,7 +236,7 @@ export class DogadjajFormaComponent implements OnInit, OnDestroy {
     const f = this.forma.getRawValue();
     const zahtjev: DogadjajRequest = {
       naziv: f.naziv!.trim(), lokacija: f.lokacija || null, opis: f.opis || null,
-      korakMinuta: f.korakMinuta!, otvoren: !!f.otvoren,
+      korakMinuta: f.korakMinuta!, otvoren: !!f.otvoren, kratkiLink: f.kratkiLink?.trim() || null,
       // Validatori su već provjerili da nijedno polje nije prazno
       paketi: f.paketi.map((p) => ({ id: p.id, naziv: p.naziv!.trim(), opis: p.opis || null, trajanjeMinuta: p.trajanjeMinuta!, cijena: p.cijena! })),
       dani: f.dani.map((d) => ({ datum: uIso(d.datum!), od: d.od!, doVremena: d.doVremena! })),
@@ -242,6 +249,10 @@ export class DogadjajFormaComponent implements OnInit, OnDestroy {
       next: (d) => this.router.navigate(['/termini', d.id]),
       error: (err) => { this.greska.set(porukaGreske(err)); this.sprema.set(false); },
     });
+  }
+
+  kratkiPrimjer(kratki: string): string {
+    return `${window.location.host}/r/${kratki}`;
   }
 
   ngOnDestroy(): void {
@@ -305,7 +316,7 @@ export class DogadjajFormaComponent implements OnInit, OnDestroy {
   private popuni(d: DogadjajDetalji): void {
     this.imaoSliku = d.slikaVerzija > 0;
     this.pregled.set(slikaUrl(d.javniKod, d.slikaVerzija));
-    this.forma.patchValue({ naziv: d.naziv, lokacija: d.lokacija ?? '', opis: d.opis ?? '', korakMinuta: d.korakMinuta, otvoren: d.otvoren });
+    this.forma.patchValue({ naziv: d.naziv, lokacija: d.lokacija ?? '', opis: d.opis ?? '', korakMinuta: d.korakMinuta, otvoren: d.otvoren, kratkiLink: d.kratkiLink ?? '' });
     if (!this.koraci.includes(d.korakMinuta)) {
       this.koraci.push(d.korakMinuta);
     }

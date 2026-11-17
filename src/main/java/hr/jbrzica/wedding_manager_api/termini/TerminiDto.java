@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
@@ -32,6 +33,10 @@ public final class TerminiDto {
             @Min(value = 5, message = "Razmak mora biti barem 5 minuta")
             @Max(value = 240, message = "Razmak može biti najviše 240 minuta") Integer korakMinuta,
             boolean otvoren,
+            @Size(max = 40, message = "Kratki link može imati najviše 40 znakova")
+            @Pattern(regexp = "^$|^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+                    message = "Kratki link smije imati samo mala slova bez kvačica, brojke i crticu (npr. bozicno)")
+            String kratkiLink,
             @NotEmpty(message = "Dodaj barem jedan paket") List<@Valid PaketDto> paketi,
             @NotEmpty(message = "Dodaj barem jedan dan") List<@Valid DanDto> dani
     ) {
@@ -73,7 +78,7 @@ public final class TerminiDto {
     }
 
     public record DogadjajDetalji(Long id, String naziv, String opis, String lokacija, int korakMinuta, boolean otvoren,
-                                  String javniKod, int slikaVerzija, List<PaketDto> paketi, List<DanRaspored> raspored,
+                                  String javniKod, String kratkiLink, int slikaVerzija, List<PaketDto> paketi, List<DanRaspored> raspored,
                                   int ukupnoTermina, int zauzeto, BigDecimal prihod, List<BrojPoPaketu> poPaketima) {
     }
 

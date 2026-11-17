@@ -53,6 +53,15 @@ public class PregledLinkaController {
                 .body(sadrzaj);
     }
 
+    // Kratki link na samoj aplikaciji: app.brzicaweddings.com/r/bozicno
+    @GetMapping("/r/{kratkiLink}")
+    public ResponseEntity<Void> kratkiLink(@PathVariable String kratkiLink) {
+        String cilj = javniService.kodZaKratkiLink(kratkiLink.toLowerCase(java.util.Locale.ROOT))
+                .map(kod -> "/rezervacija/" + kod).orElse("/");
+        return ResponseEntity.status(HttpStatus.FOUND).location(java.net.URI.create(cilj))
+                .cacheControl(CacheControl.noStore()).build();
+    }
+
     static String sOznakama(String html, PregledLinka p) {
         StringBuilder oznake = new StringBuilder()
                 .append("<title>").append(e(p.naslov())).append("</title>\n")

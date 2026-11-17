@@ -45,17 +45,17 @@ public class KratkaDomenaFilter extends OncePerRequestFilter {
             return;
         }
         java.util.Optional<String> kod = dogadjajRepository.findByKratkiLink(oznaka).map(DogadjajTermina::getJavniKod);
-        // Viber/WhatsApp odmah dobiju karticu sa slikom; ljudi se preusmjere na stranicu za rezervaciju
-        if (kod.isPresent() && PregledLinkaController.jeRobot(request.getHeader("User-Agent"))) {
-            org.springframework.http.ResponseEntity<String> html = pregled.html(kod.get());
-            response.setContentType("text/html;charset=UTF-8");
-            response.setHeader("Cache-Control", "no-cache");
-            response.getWriter().write(html.getBody());
+        if (kod.isEmpty()) {
+            response.setHeader("Cache-Control", "no-store");
+            response.sendRedirect(javnaAdresa);
             return;
         }
-        String cilj = kod.map(k -> javnaAdresa + "/rezervacija/" + k).orElse(javnaAdresa);
-        response.setHeader("Cache-Control", "no-store");
-        response.sendRedirect(cilj);
+        // Svi dobiju malu stranicu s karticom (naslov, opis, slika) koja preglednik odmah prebaci na rezervaciju.
+        // Obično preusmjeravanje (302) ne bi radilo: WhatsApp na računalu ne prati preusmjeravanje na drugu domenu.
+        String html = pregled.preusmjeravanje(kod.get(), javnaAdresa + "/rezervacija/" + kod.get());
+        response.setContentType("text/html;charset=UTF-8");
+        response.setHeader("Cache-Control", "no-cache");
+        response.getWriter().write(html);
     }
 
     // "bozicno" iz "bozicno.brzicaweddings.com"; null za sve ostale adrese (i za samu aplikaciju)

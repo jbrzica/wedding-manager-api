@@ -305,11 +305,13 @@ class TerminiTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("og:title")));
 
-        // Poddomena: preusmjerava na javnu adresu iz postavki, ne na adresu iz zahtjeva
+        // Poddomena: svi dobiju karticu i preglednik se prebaci na javnu adresu iz postavki (ne na adresu iz zahtjeva).
+        // WhatsApp na računalu ne prati preusmjeravanje na drugu domenu, pa 302 ovdje ne bi pokazao karticu.
         mvc.perform(get("/").with(r -> { r.setServerName("bozicno.brzicaweddings.com"); return r; }))
-                .andExpect(status().isFound())
-                .andExpect(header().string("Location", org.hamcrest.Matchers.endsWith("/rezervacija/" + kod)))
-                .andExpect(header().string("Location", org.hamcrest.Matchers.not(containsString("bozicno.brzicaweddings"))));
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("og:title")))
+                .andExpect(content().string(containsString("http-equiv=\"refresh\" content=\"0;url=https://app.brzicaweddings.com/rezervacija/" + kod)))
+                .andExpect(content().string(containsString("location.replace(\"https://app.brzicaweddings.com/rezervacija/" + kod + "\")")));
         mvc.perform(get("/").with(r -> { r.setServerName("nepoznato.brzicaweddings.com"); return r; }))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.not(containsString("rezervacija"))));

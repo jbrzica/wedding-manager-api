@@ -247,7 +247,7 @@ public class TerminiService {
                 .map(p -> new PaketDto(p.getId(), p.getNaziv(), p.getOpis(), p.getTrajanjeMinuta(), p.getCijena()))
                 .toList();
         return new DogadjajDetalji(d.getId(), d.getNaziv(), d.getOpis(), d.getLokacija(), d.getKorakMinuta(),
-                d.isOtvoren(), d.getJavniKod(), paketi, raspored, ukupnoMjesta(d), aktivne.size(), zbroj(aktivne),
+                d.isOtvoren(), d.getJavniKod(), d.getSlikaVerzija(), paketi, raspored, ukupnoMjesta(d), aktivne.size(), zbroj(aktivne),
                 poPaketu.entrySet().stream().map(e -> new BrojPoPaketu(e.getKey(), e.getValue())).toList());
     }
 

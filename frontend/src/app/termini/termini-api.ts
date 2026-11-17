@@ -70,6 +70,7 @@ export interface DogadjajDetalji {
   korakMinuta: number;
   otvoren: boolean;
   javniKod: string;
+  slikaVerzija: number;
   paketi: PaketTermina[];
   raspored: DanRaspored[];
   ukupnoTermina: number;
@@ -97,8 +98,9 @@ export interface JavniDogadjaj {
   otvoren: boolean;
   korakMinuta: number;
   otkazSati: number;
+  slikaVerzija: number;
   paketi: { id: number; naziv: string; opis: string | null; trajanjeMinuta: number; cijena: number }[];
-  dani: { datum: string; ukupno: number; slobodno: string[] }[];
+  dani: { datum: string; ukupno: number; slobodno: string[]; zauzeto: string[] }[];
 }
 
 export interface JavnaRezervacija {
@@ -109,7 +111,6 @@ export interface JavnaRezervacija {
   telefon: string;
   email: string;
   napomena?: string | null;
-  privola: boolean;
   web?: string;
 }
 
@@ -128,6 +129,11 @@ export interface PotvrdaRezervacije {
   moguceOtkazati: boolean;
   terminProsao: boolean;
   otkazSati: number;
+}
+
+// Verzija u adresi znači da preglednik smije dugo čuvati sliku; nova slika dobije novu adresu
+export function slikaUrl(kod: string, verzija: number): string | null {
+  return verzija ? `/api/javno/termini/${encodeURIComponent(kod)}/slika?v=${verzija}` : null;
 }
 
 // Javni link za klijente; isti oblik koristi i backend kad šalje mail
@@ -161,6 +167,16 @@ export class TerminiApi {
 
   noviLink(id: number): Observable<DogadjajDetalji> {
     return this.http.post<DogadjajDetalji>(`/api/termini/${id}/novi-link`, {});
+  }
+
+  spremiSliku(id: number, slika: Blob): Observable<{ slikaVerzija: number }> {
+    const podaci = new FormData();
+    podaci.append('slika', slika, 'naslovna.jpg');
+    return this.http.put<{ slikaVerzija: number }>(`/api/termini/${id}/slika`, podaci);
+  }
+
+  obrisiSliku(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/termini/${id}/slika`);
   }
 
   rucnaRezervacija(id: number, r: RucnaRezervacija): Observable<RezervacijaTermina> {

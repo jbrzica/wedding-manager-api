@@ -9,27 +9,38 @@ import hr.jbrzica.wedding_manager_api.termini.TerminiDto.PotvrdaRezervacije;
 import hr.jbrzica.wedding_manager_api.termini.TerminiDto.RezervacijaResponse;
 import hr.jbrzica.wedding_manager_api.termini.TerminiDto.RucnaRezervacijaRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class TerminiController {
 
     private final TerminiService terminiService;
     private final JavniTerminiService javniService;
+    private final SlikaTerminaService slikaService;
 
-    public TerminiController(TerminiService terminiService, JavniTerminiService javniService) {
+    public TerminiController(TerminiService terminiService, JavniTerminiService javniService,
+                             SlikaTerminaService slikaService) {
         this.terminiService = terminiService;
         this.javniService = javniService;
+        this.slikaService = slikaService;
     }
 
     // ---------- fotograf (prijava obavezna) ----------
@@ -66,6 +77,17 @@ public class TerminiController {
         return terminiService.noviLink(id);
     }
 
+    @PutMapping("/api/termini/{id}/slika")
+    public Map<String, Integer> spremiSliku(@PathVariable Long id, @RequestParam("slika") MultipartFile slika) throws IOException {
+        return Map.of("slikaVerzija", slikaService.spremi(id, slika.getBytes()));
+    }
+
+    @DeleteMapping("/api/termini/{id}/slika")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void obrisiSliku(@PathVariable Long id) {
+        slikaService.obrisi(id);
+    }
+
     @PostMapping("/api/termini/{id}/rezervacije")
     @ResponseStatus(HttpStatus.CREATED)
     public RezervacijaResponse rucnaRezervacija(@PathVariable Long id, @Valid @RequestBody RucnaRezervacijaRequest request) {
@@ -83,6 +105,16 @@ public class TerminiController {
     @GetMapping("/api/javno/termini/{kod}")
     public JavniDogadjaj javniDogadjaj(@PathVariable String kod) {
         return javniService.dogadjaj(kod);
+    }
+
+    // Adresa sadrži verziju (?v=), pa preglednik smije sliku čuvati dugo
+    @GetMapping("/api/javno/termini/{kod}/slika")
+    public ResponseEntity<byte[]> javnaSlika(@PathVariable String kod) {
+        SlikaTerminaService.Slika s = slikaService.javna(kod);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(s.tip()))
+                .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic())
+                .body(s.sadrzaj());
     }
 
     @PostMapping("/api/javno/termini/{kod}/rezervacije")

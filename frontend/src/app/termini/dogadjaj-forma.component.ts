@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,7 +9,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { DogadjajDetalji, DogadjajRequest, PaketTermina, TerminiApi } from './termini-api';
+import { Observable, of, switchMap, map } from 'rxjs';
+import { DogadjajDetalji, DogadjajRequest, PaketTermina, slikaUrl, TerminiApi } from './termini-api';
 import { izIso, uIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
 
@@ -45,6 +46,24 @@ const ZADANI_PAKETI: PaketTermina[] = [
             <mat-label>Opis za klijente (nije obavezno)</mat-label>
             <textarea matInput formControlName="opis" rows="3" placeholder="npr. Dođite u svečanoj odjeći. Plaćanje u studiju."></textarea>
           </mat-form-field>
+          <div class="slika-polje">
+            @if (pregled(); as url) {
+              <div class="pregled" [style.background-image]="'url(' + url + ')'"></div>
+            } @else {
+              <div class="pregled prazno"><mat-icon>image</mat-icon></div>
+            }
+            <div class="slika-tekst">
+              <strong>Naslovna slika</strong>
+              <span class="sivo">Prikazuje se klijentima na vrhu stranice za rezervaciju. Najbolje široka fotografija.</span>
+              <div class="slika-gumbi">
+                <label mat-stroked-button class="odaberi" [class.zauzeto]="obradjuje()">
+                  <input type="file" accept="image/jpeg,image/png,image/webp" (change)="odaberiSliku($event)" hidden>
+                  {{ obradjuje() ? 'Pripremam…' : pregled() ? 'Promijeni' : 'Dodaj sliku' }}
+                </label>
+                @if (pregled()) { <button mat-button type="button" (click)="makniSliku()">Makni</button> }
+              </div>
+            </div>
+          </div>
           <div class="red">
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
               <mat-label>Termin svakih</mat-label>
@@ -132,6 +151,16 @@ const ZADANI_PAKETI: PaketTermina[] = [
     mat-card-content { padding-top: 8px; }
     .sivo { color: var(--mat-sys-on-surface-variant); font-size: 13.5px; margin: 4px 0 0; }
     .greska { color: var(--mat-sys-error); }
+    .slika-polje { display: flex; gap: 14px; align-items: center; }
+    .pregled { width: 120px; height: 80px; flex: none; border-radius: 12px; background: center / cover no-repeat;
+               border: 1px solid var(--mat-sys-outline-variant); }
+    .pregled.prazno { display: grid; place-items: center; color: var(--mat-sys-on-surface-variant); background: var(--mat-sys-surface-container); }
+    .slika-tekst { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .slika-tekst .sivo { margin: 0; }
+    .slika-gumbi { display: flex; gap: 4px; margin-top: 6px; }
+    .odaberi { cursor: pointer; display: inline-flex; align-items: center; border: 1px solid var(--mat-sys-outline);
+               border-radius: 999px; padding: 0 16px; height: 36px; font-size: 14px; font-weight: 500; color: var(--mat-sys-primary); }
+    .odaberi.zauzeto { pointer-events: none; opacity: .6; }
     .gumbi { display: flex; justify-content: flex-end; gap: 8px; margin: 16px 0; }
     @media (max-width: 480px) {
       .dan { grid-template-columns: 1fr 1fr 40px; }
@@ -139,7 +168,7 @@ const ZADANI_PAKETI: PaketTermina[] = [
     }
   `,
 })
-export class DogadjajFormaComponent implements OnInit {
+export class DogadjajFormaComponent implements OnInit, OnDestroy {
   private api = inject(TerminiApi);
   private router = inject(Router);
   private fb = inject(FormBuilder);
@@ -148,6 +177,11 @@ export class DogadjajFormaComponent implements OnInit {
 
   sprema = signal(false);
   greska = signal('');
+  pregled = signal<string | null>(null);
+  obradjuje = signal(false);
+  private novaSlika: Blob | null = null;
+  private imaoSliku = false;
+  private makniStaru = false;
 
   forma = this.fb.group({
     naziv: ['Božićno fotografiranje', [Validators.required, Validators.maxLength(200)]],
@@ -202,14 +236,75 @@ export class DogadjajFormaComponent implements OnInit {
     };
     this.sprema.set(true);
     this.greska.set('');
-    const spremanje = this.id ? this.api.izmijeni(this.id, zahtjev) : this.api.stvori(zahtjev);
+    const spremanje = (this.id ? this.api.izmijeni(this.id, zahtjev) : this.api.stvori(zahtjev))
+      .pipe(switchMap((d) => this.spremiSliku(d.id).pipe(map(() => d))));
     spremanje.subscribe({
       next: (d) => this.router.navigate(['/termini', d.id]),
       error: (err) => { this.greska.set(porukaGreske(err)); this.sprema.set(false); },
     });
   }
 
+  ngOnDestroy(): void {
+    this.oslobodiPregled();
+  }
+
+  // Fotografija s aparata ima i 10 MB; preglednik je smanji na 1600 px širine prije slanja
+  async odaberiSliku(e: Event): Promise<void> {
+    const ulaz = e.target as HTMLInputElement;
+    const datoteka = ulaz.files?.[0];
+    ulaz.value = '';
+    if (!datoteka) {
+      return;
+    }
+    this.obradjuje.set(true);
+    this.greska.set('');
+    try {
+      const slika = await createImageBitmap(datoteka);
+      const omjer = Math.min(1, 1600 / slika.width);
+      const platno = document.createElement('canvas');
+      platno.width = Math.round(slika.width * omjer);
+      platno.height = Math.round(slika.height * omjer);
+      platno.getContext('2d')!.drawImage(slika, 0, 0, platno.width, platno.height);
+      slika.close();
+      const blob = await new Promise<Blob | null>((ok) => platno.toBlob(ok, 'image/jpeg', 0.85));
+      if (!blob) {
+        throw new Error();
+      }
+      this.oslobodiPregled();
+      this.novaSlika = blob;
+      this.makniStaru = false;
+      this.pregled.set(URL.createObjectURL(blob));
+    } catch {
+      this.greska.set('Ta slika se ne može otvoriti. Probaj JPG ili PNG.');
+    } finally {
+      this.obradjuje.set(false);
+    }
+  }
+
+  makniSliku(): void {
+    this.oslobodiPregled();
+    this.novaSlika = null;
+    this.makniStaru = this.imaoSliku;
+    this.pregled.set(null);
+  }
+
+  private spremiSliku(id: number): Observable<unknown> {
+    if (this.novaSlika) {
+      return this.api.spremiSliku(id, this.novaSlika);
+    }
+    return this.makniStaru ? this.api.obrisiSliku(id) : of(null);
+  }
+
+  private oslobodiPregled(): void {
+    const url = this.pregled();
+    if (url?.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+  }
+
   private popuni(d: DogadjajDetalji): void {
+    this.imaoSliku = d.slikaVerzija > 0;
+    this.pregled.set(slikaUrl(d.javniKod, d.slikaVerzija));
     this.forma.patchValue({ naziv: d.naziv, lokacija: d.lokacija ?? '', opis: d.opis ?? '', korakMinuta: d.korakMinuta, otvoren: d.otvoren });
     if (!this.koraci.includes(d.korakMinuta)) {
       this.koraci.push(d.korakMinuta);

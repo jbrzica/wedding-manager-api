@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -26,7 +27,9 @@ import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -207,6 +210,48 @@ class TerminiTest {
                 .andReturn().getResponse().getContentAsString();
         assertThat((List<?>) JsonPath.read(popis, "$")).isEmpty();
         mvc.perform(get("/api/termini/" + id)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void naslovnaSlikaSeSpremaIVidiJavno() throws Exception {
+        byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 1, 2, 3, 4, 5};
+        String drugi = jwtServis.napravi(podaci.noviVlasnik("Druga", "lozinka123"));
+        mvc.perform(multipart(org.springframework.http.HttpMethod.PUT, "/api/termini/" + id + "/slika")
+                        .file(new MockMultipartFile("slika", "a.jpg", "image/jpeg", jpg))
+                        .header("Authorization", "Bearer " + drugi))
+                .andExpect(status().isNotFound());
+        // Tekst preimenovan u .jpg se odbija jer se gleda sadržaj
+        mvc.perform(multipart(org.springframework.http.HttpMethod.PUT, "/api/termini/" + id + "/slika")
+                .file(new MockMultipartFile("slika", "a.jpg", "image/jpeg", "<html>".getBytes()))
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/javno/termini/" + kod + "/slika")).andExpect(status().isNotFound());
+
+        mvc.perform(multipart(org.springframework.http.HttpMethod.PUT, "/api/termini/" + id + "/slika")
+                .file(new MockMultipartFile("slika", "a.jpg", "image/jpeg", jpg))
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.slikaVerzija").value(1));
+        mvc.perform(get("/api/javno/termini/" + kod)).andExpect(jsonPath("$.slikaVerzija").value(1));
+        mvc.perform(get("/api/javno/termini/" + kod + "/slika"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("image/jpeg"))
+                .andExpect(content().bytes(jpg));
+
+        fotograf(delete("/api/termini/" + id + "/slika"), null).andExpect(status().isNoContent());
+        mvc.perform(get("/api/javno/termini/" + kod + "/slika")).andExpect(status().isNotFound());
+        fotograf(get("/api/termini/" + id), null).andExpect(jsonPath("$.slikaVerzija").value(0));
+    }
+
+    // Zauzeta vremena se javno vide precrtana, ali bez ikakvih podataka o klijentu
+    @Test
+    void javnoSeVideZauzetaVremenaBezImena() throws Exception {
+        rezerviraj(mini, "10:30", "ana@test.hr").andExpect(status().isCreated());
+        mvc.perform(get("/api/javno/termini/" + kod))
+                .andExpect(jsonPath("$.dani[0].zauzeto", hasSize(1)))
+                .andExpect(jsonPath("$.dani[0].zauzeto[0]").value("10:30:00"))
+                .andExpect(jsonPath("$.dani[0].slobodno", hasSize(3)))
+                .andExpect(content().string(not(containsString("ana@test.hr"))));
     }
 
     private String dogadjaj(String od, String doVremena, int korak) {

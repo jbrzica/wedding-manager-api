@@ -254,6 +254,37 @@ class TerminiTest {
                 .andExpect(content().string(not(containsString("ana@test.hr"))));
     }
 
+    // Viber/WhatsApp čitaju samo HTML sa servera, pa server sam upiše naslov, opis i sliku
+    @Test
+    void linkImaPregledZaViberIWhatsApp() throws Exception {
+        mvc.perform(get("/rezervacija/" + kod))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<meta property=\"og:title\" content=\"Božićno fotografiranje\">")))
+                .andExpect(content().string(containsString("Foto Test · ")))
+                .andExpect(content().string(containsString("od 100 €")))
+                .andExpect(content().string(not(containsString("<title>Wedding Manager</title>"))))
+                .andExpect(content().string(not(containsString("og:image"))));
+
+        byte[] jpg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 1, 2, 3, 4, 5};
+        mvc.perform(multipart(org.springframework.http.HttpMethod.PUT, "/api/termini/" + id + "/slika")
+                .file(new MockMultipartFile("slika", "a.jpg", "image/jpeg", jpg))
+                .header("Authorization", "Bearer " + token)).andExpect(status().isOk());
+        mvc.perform(get("/rezervacija/" + kod))
+                .andExpect(content().string(containsString("/api/javno/termini/" + kod + "/slika?v=1\">")));
+
+        // Naziv upisuje korisnik: ne smije završiti kao HTML na stranici
+        fotograf(put("/api/termini/" + id), dogadjaj("10:00", "12:00", 30)
+                .replace("Božićno fotografiranje", "Zlo \\\"><script>alert(1)</script>")).andExpect(status().isOk());
+        mvc.perform(get("/rezervacija/" + kod))
+                .andExpect(content().string(not(containsString("<script>alert"))))
+                .andExpect(content().string(containsString("&lt;script&gt;")));
+
+        // Nepoznat kod: obična aplikacija, koja sama pokaže da link ne vrijedi
+        mvc.perform(get("/rezervacija/izmisljeno"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<title>Wedding Manager</title>")));
+    }
+
     private String dogadjaj(String od, String doVremena, int korak) {
         return """
                 {"naziv": "Božićno fotografiranje", "lokacija": "Studio", "korakMinuta": %d, "otvoren": true,

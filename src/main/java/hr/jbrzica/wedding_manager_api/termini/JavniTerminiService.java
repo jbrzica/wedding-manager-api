@@ -30,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -121,6 +122,38 @@ public class JavniTerminiService {
         posaljiPotvrdu(r, otkazniKod);
         obavijestiStudio(r);
         return potvrda(r);
+    }
+
+    // Kartica koju Viber, WhatsApp i Facebook pokažu kad se link pošalje
+    public record PregledLinka(String naslov, String opis, String slika, String adresa) {
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<PregledLinka> pregled(String kod) {
+        return dogadjajRepository.findByJavniKod(kod).map(d -> {
+            List<java.time.LocalDate> dani = d.getDani().stream().map(DanTermina::getDatum).distinct().sorted().toList();
+            StringBuilder opis = new StringBuilder(d.getTvrtka().getNaziv());
+            if (!dani.isEmpty()) {
+                opis.append(" · ").append(raspon(dani.getFirst(), dani.getLast()));
+            }
+            d.getPaketi().stream().map(PaketTermina::getCijena).min(java.math.BigDecimal::compareTo)
+                    .ifPresent(c -> opis.append(" · od ").append(novac(c)));
+            opis.append(". Odaberi termin i rezerviraj online.");
+            String slika = d.getSlikaVerzija() > 0
+                    ? javnaAdresa + "/api/javno/termini/" + kod + "/slika?v=" + d.getSlikaVerzija() : null;
+            return new PregledLinka(d.getNaziv(), opis.toString(), slika, javnaAdresa + "/rezervacija/" + kod);
+        });
+    }
+
+    // "13. – 21. 12." ili "28. 11. – 3. 12."
+    static String raspon(java.time.LocalDate od, java.time.LocalDate doDana) {
+        String kraj = doDana.getDayOfMonth() + ". " + doDana.getMonthValue() + ".";
+        if (od.equals(doDana)) {
+            return kraj;
+        }
+        String pocetak = od.getMonth() == doDana.getMonth() && od.getYear() == doDana.getYear()
+                ? od.getDayOfMonth() + "." : od.getDayOfMonth() + ". " + od.getMonthValue() + ".";
+        return pocetak + " – " + kraj;
     }
 
     @Transactional(readOnly = true)
@@ -232,8 +265,12 @@ public class JavniTerminiService {
     }
 
     private static String novac(RezervacijaTermina r) {
-        String uzorak = r.getCijena().stripTrailingZeros().scale() <= 0 ? "#,##0" : "#,##0.00";
-        return new DecimalFormat(uzorak, DecimalFormatSymbols.getInstance(HR)).format(r.getCijena()) + " €";
+        return novac(r.getCijena());
+    }
+
+    private static String novac(java.math.BigDecimal iznos) {
+        String uzorak = iznos.stripTrailingZeros().scale() <= 0 ? "#,##0" : "#,##0.00";
+        return new DecimalFormat(uzorak, DecimalFormatSymbols.getInstance(HR)).format(iznos) + " €";
     }
 
     static String hash(String kod) {

@@ -248,7 +248,7 @@ export class DogadjajFormaComponent implements OnInit, OnDestroy {
     this.oslobodiPregled();
   }
 
-  // Fotografija s aparata ima i 10 MB; preglednik je smanji na 1600 px širine prije slanja
+  // Fotografija s aparata ima i 10 MB; preglednik je smanji na 1200 px širine (manja slika se brže otvori i stane u pregled linka na Viberu) prije slanja
   async odaberiSliku(e: Event): Promise<void> {
     const ulaz = e.target as HTMLInputElement;
     const datoteka = ulaz.files?.[0];
@@ -260,13 +260,13 @@ export class DogadjajFormaComponent implements OnInit, OnDestroy {
     this.greska.set('');
     try {
       const slika = await createImageBitmap(datoteka);
-      const omjer = Math.min(1, 1600 / slika.width);
+      const omjer = Math.min(1, 1200 / slika.width);
       const platno = document.createElement('canvas');
       platno.width = Math.round(slika.width * omjer);
       platno.height = Math.round(slika.height * omjer);
       platno.getContext('2d')!.drawImage(slika, 0, 0, platno.width, platno.height);
       slika.close();
-      const blob = await new Promise<Blob | null>((ok) => platno.toBlob(ok, 'image/jpeg', 0.85));
+      const blob = await new Promise<Blob | null>((ok) => platno.toBlob(ok, 'image/jpeg', 0.8));
       if (!blob) {
         throw new Error();
       }

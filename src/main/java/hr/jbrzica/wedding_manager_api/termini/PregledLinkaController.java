@@ -9,12 +9,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.HtmlUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Viber, WhatsApp i Facebook ne pokreću Angular: pročitaju samo HTML koji server vrati.
@@ -43,23 +47,45 @@ public class PregledLinkaController {
         this.javniService = javniService;
     }
 
+    // Programi koji rade pregled linka u porukama; neki ne prate preusmjeravanje, pa njima kartica ide odmah
+    private static final List<String> ROBOTI = List.of("whatsapp", "facebookexternalhit", "facebot", "viber",
+            "telegrambot", "twitterbot", "slackbot", "discordbot", "linkedinbot", "skypeuripreview", "applebot",
+            "pinterest", "snapchat", "redditbot", "embedly", "iframely");
+
+    static boolean jeRobot(String userAgent) {
+        if (userAgent == null) {
+            return false;
+        }
+        String ua = userAgent.toLowerCase(Locale.ROOT);
+        return ROBOTI.stream().anyMatch(ua::contains);
+    }
+
     @GetMapping(value = "/rezervacija/{kod}", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> stranica(@PathVariable String kod) {
+        return html(kod);
+    }
+
+    // Kratki link na samoj aplikaciji: app.brzicaweddings.com/r/bozicno
+    @GetMapping("/r/{kratkiLink}")
+    public ResponseEntity<String> kratkiLink(@PathVariable String kratkiLink,
+                                             @RequestHeader(value = "User-Agent", required = false) String userAgent) {
+        Optional<String> kod = javniService.kodZaKratkiLink(kratkiLink.toLowerCase(Locale.ROOT));
+        if (kod.isPresent() && jeRobot(userAgent)) {
+            return html(kod.get());
+        }
+        String cilj = kod.map(k -> "/rezervacija/" + k).orElse("/");
+        return ResponseEntity.status(HttpStatus.FOUND).location(java.net.URI.create(cilj))
+                .cacheControl(CacheControl.noStore()).build();
+    }
+
+    // Aplikacija s upisanim naslovom, opisom i slikom fotografiranja
+    public ResponseEntity<String> html(String kod) {
         String html = index();
         String sadrzaj = javniService.pregled(kod).map(p -> sOznakama(html, p)).orElse(html);
         return ResponseEntity.ok()
                 .contentType(new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8))
                 .cacheControl(CacheControl.noCache())
                 .body(sadrzaj);
-    }
-
-    // Kratki link na samoj aplikaciji: app.brzicaweddings.com/r/bozicno
-    @GetMapping("/r/{kratkiLink}")
-    public ResponseEntity<Void> kratkiLink(@PathVariable String kratkiLink) {
-        String cilj = javniService.kodZaKratkiLink(kratkiLink.toLowerCase(java.util.Locale.ROOT))
-                .map(kod -> "/rezervacija/" + kod).orElse("/");
-        return ResponseEntity.status(HttpStatus.FOUND).location(java.net.URI.create(cilj))
-                .cacheControl(CacheControl.noStore()).build();
     }
 
     static String sOznakama(String html, PregledLinka p) {

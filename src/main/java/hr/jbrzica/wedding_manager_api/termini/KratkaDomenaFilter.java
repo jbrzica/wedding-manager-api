@@ -21,14 +21,16 @@ import java.util.Locale;
 public class KratkaDomenaFilter extends OncePerRequestFilter {
 
     private final DogadjajTerminaRepository dogadjajRepository;
+    private final PregledLinkaController pregled;
     private final String javnaAdresa;
     private final String javniHost;
     private final String domena;
 
-    public KratkaDomenaFilter(DogadjajTerminaRepository dogadjajRepository,
+    public KratkaDomenaFilter(DogadjajTerminaRepository dogadjajRepository, PregledLinkaController pregled,
                               @Value("${app.javna-adresa}") String javnaAdresa,
                               @Value("${app.kratka-domena:}") String domena) {
         this.dogadjajRepository = dogadjajRepository;
+        this.pregled = pregled;
         this.javnaAdresa = javnaAdresa.replaceAll("/+$", "");
         this.javniHost = URI.create(this.javnaAdresa).getHost();
         this.domena = domena.toLowerCase(Locale.ROOT).trim();
@@ -42,9 +44,16 @@ public class KratkaDomenaFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
             return;
         }
-        String cilj = dogadjajRepository.findByKratkiLink(oznaka)
-                .map(d -> javnaAdresa + "/rezervacija/" + d.getJavniKod())
-                .orElse(javnaAdresa);
+        java.util.Optional<String> kod = dogadjajRepository.findByKratkiLink(oznaka).map(DogadjajTermina::getJavniKod);
+        // Viber/WhatsApp odmah dobiju karticu sa slikom; ljudi se preusmjere na stranicu za rezervaciju
+        if (kod.isPresent() && PregledLinkaController.jeRobot(request.getHeader("User-Agent"))) {
+            org.springframework.http.ResponseEntity<String> html = pregled.html(kod.get());
+            response.setContentType("text/html;charset=UTF-8");
+            response.setHeader("Cache-Control", "no-cache");
+            response.getWriter().write(html.getBody());
+            return;
+        }
+        String cilj = kod.map(k -> javnaAdresa + "/rezervacija/" + k).orElse(javnaAdresa);
         response.setHeader("Cache-Control", "no-store");
         response.sendRedirect(cilj);
     }

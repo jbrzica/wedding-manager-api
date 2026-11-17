@@ -297,6 +297,14 @@ class TerminiTest {
                 .andExpect(header().string("Location", "/rezervacija/" + kod));
         mvc.perform(get("/r/nepostoji")).andExpect(header().string("Location", "/"));
 
+        // Viber/WhatsApp odmah dobiju karticu sa slikom, bez preusmjeravanja
+        mvc.perform(get("/r/bozicno").header("User-Agent", "WhatsApp/2.23.20.0 A"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("og:title")));
+        mvc.perform(get("/").header("User-Agent", "Viber/21.0").with(r -> { r.setServerName("bozicno.brzicaweddings.com"); return r; }))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("og:title")));
+
         // Poddomena: preusmjerava na javnu adresu iz postavki, ne na adresu iz zahtjeva
         mvc.perform(get("/").with(r -> { r.setServerName("bozicno.brzicaweddings.com"); return r; }))
                 .andExpect(status().isFound())

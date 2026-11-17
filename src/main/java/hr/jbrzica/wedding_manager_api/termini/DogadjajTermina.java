@@ -53,6 +53,10 @@ public class DogadjajTermina {
     @Column(nullable = false)
     private boolean otvoren = true;
 
+    // 0 = nema slike
+    @Column(name = "slika_verzija", nullable = false)
+    private int slikaVerzija;
+
     @Column(nullable = false)
     private Instant kreirano;
 

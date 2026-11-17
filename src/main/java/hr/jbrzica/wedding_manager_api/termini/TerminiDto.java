@@ -1,7 +1,6 @@
 package hr.jbrzica.wedding_manager_api.termini;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -74,7 +73,7 @@ public final class TerminiDto {
     }
 
     public record DogadjajDetalji(Long id, String naziv, String opis, String lokacija, int korakMinuta, boolean otvoren,
-                                  String javniKod, List<PaketDto> paketi, List<DanRaspored> raspored,
+                                  String javniKod, int slikaVerzija, List<PaketDto> paketi, List<DanRaspored> raspored,
                                   int ukupnoTermina, int zauzeto, BigDecimal prihod, List<BrojPoPaketu> poPaketima) {
     }
 
@@ -95,11 +94,11 @@ public final class TerminiDto {
     }
 
     // Javno se vide samo slobodna vremena, nikad tko je rezervirao
-    public record JavniDan(LocalDate datum, int ukupno, List<LocalTime> slobodno) {
+    public record JavniDan(LocalDate datum, int ukupno, List<LocalTime> slobodno, List<LocalTime> zauzeto) {
     }
 
     public record JavniDogadjaj(String naziv, String opis, String lokacija, String tvrtka, String telefonTvrtke,
-                                boolean otvoren, int korakMinuta, int otkazSati, List<JavniPaket> paketi, List<JavniDan> dani) {
+                                boolean otvoren, int korakMinuta, int otkazSati, int slikaVerzija, List<JavniPaket> paketi, List<JavniDan> dani) {
     }
 
     public record JavnaRezervacijaRequest(
@@ -111,7 +110,6 @@ public final class TerminiDto {
             @NotBlank(message = "Upiši email za potvrdu") @Email(message = "Email nije ispravan")
             @Size(max = 255, message = "Email je predug") String email,
             @Size(max = 1000, message = "Napomena je preduga") String napomena,
-            @AssertTrue(message = "Potrebna je privola za čuvanje podataka") boolean privola,
             // Skriveno polje: ljudi ga ne vide, botovi ga popune
             String web
     ) {

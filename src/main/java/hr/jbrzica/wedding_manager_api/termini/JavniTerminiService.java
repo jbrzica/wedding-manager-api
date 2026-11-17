@@ -82,14 +82,15 @@ public class JavniTerminiService {
                 .filter(datum -> !datum.isBefore(sada.toLocalDate()))
                 .map(datum -> {
                     List<LocalTime> sva = TerminiService.mjesta(d, datum);
-                    List<LocalTime> slobodno = !d.isOtvoren() ? List.<LocalTime>of() : sva.stream()
-                            .filter(v -> !zauzeto.contains(datum + " " + v))
-                            .filter(v -> datum.atTime(v).isAfter(sada))
-                            .toList();
-                    return new JavniDan(datum, sva.size(), slobodno);
+                    // Prošla vremena se ne prikazuju; zauzeta se prikazuju precrtana (samo vrijeme, bez imena)
+                    List<LocalTime> buduca = sva.stream().filter(v -> datum.atTime(v).isAfter(sada)).toList();
+                    List<LocalTime> zauzeta = buduca.stream().filter(v -> zauzeto.contains(datum + " " + v)).toList();
+                    List<LocalTime> slobodno = !d.isOtvoren() ? List.<LocalTime>of()
+                            : buduca.stream().filter(v -> !zauzeto.contains(datum + " " + v)).toList();
+                    return new JavniDan(datum, sva.size(), slobodno, zauzeta);
                 }).toList();
         return new JavniDogadjaj(d.getNaziv(), d.getOpis(), d.getLokacija(), t.getNaziv(), t.getTelefon(),
-                d.isOtvoren(), d.getKorakMinuta(), OTKAZ_SATI, paketi, dani);
+                d.isOtvoren(), d.getKorakMinuta(), OTKAZ_SATI, d.getSlikaVerzija(), paketi, dani);
     }
 
     @Transactional

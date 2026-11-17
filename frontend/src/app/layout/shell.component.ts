@@ -8,6 +8,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../core/auth.service';
 import { inicijali } from '../core/imena';
+import { NoveRezervacijeService } from '../termini/nove-rezervacije.service';
 
 @Component({
   selector: 'app-shell',
@@ -177,9 +178,13 @@ export class ShellComponent {
     window.addEventListener('online', osvjezi);
     window.addEventListener('offline', osvjezi);
     // Shell živi koliko i prijava; slušači se skidaju da se nakon odjave i ponovne prijave ne gomilaju
+    // Obavijest o novim online rezervacijama radi dok je korisnik prijavljen
+    const nove = inject(NoveRezervacijeService);
+    nove.pokreni();
     inject(DestroyRef).onDestroy(() => {
       window.removeEventListener('online', osvjezi);
       window.removeEventListener('offline', osvjezi);
+      nove.zaustavi();
     });
   }
   inicijali = computed(() => inicijali(this.auth.korisnik()?.ime) || '?');

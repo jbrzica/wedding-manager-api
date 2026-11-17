@@ -48,9 +48,12 @@ public class TerminiService {
     private final TvrtkaRepository tvrtkaRepository;
     private final TrenutniKorisnik trenutniKorisnik;
     private final RezervacijaZapis zapis;
+    private final TerminiVidjenoRepository vidjenoRepository;
 
     public TerminiService(DogadjajTerminaRepository dogadjajRepository, RezervacijaTerminaRepository rezervacijaRepository,
-                          TvrtkaRepository tvrtkaRepository, TrenutniKorisnik trenutniKorisnik, RezervacijaZapis zapis) {
+                          TvrtkaRepository tvrtkaRepository, TrenutniKorisnik trenutniKorisnik, RezervacijaZapis zapis,
+                          TerminiVidjenoRepository vidjenoRepository) {
+        this.vidjenoRepository = vidjenoRepository;
         this.dogadjajRepository = dogadjajRepository;
         this.rezervacijaRepository = rezervacijaRepository;
         this.tvrtkaRepository = tvrtkaRepository;
@@ -127,6 +130,31 @@ public class TerminiService {
         if (r.getOtkazano() == null) {
             r.setOtkazano(Instant.now());
         }
+    }
+
+    // ---------- obavijest o novim rezervacijama ----------
+
+    // Najviše toliko se vraća u popisu; broj je uvijek točan
+    private static final int NAJVISE_NOVIH = 20;
+
+    @Transactional(readOnly = true)
+    public TerminiDto.NoveRezervacije nove() {
+        // Tko još nikad nije pregledao, vidi rezervacije iz zadnja 3 dana, ne cijelu povijest
+        Instant od = vidjenoRepository.findById(trenutniKorisnik.id()).map(TerminiVidjeno::getVidjenoDo)
+                .orElse(Instant.now().minus(java.time.Duration.ofDays(3)));
+        List<RezervacijaTermina> nove = rezervacijaRepository.noveOd(trenutniKorisnik.tvrtkaId(), od);
+        return new TerminiDto.NoveRezervacije(nove.size(), nove.stream().limit(NAJVISE_NOVIH)
+                .map(r -> new TerminiDto.NovaRezervacija(r.getId(), r.getDogadjaj().getId(), r.getDogadjaj().getNaziv(),
+                        r.getDatum(), r.getVrijeme(), r.getIme(), r.getNazivPaketa(), r.getKreirano()))
+                .toList());
+    }
+
+    @Transactional
+    public void procitano() {
+        TerminiVidjeno v = vidjenoRepository.findById(trenutniKorisnik.id()).orElseGet(TerminiVidjeno::new);
+        v.setKorisnikId(trenutniKorisnik.id());
+        v.setVidjenoDo(Instant.now());
+        vidjenoRepository.save(v);
     }
 
     // ---------- pravila ----------

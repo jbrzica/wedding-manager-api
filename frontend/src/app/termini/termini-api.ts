@@ -138,6 +138,22 @@ export function slikaUrl(kod: string, verzija: number): string | null {
   return verzija ? `/api/javno/termini/${encodeURIComponent(kod)}/slika?v=${verzija}` : null;
 }
 
+export interface NovaRezervacija {
+  id: number;
+  dogadjajId: number;
+  dogadjaj: string;
+  datum: string;
+  vrijeme: string;
+  ime: string;
+  nazivPaketa: string;
+  kreirano: string;
+}
+
+export interface NoveRezervacije {
+  broj: number;
+  rezervacije: NovaRezervacija[];
+}
+
 // Kratki link (npr. /r/bozicno) za objave i story; preusmjeri na javni link
 export function kratkiLinkUrl(kratki: string): string {
   return `${window.location.origin}/r/${kratki}`;
@@ -188,6 +204,14 @@ export class TerminiApi {
 
   rucnaRezervacija(id: number, r: RucnaRezervacija): Observable<RezervacijaTermina> {
     return this.http.post<RezervacijaTermina>(`/api/termini/${id}/rezervacije`, r);
+  }
+
+  nove(): Observable<NoveRezervacije> {
+    return this.http.get<NoveRezervacije>('/api/termini/nove');
+  }
+
+  procitano(): Observable<void> {
+    return this.http.post<void>('/api/termini/nove/procitano', {});
   }
 
   otkazi(rezervacijaId: number): Observable<void> {

@@ -94,6 +94,17 @@ public class TerminiController {
         return terminiService.rucnaRezervacija(id, request);
     }
 
+    @GetMapping("/api/termini/nove")
+    public TerminiDto.NoveRezervacije nove() {
+        return terminiService.nove();
+    }
+
+    @PostMapping("/api/termini/nove/procitano")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void procitano() {
+        terminiService.procitano();
+    }
+
     @PostMapping("/api/termini/rezervacije/{id}/otkazi")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void otkazi(@PathVariable Long id) {

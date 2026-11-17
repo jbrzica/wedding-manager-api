@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -98,7 +99,7 @@ class TerminiTest {
                 .andExpect(jsonPath("$.prihod").value(120))
                 .andExpect(jsonPath("$.raspored[0].mjesta[1].rezervacija.ime").value("Ana Horvat"))
                 .andExpect(jsonPath("$.raspored[0].mjesta[0].rezervacija").doesNotExist());
-        verify(emailServis).posalji(eq("ana@test.hr"), anyString(), anyString());
+        verify(emailServis).posalji(eq("ana@test.hr"), anyString(), anyString(), eq("Foto Test"), any());
     }
 
     // Jedinstveni indeks u bazi: isti termin dvaput ne može, ni ako se klikne u istoj sekundi
@@ -125,7 +126,7 @@ class TerminiTest {
     void otkazivanjeLinkomIzMailaOslobodiTermin() throws Exception {
         rezerviraj(mini, "10:00", "ana@test.hr").andExpect(status().isCreated());
         ArgumentCaptor<String> tekst = ArgumentCaptor.forClass(String.class);
-        verify(emailServis).posalji(eq("ana@test.hr"), anyString(), tekst.capture());
+        verify(emailServis).posalji(eq("ana@test.hr"), anyString(), tekst.capture(), any(), any());
         String otkazniKod = tekst.getValue().replaceAll("(?s).*/rezervacija/otkazi/(\\S+).*", "$1");
 
         mvc.perform(get("/api/javno/otkazivanje/" + otkazniKod))
@@ -154,7 +155,7 @@ class TerminiTest {
                         """.formatted(paket, sutra)))
                 .andExpect(status().isCreated());
         ArgumentCaptor<String> tekst = ArgumentCaptor.forClass(String.class);
-        verify(emailServis).posalji(eq("kasno@test.hr"), anyString(), tekst.capture());
+        verify(emailServis).posalji(eq("kasno@test.hr"), anyString(), tekst.capture(), any(), any());
         assertThat(tekst.getValue()).contains("najkasnije 24 sata prije");
         String otkazniKod = tekst.getValue().replaceAll("(?s).*/rezervacija/otkazi/(\\S+).*", "$1");
 
@@ -322,6 +323,28 @@ class TerminiTest {
                 .contentType(MediaType.APPLICATION_JSON).content(sKratkim)).andExpect(status().isConflict());
         fotograf(put("/api/termini/" + id), sKratkim.replace("bozicno", "app")).andExpect(status().isBadRequest());
         fotograf(put("/api/termini/" + id), sKratkim.replace("bozicno", "Božićno")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void obavijestONovimRezervacijama() throws Exception {
+        rezerviraj(mini, "10:00", "ana@test.hr").andExpect(status().isCreated());
+        fotograf(post("/api/termini/" + id + "/rezervacije"), """
+                {"paketId": %d, "datum": "%s", "vrijeme": "10:30", "ime": "Telefonom"}
+                """.formatted(standard, dan)).andExpect(status().isCreated());
+
+        // Ručno upisane studio već zna, pa se ne broje
+        fotograf(get("/api/termini/nove"), null)
+                .andExpect(jsonPath("$.broj").value(1))
+                .andExpect(jsonPath("$.rezervacije[0].ime").value("Ana Horvat"))
+                .andExpect(jsonPath("$.rezervacije[0].dogadjajId").value(id));
+        String drugi = jwtServis.napravi(podaci.noviVlasnik("Druga", "lozinka123"));
+        mvc.perform(get("/api/termini/nove").header("Authorization", "Bearer " + drugi))
+                .andExpect(jsonPath("$.broj").value(0));
+
+        fotograf(post("/api/termini/nove/procitano"), null).andExpect(status().isNoContent());
+        fotograf(get("/api/termini/nove"), null).andExpect(jsonPath("$.broj").value(0));
+        rezerviraj(mini, "11:00", "iva@test.hr").andExpect(status().isCreated());
+        fotograf(get("/api/termini/nove"), null).andExpect(jsonPath("$.broj").value(1));
     }
 
     private String dogadjaj(String od, String doVremena, int korak) {

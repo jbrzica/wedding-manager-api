@@ -124,6 +124,11 @@ public class JavniTerminiService {
         return potvrda(r);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<String> kodZaKratkiLink(String kratkiLink) {
+        return dogadjajRepository.findByKratkiLink(kratkiLink).map(DogadjajTermina::getJavniKod);
+    }
+
     // Kartica koju Viber, WhatsApp i Facebook pokažu kad se link pošalje
     public record PregledLinka(String naslov, String opis, String slika, String adresa) {
     }

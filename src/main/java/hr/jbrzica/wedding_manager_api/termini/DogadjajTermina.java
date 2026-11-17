@@ -53,6 +53,10 @@ public class DogadjajTermina {
     @Column(nullable = false)
     private boolean otvoren = true;
 
+    // npr. "bozicno"; null = nema kratkog linka
+    @Column(name = "kratki_link")
+    private String kratkiLink;
+
     // 0 = nema slike
     @Column(name = "slika_verzija", nullable = false)
     private int slikaVerzija;

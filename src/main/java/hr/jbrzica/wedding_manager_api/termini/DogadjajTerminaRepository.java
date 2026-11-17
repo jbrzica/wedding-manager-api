@@ -11,5 +11,7 @@ public interface DogadjajTerminaRepository extends JpaRepository<DogadjajTermina
 
     List<DogadjajTermina> findByTvrtkaIdOrderByKreiranoDesc(Long tvrtkaId);
 
+    Optional<DogadjajTermina> findByKratkiLink(String kratkiLink);
+
     Optional<DogadjajTermina> findByJavniKod(String javniKod);
 }

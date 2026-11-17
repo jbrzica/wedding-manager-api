@@ -33,6 +33,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -283,6 +284,34 @@ class TerminiTest {
         mvc.perform(get("/rezervacija/izmisljeno"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("<title>Wedding Manager</title>")));
+    }
+
+    @Test
+    void kratkiLinkIPoddomenaVodeNaRezervaciju() throws Exception {
+        String sKratkim = dogadjaj("10:00", "12:00", 30).replace("\"otvoren\": true", "\"otvoren\": true, \"kratkiLink\": \"bozicno\"");
+        fotograf(put("/api/termini/" + id), sKratkim).andExpect(status().isOk())
+                .andExpect(jsonPath("$.kratkiLink").value("bozicno"));
+
+        mvc.perform(get("/r/bozicno"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/rezervacija/" + kod));
+        mvc.perform(get("/r/nepostoji")).andExpect(header().string("Location", "/"));
+
+        // Poddomena: preusmjerava na javnu adresu iz postavki, ne na adresu iz zahtjeva
+        mvc.perform(get("/").with(r -> { r.setServerName("bozicno.brzicaweddings.com"); return r; }))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", org.hamcrest.Matchers.endsWith("/rezervacija/" + kod)))
+                .andExpect(header().string("Location", org.hamcrest.Matchers.not(containsString("bozicno.brzicaweddings"))));
+        mvc.perform(get("/").with(r -> { r.setServerName("nepoznato.brzicaweddings.com"); return r; }))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", org.hamcrest.Matchers.not(containsString("rezervacija"))));
+
+        // Isti kratki link ne može imati druga tvrtka, ni rezervirane riječi
+        String drugi = jwtServis.napravi(podaci.noviVlasnik("Druga", "lozinka123"));
+        mvc.perform(post("/api/termini").header("Authorization", "Bearer " + drugi)
+                .contentType(MediaType.APPLICATION_JSON).content(sKratkim)).andExpect(status().isConflict());
+        fotograf(put("/api/termini/" + id), sKratkim.replace("bozicno", "app")).andExpect(status().isBadRequest());
+        fotograf(put("/api/termini/" + id), sKratkim.replace("bozicno", "Božićno")).andExpect(status().isBadRequest());
     }
 
     private String dogadjaj(String od, String doVremena, int korak) {

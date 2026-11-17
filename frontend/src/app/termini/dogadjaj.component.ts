@@ -7,7 +7,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
-import { DogadjajDetalji, javniLink, RezervacijaTermina, TerminiApi } from './termini-api';
+import { DogadjajDetalji, javniLink, kratkiLinkUrl, RezervacijaTermina, TerminiApi } from './termini-api';
 import { izIso } from '../core/datumi';
 import { porukaGreske } from '../core/greska';
 
@@ -27,6 +27,9 @@ import { porukaGreske } from '../core/greska';
         <mat-menu #vise="matMenu">
           <a mat-menu-item [routerLink]="['/termini', d.id, 'uredi']"><mat-icon>edit</mat-icon> Uredi dane, sate i pakete</a>
           <button mat-menu-item (click)="kopiraj()"><mat-icon>content_copy</mat-icon> Kopiraj link</button>
+          @if (d.kratkiLink) {
+            <button mat-menu-item (click)="kopiraj(kratkiLinkUrl(d.kratkiLink))"><mat-icon>link</mat-icon> Kopiraj kratki link</button>
+          }
           <a mat-menu-item [href]="link()" target="_blank" rel="noopener"><mat-icon>open_in_new</mat-icon> Otvori stranicu za klijente</a>
           <button mat-menu-item (click)="noviLink()"><mat-icon>refresh</mat-icon> Napravi novi link</button>
           <button mat-menu-item (click)="obrisi()" class="opasno"><mat-icon>delete</mat-icon> Obriši</button>
@@ -153,10 +156,12 @@ export class DogadjajComponent implements OnInit {
     this.kopiraj();
   }
 
-  kopiraj(): void {
-    navigator.clipboard.writeText(this.link()).then(
+  readonly kratkiLinkUrl = kratkiLinkUrl;
+
+  kopiraj(link = this.link()): void {
+    navigator.clipboard.writeText(link).then(
       () => this.poruka('Link je kopiran. Zalijepi ga u objavu ili poruku.'),
-      () => this.poruka(this.link()),
+      () => this.poruka(link),
     );
   }
 

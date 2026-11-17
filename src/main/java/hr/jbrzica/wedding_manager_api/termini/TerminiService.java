@@ -131,6 +131,24 @@ public class TerminiService {
 
     // ---------- pravila ----------
 
+    // Rezervirane riječi bi se sudarile s adresama aplikacije (app.brzicaweddings.com, www...)
+    private static final java.util.Set<String> ZAUZETE_RIJECI = java.util.Set.of("app", "www", "api", "mail", "admin");
+
+    private String kratkiLink(DogadjajTermina d, String zeljeni) {
+        String link = prazno(zeljeni);
+        if (link == null) {
+            return null;
+        }
+        link = link.toLowerCase(java.util.Locale.ROOT);
+        if (ZAUZETE_RIJECI.contains(link)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Kratki link „" + link + "” nije dozvoljen. Odaberi drugi.");
+        }
+        dogadjajRepository.findByKratkiLink(link).filter(drugi -> !drugi.getId().equals(d.getId())).ifPresent(drugi -> {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Kratki link „" + drugi.getKratkiLink() + "” je već zauzet. Odaberi drugi.");
+        });
+        return link;
+    }
+
     private void popuni(DogadjajTermina d, DogadjajRequest request, List<RezervacijaTermina> aktivne) {
         int korak = request.korakMinuta();
         for (PaketDto p : request.paketi()) {
@@ -153,6 +171,7 @@ public class TerminiService {
         d.setLokacija(prazno(request.lokacija()));
         d.setKorakMinuta(korak);
         d.setOtvoren(request.otvoren());
+        d.setKratkiLink(kratkiLink(d, request.kratkiLink()));
 
         // Paketi: postojeći se ažuriraju (rezervacije ostaju vezane), novi dodaju, uklonjeni brišu
         Map<Long, PaketTermina> postojeci = d.getPaketi().stream()
@@ -247,7 +266,7 @@ public class TerminiService {
                 .map(p -> new PaketDto(p.getId(), p.getNaziv(), p.getOpis(), p.getTrajanjeMinuta(), p.getCijena()))
                 .toList();
         return new DogadjajDetalji(d.getId(), d.getNaziv(), d.getOpis(), d.getLokacija(), d.getKorakMinuta(),
-                d.isOtvoren(), d.getJavniKod(), d.getSlikaVerzija(), paketi, raspored, ukupnoMjesta(d), aktivne.size(), zbroj(aktivne),
+                d.isOtvoren(), d.getJavniKod(), d.getKratkiLink(), d.getSlikaVerzija(), paketi, raspored, ukupnoMjesta(d), aktivne.size(), zbroj(aktivne),
                 poPaketu.entrySet().stream().map(e -> new BrojPoPaketu(e.getKey(), e.getValue())).toList());
     }
 

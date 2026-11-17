@@ -88,6 +88,31 @@ public class PregledLinkaController {
                 .body(sadrzaj);
     }
 
+    // Mala stranica za poddomenu: kartica za Viber/WhatsApp, a preglednik odmah ide na cilj
+    public String preusmjeravanje(String kod, String cilj) {
+        String osnova = """
+                <!doctype html>
+                <html lang="hr">
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <meta http-equiv="refresh" content="0;url=%1$s">
+                  <title>Rezervacija</title>
+                </head>
+                <body>
+                  <p><a href="%1$s">Otvori stranicu za rezervaciju</a></p>
+                  <script>location.replace(%2$s);</script>
+                </body>
+                </html>
+                """.formatted(e(cilj), jsString(cilj));
+        return javniService.pregled(kod).map(p -> sOznakama(osnova, p)).orElse(osnova);
+    }
+
+    // Adresa kao JavaScript string; "<" se kodira da ne može zatvoriti <script>
+    private static String jsString(String s) {
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("<", "\\u003c") + "\"";
+    }
+
     static String sOznakama(String html, PregledLinka p) {
         StringBuilder oznake = new StringBuilder()
                 .append("<title>").append(e(p.naslov())).append("</title>\n")

@@ -12,7 +12,7 @@ import java.io.IOException;
 /**
  * Na serveru Spring Boot servira i Angular aplikaciju (iz static/).
  * Adrese poput /kalendar ili /vjencanja/5 ne postoje kao datoteke, nego ih rješava Angular,
- * pa za njih vraćamo index.html. Za /api/... nikad, da kriva API adresa ostane 404.
+ * pa za njih vraćamo index.html. Za /api/... i /actuator/... nikad, da kriva adresa ostane 404.
  */
 @Configuration
 public class SpaConfig implements WebMvcConfigurer {
@@ -30,7 +30,7 @@ public class SpaConfig implements WebMvcConfigurer {
                         if (datoteka != null) {
                             return datoteka;
                         }
-                        if (putanja.startsWith("api/")) {
+                        if (putanja.startsWith("api/") || putanja.startsWith("actuator/")) {
                             return null;
                         }
                         Resource index = new ClassPathResource("/static/index.html");

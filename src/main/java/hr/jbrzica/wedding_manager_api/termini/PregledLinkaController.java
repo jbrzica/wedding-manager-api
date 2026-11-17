@@ -24,6 +24,18 @@ import java.nio.charset.StandardCharsets;
 @Controller
 public class PregledLinkaController {
 
+    // Kad Angular nije izgrađen (npr. backend testovi), dovoljna je osnovna stranica
+    private static final String ZADANI_INDEX = """
+            <!doctype html>
+            <html lang="hr">
+            <head>
+              <meta charset="utf-8">
+              <title>Wedding Manager</title>
+            </head>
+            <body><app-root></app-root></body>
+            </html>
+            """;
+
     private final JavniTerminiService javniService;
     private volatile String index;
 
@@ -72,7 +84,7 @@ public class PregledLinkaController {
         if (html == null) {
             ClassPathResource r = new ClassPathResource("static/index.html");
             if (!r.exists()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+                return ZADANI_INDEX;
             }
             try (InputStream in = r.getInputStream()) {
                 html = new String(in.readAllBytes(), StandardCharsets.UTF_8);

@@ -96,12 +96,20 @@ public class PregledLinkaController {
                 <head>
                   <meta charset="utf-8">
                   <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <meta name="theme-color" content="#fbfaf7">
                   <meta http-equiv="refresh" content="0;url=%1$s">
                   <title>Rezervacija</title>
+                  <script>location.replace(%2$s);</script>
+                  <style>
+                    html, body { margin: 0; height: 100%%; background: #fbfaf7; }
+                    /* Vidi se samo ako preusmjeravanje zapne; inače je ekran prazan u boji stranice za rezervaciju */
+                    a { position: fixed; inset: auto 0 45%% 0; text-align: center; font: 600 16px -apple-system, Segoe UI, Arial, sans-serif;
+                        color: #a8232c; text-decoration: none; opacity: 0; animation: pokazi .3s 2s forwards; }
+                    @keyframes pokazi { to { opacity: 1; } }
+                  </style>
                 </head>
                 <body>
-                  <p><a href="%1$s">Otvori stranicu za rezervaciju</a></p>
-                  <script>location.replace(%2$s);</script>
+                  <a href="%1$s">Otvori stranicu za rezervaciju →</a>
                 </body>
                 </html>
                 """.formatted(e(cilj), jsString(cilj));

@@ -25,6 +25,7 @@ export interface DogadjajRequest {
   korakMinuta: number;
   otvoren: boolean;
   kratkiLink?: string | null;
+  kontaktTelefon?: string | null;
   paketi: PaketTermina[];
   dani: DanTermina[];
 }
@@ -72,6 +73,7 @@ export interface DogadjajDetalji {
   otvoren: boolean;
   javniKod: string;
   kratkiLink: string | null;
+  kontaktTelefon: string | null;
   slikaVerzija: number;
   paketi: PaketTermina[];
   raspored: DanRaspored[];

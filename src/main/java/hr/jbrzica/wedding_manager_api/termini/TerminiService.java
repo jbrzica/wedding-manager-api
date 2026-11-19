@@ -200,6 +200,7 @@ public class TerminiService {
         d.setKorakMinuta(korak);
         d.setOtvoren(request.otvoren());
         d.setKratkiLink(kratkiLink(d, request.kratkiLink()));
+        d.setKontaktTelefon(prazno(request.kontaktTelefon()));
 
         // Paketi: postojeći se ažuriraju (rezervacije ostaju vezane), novi dodaju, uklonjeni brišu
         Map<Long, PaketTermina> postojeci = d.getPaketi().stream()
@@ -294,7 +295,7 @@ public class TerminiService {
                 .map(p -> new PaketDto(p.getId(), p.getNaziv(), p.getOpis(), p.getTrajanjeMinuta(), p.getCijena()))
                 .toList();
         return new DogadjajDetalji(d.getId(), d.getNaziv(), d.getOpis(), d.getLokacija(), d.getKorakMinuta(),
-                d.isOtvoren(), d.getJavniKod(), d.getKratkiLink(), d.getSlikaVerzija(), paketi, raspored, ukupnoMjesta(d), aktivne.size(), zbroj(aktivne),
+                d.isOtvoren(), d.getJavniKod(), d.getKratkiLink(), d.getKontaktTelefon(), d.getSlikaVerzija(), paketi, raspored, ukupnoMjesta(d), aktivne.size(), zbroj(aktivne),
                 poPaketu.entrySet().stream().map(e -> new BrojPoPaketu(e.getKey(), e.getValue())).toList());
     }
 

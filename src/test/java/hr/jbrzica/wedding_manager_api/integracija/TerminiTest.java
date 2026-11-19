@@ -347,6 +347,27 @@ class TerminiTest {
         fotograf(get("/api/termini/nove"), null).andExpect(jsonPath("$.broj").value(1));
     }
 
+    @Test
+    void paketiOdNajskupljegIKontaktTelefonFotografiranja() throws Exception {
+        String json = mvc.perform(get("/api/javno/termini/" + kod)).andReturn().getResponse().getContentAsString();
+        List<Number> cijene = JsonPath.read(json, "$.paketi[*].cijena");
+        for (int i = 1; i < cijene.size(); i++) {
+            assertThat(cijene.get(i - 1).doubleValue()).isGreaterThanOrEqualTo(cijene.get(i).doubleValue());
+        }
+
+        String sTelefonom = dogadjaj("10:00", "12:00", 30).replace("\"otvoren\": true", "\"otvoren\": true, \"kontaktTelefon\": \"095 551 2245\"");
+        String odgovor = fotograf(put("/api/termini/" + id), sTelefonom).andExpect(status().isOk())
+                .andExpect(jsonPath("$.kontaktTelefon").value("095 551 2245"))
+                .andReturn().getResponse().getContentAsString();
+        mvc.perform(get("/api/javno/termini/" + kod)).andExpect(jsonPath("$.telefonTvrtke").value("095 551 2245"));
+
+        long paket = ((Number) JsonPath.read(odgovor, "$.paketi[0].id")).longValue();
+        rezerviraj(paket, "10:00", "ana@test.hr").andExpect(status().isCreated());
+        ArgumentCaptor<String> tekst = ArgumentCaptor.forClass(String.class);
+        verify(emailServis).posalji(eq("ana@test.hr"), anyString(), tekst.capture(), any(), any());
+        assertThat(tekst.getValue()).contains("095 551 2245");
+    }
+
     private String dogadjaj(String od, String doVremena, int korak) {
         return """
                 {"naziv": "Božićno fotografiranje", "lokacija": "Studio", "korakMinuta": %d, "otvoren": true,

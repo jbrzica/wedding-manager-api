@@ -37,6 +37,8 @@ public final class TerminiDto {
             @Pattern(regexp = "^$|^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
                     message = "Kratki link smije imati samo mala slova bez kvačica, brojke i crticu (npr. bozicno)")
             String kratkiLink,
+            @Size(max = 50, message = "Telefon može imati najviše 50 znakova")
+            String kontaktTelefon,
             @NotEmpty(message = "Dodaj barem jedan paket") List<@Valid PaketDto> paketi,
             @NotEmpty(message = "Dodaj barem jedan dan") List<@Valid DanDto> dani
     ) {
@@ -78,7 +80,7 @@ public final class TerminiDto {
     }
 
     public record DogadjajDetalji(Long id, String naziv, String opis, String lokacija, int korakMinuta, boolean otvoren,
-                                  String javniKod, String kratkiLink, int slikaVerzija, List<PaketDto> paketi, List<DanRaspored> raspored,
+                                  String javniKod, String kratkiLink, String kontaktTelefon, int slikaVerzija, List<PaketDto> paketi, List<DanRaspored> raspored,
                                   int ukupnoTermina, int zauzeto, BigDecimal prihod, List<BrojPoPaketu> poPaketima) {
     }
 

@@ -72,7 +72,9 @@ public class JavniTerminiService {
     public JavniDogadjaj dogadjaj(String kod) {
         DogadjajTermina d = poKodu(kod);
         Tvrtka t = d.getTvrtka();
+        // Od najskupljeg prema najjeftinijem: klijent prvo vidi najbolju ponudu
         List<JavniPaket> paketi = d.getPaketi().stream()
+                .sorted(java.util.Comparator.comparing(PaketTermina::getCijena).reversed())
                 .map(p -> new JavniPaket(p.getId(), p.getNaziv(), p.getOpis(), p.getTrajanjeMinuta(), p.getCijena()))
                 .toList();
         Set<String> zauzeto = new HashSet<>();
@@ -90,7 +92,7 @@ public class JavniTerminiService {
                             : buduca.stream().filter(v -> !zauzeto.contains(datum + " " + v)).toList();
                     return new JavniDan(datum, sva.size(), slobodno, zauzeta);
                 }).toList();
-        return new JavniDogadjaj(d.getNaziv(), d.getOpis(), d.getLokacija(), t.getNaziv(), t.getTelefon(),
+        return new JavniDogadjaj(d.getNaziv(), d.getOpis(), d.getLokacija(), t.getNaziv(), d.telefonZaKlijente(),
                 d.isOtvoren(), d.getKorakMinuta(), OTKAZ_SATI, d.getSlikaVerzija(), paketi, dani);
     }
 
@@ -171,10 +173,10 @@ public class JavniTerminiService {
         RezervacijaTermina r = poOtkaznom(otkazniKod);
         if (r.getOtkazano() == null) {
             if (!moguceOtkazati(r)) {
-                Tvrtka t = r.getDogadjaj().getTvrtka();
+                String telefon = r.getDogadjaj().telefonZaKlijente();
                 String poruka = terminProsao(r) ? "Termin je već prošao, ne može se otkazati."
                         : "Online otkazivanje je moguće najkasnije " + OTKAZ_SATI + " sata prije termina."
-                        + (t.getTelefon() == null ? " Javi se studiju." : " Nazovi studio: " + t.getTelefon());
+                        + (telefon == null ? " Javi se studiju." : " Nazovi studio: " + telefon);
                 throw new ResponseStatusException(HttpStatus.CONFLICT, poruka);
             }
             r.setOtkazano(Instant.now());
@@ -211,7 +213,7 @@ public class JavniTerminiService {
     private PotvrdaRezervacije potvrda(RezervacijaTermina r) {
         DogadjajTermina d = r.getDogadjaj();
         Tvrtka t = d.getTvrtka();
-        return new PotvrdaRezervacije(d.getNaziv(), t.getNaziv(), t.getTelefon(), d.getLokacija(), r.getDatum(),
+        return new PotvrdaRezervacije(d.getNaziv(), t.getNaziv(), d.telefonZaKlijente(), d.getLokacija(), r.getDatum(),
                 r.getVrijeme(), r.getNazivPaketa(), r.getTrajanjeMinuta(), r.getCijena(), r.getIme(),
                 r.getOtkazano() != null, moguceOtkazati(r), terminProsao(r), OTKAZ_SATI);
     }
@@ -236,8 +238,8 @@ public class JavniTerminiService {
                 .append(javnaAdresa).append("/rezervacija/otkazi/").append(otkazniKod).append('\n')
                 .append("Kasnije od toga nazovi studio.\n\n")
                 .append(t.getNaziv());
-        if (t.getTelefon() != null) {
-            tekst.append(", ").append(t.getTelefon());
+        if (d.telefonZaKlijente() != null) {
+            tekst.append(", ").append(d.telefonZaKlijente());
         }
         // Klijent vidi naziv studija kao pošiljatelja, a "Odgovori" ide na mail studija
         posalji(r.getEmail(), "Termin je rezerviran: " + d.getNaziv(), tekst.toString(), t.getNaziv(), t.getEmail());

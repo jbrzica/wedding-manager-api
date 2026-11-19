@@ -53,6 +53,15 @@ public class DogadjajTermina {
     @Column(nullable = false)
     private boolean otvoren = true;
 
+    // Broj koji klijenti vide za ovo fotografiranje; null = telefon tvrtke
+    @Column(name = "kontakt_telefon")
+    private String kontaktTelefon;
+
+    // Telefon koji se pokazuje klijentima
+    public String telefonZaKlijente() {
+        return kontaktTelefon != null ? kontaktTelefon : tvrtka.getTelefon();
+    }
+
     // npr. "bozicno"; null = nema kratkog linka
     @Column(name = "kratki_link")
     private String kratkiLink;

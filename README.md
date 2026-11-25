@@ -6,6 +6,8 @@ Web aplikacija za fotografe vjenčanja: vjenčanja po datumima, mladenci, raspor
 
 Projekt je nastao iz stvarne potrebe obiteljskog posla: vjenčanja su se vodila na papiru, a termini za fotografiranja preko poruka.
 
+Aplikacija je razvijena uz AI asistenta (Claude Code); moja uloga su zahtjevi s korisnicima, odluke o funkcionalnostima, testiranje u stvarnoj upotrebi, objava i održavanje. Na ovom kodu učim Javu i Spring Boot.
+
 ## Što aplikacija radi
 
 **Za studio (prijava):**
